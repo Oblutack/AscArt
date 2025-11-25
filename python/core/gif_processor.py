@@ -4,30 +4,45 @@ Handles animated GIF conversion to ASCII
 """
 
 from PIL import Image
-import imageio
 from .image_processor import ImageProcessor
-import numpy as np
 
 
 class GifProcessor:
     def __init__(self):
         self.frames = []
+        self.delays = []
         self.processor = ImageProcessor()
     
     def load_gif(self, path):
-        """Load GIF frames"""
-        gif = Image.open(path)
-        
-        self.frames = []
-        try:
-            while True:
+        """Load GIF frames and delays"""
+        with Image.open(path) as gif:
+            self.frames = []
+            self.delays = []
+            
+            # Count total frames
+            total_frames = 0
+            try:
+                while True:
+                    gif.seek(total_frames)
+                    total_frames += 1
+            except EOFError:
+                pass
+            
+            gif.seek(0)  # Reset to first frame
+            
+            # Extract frames and delays
+            for frame_index in range(total_frames):
+                gif.seek(frame_index)
+                
+                # Get frame delay in milliseconds (default 100ms)
+                delay = gif.info.get('duration', 100)
+                self.delays.append(delay)
+                
+                # Convert frame to RGB
                 frame = gif.copy()
                 if frame.mode != 'RGB':
                     frame = frame.convert('RGB')
                 self.frames.append(frame)
-                gif.seek(gif.tell() + 1)
-        except EOFError:
-            pass
         
         return len(self.frames)
     
@@ -70,14 +85,12 @@ class GifProcessor:
         """Complete GIF processing pipeline"""
         try:
             frame_count = self.load_gif(path)
-            
-            # For now, return first frame as ASCII
-            # Full animation support can be added later
             ascii_frames = self.convert_frames_to_ascii(options)
             
             return {
                 'type': 'gif',
                 'frames': ascii_frames,
+                'delays': self.delays,
                 'frame_count': frame_count,
                 'preview': ascii_frames[0] if ascii_frames else ''
             }

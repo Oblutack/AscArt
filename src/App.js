@@ -17,6 +17,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState("");
 
+  // GIF Animation State
+  const [isGif, setIsGif] = useState(false);
+  const [gifFrames, setGifFrames] = useState([]);
+  const [gifDelays, setGifDelays] = useState([]);
+
   // Settings State
   const [removeBackground, setRemoveBackground] = useState(false);
   const [width, setWidth] = useState(120);
@@ -41,9 +46,20 @@ function App() {
         console.log("✅ ASCII art received, length:", data.ascii?.length);
         console.log("First 100 chars:", data.ascii?.substring(0, 100));
         setAsciiArt(data.ascii);
+        setIsGif(false);
+        setGifFrames([]);
+        setGifDelays([]);
         setIsLoading(false);
         console.log("State updated, isLoading:", false);
         setDebugInfo(`✅ ASCII loaded: ${data.ascii?.length} chars`);
+      } else if (data.type === "gif-result") {
+        console.log("🎬 GIF received:", data.frames?.length, "frames");
+        setIsGif(true);
+        setGifFrames(data.frames || []);
+        setGifDelays(data.delays || []);
+        setAsciiArt(data.frames?.[0] || "");
+        setIsLoading(false);
+        setDebugInfo(`🎬 GIF loaded: ${data.frames?.length} frames`);
       } else if (data.error) {
         console.error("❌ Python Error:", data.error);
         setIsLoading(false);
@@ -217,7 +233,13 @@ function App() {
           disabled={!asciiArt}
         />
 
-        <OutputViewer asciiArt={asciiArt} isLoading={isLoading} />
+        <OutputViewer
+          asciiArt={asciiArt}
+          isLoading={isLoading}
+          isGif={isGif}
+          gifFrames={gifFrames}
+          gifDelays={gifDelays}
+        />
       </div>
     </MainLayout>
   );

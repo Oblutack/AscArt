@@ -41,8 +41,20 @@ class ImageProcessor:
         self.original_image = Image.open(path)
         self.image = self.original_image.copy()
         
-        # Convert to RGB if needed
-        if self.image.mode != 'RGB':
+        # Handle transparency: convert RGBA to RGB with white background
+        if self.image.mode in ('RGBA', 'LA', 'P'):
+            # Create white background
+            background = Image.new('RGB', self.image.size, (255, 255, 255))
+            # If has alpha channel, use it for compositing
+            if self.image.mode == 'RGBA':
+                background.paste(self.image, mask=self.image.split()[3])
+            elif self.image.mode == 'LA':
+                background.paste(self.image.convert('RGB'), mask=self.image.split()[1])
+            else:  # Palette mode
+                self.image = self.image.convert('RGBA')
+                background.paste(self.image, mask=self.image.split()[3])
+            self.image = background
+        elif self.image.mode != 'RGB':
             self.image = self.image.convert('RGB')
             
         return True

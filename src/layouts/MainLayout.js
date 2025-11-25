@@ -3,12 +3,12 @@ import React from "react";
 const MainLayout = ({ children }) => {
   return (
     <div className="main-layout">
-      <header className="app-header">
+      <header className="app-header draggable">
         <h1 className="app-title">
           <span className="title-main">ASCII GENERATOR</span>
           <span className="title-subtitle">// Image & GIF Converter</span>
         </h1>
-        <div className="drag-hint">
+        <div className="drag-hint no-drag">
           <svg
             width="16"
             height="16"

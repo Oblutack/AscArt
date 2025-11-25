@@ -58,6 +58,24 @@ body {
   margin-bottom: 15px;
 }
 
+/* Make header draggable */
+.draggable {
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+/* Prevent drag on interactive elements */
+.no-drag,
+.no-drag *,
+button,
+input,
+select,
+textarea,
+a {
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
 .app-title {
   font-size: 18px;
   font-weight: bold;
@@ -237,6 +255,29 @@ body {
   color: #888;
   min-width: 30px;
   text-align: center;
+}
+
+.speed-select {
+  background: rgba(191, 0, 255, 0.2);
+  border: 1px solid rgba(191, 0, 255, 0.5);
+  color: #bf00ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: "Courier New", Consolas, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.speed-select:hover {
+  background: rgba(191, 0, 255, 0.3);
+  border-color: #bf00ff;
+  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
+}
+
+.speed-select option {
+  background: #1a1a25;
+  color: #bf00ff;
 }
 
 /* ==================== INPUT PANEL ==================== */

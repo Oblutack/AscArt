@@ -1,7 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
-const OutputViewer = ({ asciiArt, isLoading }) => {
+const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
   const [fontSize, setFontSize] = useState(8);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const timerRef = useRef(null);
+
+  // Auto-play GIF when loaded
+  useEffect(() => {
+    if (isGif && gifFrames.length > 0) {
+      setCurrentFrame(0);
+      setIsPlaying(true);
+    }
+  }, [isGif, gifFrames]);
+
+  // Animation playback loop
+  useEffect(() => {
+    if (isPlaying && isGif && gifFrames.length > 1) {
+      const delay = (gifDelays[currentFrame] || 100) / playbackSpeed;
+      timerRef.current = setTimeout(() => {
+        setCurrentFrame((prev) => (prev + 1) % gifFrames.length);
+      }, Math.max(10, delay));
+    }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isPlaying, currentFrame, isGif, gifFrames, gifDelays, playbackSpeed]);
+
+  const togglePlayback = () => setIsPlaying(!isPlaying);
+  const stopPlayback = () => {
+    setIsPlaying(false);
+    setCurrentFrame(0);
+  };
+
+  const displayArt =
+    isGif && gifFrames.length > 0 ? gifFrames[currentFrame] : asciiArt;
 
   return (
     <div className="panel output-panel">
@@ -9,6 +43,39 @@ const OutputViewer = ({ asciiArt, isLoading }) => {
         OUTPUT
         {asciiArt && (
           <div className="output-controls">
+            {isGif && gifFrames.length > 1 && (
+              <>
+                <button
+                  className="zoom-btn"
+                  onClick={togglePlayback}
+                  title={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? "⏸" : "▶"}
+                </button>
+                <button
+                  className="zoom-btn"
+                  onClick={stopPlayback}
+                  title="Stop"
+                >
+                  ⏹
+                </button>
+                <select
+                  className="speed-select"
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                  title="Playback Speed"
+                >
+                  <option value="0.5">0.5×</option>
+                  <option value="1">1×</option>
+                  <option value="1.5">1.5×</option>
+                  <option value="2">2×</option>
+                </select>
+                <span className="zoom-label">
+                  {currentFrame + 1}/{gifFrames.length}
+                </span>
+                <span style={{ margin: "0 8px", color: "#666" }}>|</span>
+              </>
+            )}
             <button
               className="zoom-btn"
               onClick={() => setFontSize(Math.max(4, fontSize - 1))}
@@ -33,12 +100,12 @@ const OutputViewer = ({ asciiArt, isLoading }) => {
             <div className="loading-spinner"></div>
             <p>Generating ASCII art...</p>
           </div>
-        ) : asciiArt ? (
+        ) : displayArt ? (
           <pre
             className="ascii-display"
             style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize}px` }}
           >
-            {asciiArt}
+            {displayArt}
           </pre>
         ) : (
           <div className="output-placeholder">

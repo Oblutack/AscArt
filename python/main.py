@@ -77,9 +77,9 @@ def main():
                             result = gif_processor.process_and_convert(path, options)
                             response = {
                                 "status": "success",
-                                "type": "ascii-result",
-                                "ascii": result['preview'],
-                                "isGif": True,
+                                "type": "gif-result",
+                                "frames": result['frames'],
+                                "delays": result['delays'],
                                 "frameCount": result['frame_count']
                             }
                             log_info(f"GIF processed successfully, {result['frame_count']} frames")
