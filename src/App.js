@@ -205,6 +205,13 @@ function App() {
             setRemoveBackground={setRemoveBackground}
             imagePreview={imagePreview}
           />
+          <ActionButtons
+            onSave={handleSave}
+            onWidget={handleWidget}
+            onHistory={handleHistory}
+            onQuit={handleQuit}
+            disabled={!asciiArt}
+          />
           <WidthPanel
             width={width}
             setWidth={setWidth}
@@ -212,8 +219,9 @@ function App() {
             setRatio={setRatio}
             keepOriginal={keepOriginal}
             setKeepOriginal={setKeepOriginal}
+            charset={charset}
+            setCharset={setCharset}
           />
-          <StylePanel charset={charset} setCharset={setCharset} />
           <AdjustmentPanel
             invert={invert}
             setInvert={setInvert}
@@ -224,14 +232,6 @@ function App() {
             onReset={handleReset}
           />
         </div>
-
-        <ActionButtons
-          onSave={handleSave}
-          onWidget={handleWidget}
-          onHistory={handleHistory}
-          onQuit={handleQuit}
-          disabled={!asciiArt}
-        />
 
         <OutputViewer
           asciiArt={asciiArt}

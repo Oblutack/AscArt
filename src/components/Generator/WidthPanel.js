@@ -10,6 +10,8 @@ const WidthPanel = ({
   setRatio,
   keepOriginal,
   setKeepOriginal,
+  charset,
+  setCharset,
 }) => {
   const ratioOptions = [
     { value: "--", label: "--" },
@@ -17,6 +19,11 @@ const WidthPanel = ({
     { value: "4:3", label: "4:3" },
     { value: "1:1", label: "1:1" },
     { value: "9:16", label: "9:16" },
+  ];
+
+  const charsetOptions = [
+    { value: "detailed", label: "Detailed" },
+    { value: "blocks", label: "Blocks" },
   ];
 
   return (
@@ -40,6 +47,15 @@ const WidthPanel = ({
           value={ratio}
           onChange={setRatio}
           options={ratioOptions}
+          className="ratio-dropdown"
+        />
+      </div>
+      <div className="ratio-section">
+        <label className="ratio-label">Style:</label>
+        <Dropdown
+          value={charset}
+          onChange={setCharset}
+          options={charsetOptions}
           className="ratio-dropdown"
         />
       </div>

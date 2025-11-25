@@ -7,7 +7,7 @@ let pythonProcess;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
+    width: 1200,
     height: 700,
     frame: false, // Frameless for custom Figma design
     transparent: true, // Allows rounded corners / transparency

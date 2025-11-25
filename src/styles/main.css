@@ -87,7 +87,6 @@ a {
 
 .title-main {
   color: #00ffff;
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
 }
 
 .title-subtitle {
@@ -116,18 +115,22 @@ a {
 /* ==================== GENERATOR GRID ==================== */
 .generator-grid {
   display: grid;
-  grid-template-columns: 350px 180px 1fr;
+  grid-template-columns: 40% 60%;
   grid-template-rows: 1fr;
   gap: 15px;
   height: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .left-sidebar {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 15px;
   overflow-y: auto;
   padding-right: 5px;
+  min-width: 0;
 }
 
 /* ==================== PANELS ==================== */
@@ -164,7 +167,6 @@ a {
 
 .input-panel {
   border: 2px solid #00ffff;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 }
 
 .input-panel .panel-header {
@@ -173,7 +175,6 @@ a {
 
 .width-panel {
   border: 2px solid #ff00ff;
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
 }
 
 .width-panel .panel-header {
@@ -182,7 +183,6 @@ a {
 
 .style-panel {
   border: 2px solid #bf00ff;
-  box-shadow: 0 0 20px rgba(191, 0, 255, 0.3);
 }
 
 .style-panel .panel-header {
@@ -191,7 +191,6 @@ a {
 
 .adjustment-panel {
   border: 2px solid #00ffff;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 }
 
 .adjustment-panel .panel-header {
@@ -200,7 +199,6 @@ a {
 
 .actions-panel {
   border: 2px solid #00ff00;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
   display: flex;
   flex-direction: column;
 }
@@ -211,11 +209,11 @@ a {
 
 .output-panel {
   border: 2px solid #bf00ff;
-  box-shadow: 0 0 20px rgba(191, 0, 255, 0.3);
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  min-width: 0;
 }
 
 .output-panel .panel-header {
@@ -247,7 +245,6 @@ a {
 .zoom-btn:hover {
   background: rgba(191, 0, 255, 0.3);
   border-color: #bf00ff;
-  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
 }
 
 .zoom-label {
@@ -272,7 +269,6 @@ a {
 .speed-select:hover {
   background: rgba(191, 0, 255, 0.3);
   border-color: #bf00ff;
-  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
 }
 
 .speed-select option {
@@ -319,7 +315,6 @@ a {
   font-weight: bold;
   text-align: center;
   color: #ff00ff;
-  text-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
   line-height: 1;
   margin: 10px 0 0 0;
 }
@@ -396,7 +391,6 @@ a {
 .reset-button:hover {
   background: rgba(0, 255, 255, 0.1);
   border-color: #00ffff;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .reset-button svg {
@@ -419,6 +413,7 @@ a {
   padding: 15px;
   position: relative;
   min-height: 0;
+  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -478,7 +473,6 @@ a {
   font-size: 8px;
   line-height: 1;
   color: #bf00ff;
-  text-shadow: 0 0 5px rgba(191, 0, 255, 0.5);
   white-space: pre;
   margin: 0;
   display: block;
@@ -552,7 +546,6 @@ a {
 
 .btn-load:hover {
   background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
 }
 
 .btn-save {
@@ -562,7 +555,6 @@ a {
 
 .btn-save:hover {
   background: rgba(255, 0, 255, 0.1);
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
 }
 
 .btn-widget {
@@ -572,7 +564,6 @@ a {
 
 .btn-widget:hover {
   background: rgba(191, 0, 255, 0.1);
-  box-shadow: 0 0 20px rgba(191, 0, 255, 0.4);
 }
 
 .btn-history {
@@ -582,7 +573,6 @@ a {
 
 .btn-history:hover {
   background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
 }
 
 .btn-quit {
@@ -592,7 +582,6 @@ a {
 
 .btn-quit:hover {
   background: rgba(255, 0, 85, 0.1);
-  box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
 }
 
 /* Toggle */
@@ -622,7 +611,6 @@ a {
 .toggle-input:checked + .toggle-checkmark {
   background: rgba(0, 255, 255, 0.2);
   border-color: #00ffff;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
 .toggle-input:checked + .toggle-checkmark::after {
@@ -684,22 +672,15 @@ a {
   border-radius: 50%;
   background: #00ffff;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
   transition: all 0.3s ease;
 }
 
 .neon-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 1);
 }
 
 .slider-magenta::-webkit-slider-thumb {
   background: #ff00ff;
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
-}
-
-.slider-magenta::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 15px rgba(255, 0, 255, 1);
 }
 
 /* Dropdown */
@@ -719,12 +700,10 @@ a {
 
 .neon-dropdown:hover {
   border-color: #bf00ff;
-  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
 }
 
 .neon-dropdown:focus {
   border-color: #bf00ff;
-  box-shadow: 0 0 15px rgba(191, 0, 255, 0.5);
 }
 
 .neon-dropdown option {
