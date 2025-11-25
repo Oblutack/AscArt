@@ -86,7 +86,8 @@ class FileHandler:
         # Add new entry
         entry = {
             'timestamp': datetime.now().isoformat(),
-            'ascii': ascii_art[:500],  # Store preview only
+            'ascii': ascii_art,  # Store full ASCII art
+            'preview': ascii_art[:500],  # Store preview for gallery display
             'options': options
         }
         history.append(entry)

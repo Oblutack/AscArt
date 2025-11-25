@@ -75,6 +75,11 @@ def main():
                         if file_ext == '.gif':
                             log_info("Processing as GIF")
                             result = gif_processor.process_and_convert(path, options)
+                            
+                            # Save to history (first frame preview)
+                            if result['frames']:
+                                file_handler.save_history_entry(result['frames'][0], options)
+                            
                             response = {
                                 "status": "success",
                                 "type": "gif-result",
@@ -87,6 +92,11 @@ def main():
                             log_info("Processing as image")
                             ascii_art = image_processor.process_and_convert(path, options)
                             log_info(f"ASCII art generated, length: {len(ascii_art) if ascii_art else 0}")
+                            
+                            # Save to history
+                            if ascii_art:
+                                file_handler.save_history_entry(ascii_art, options)
+                            
                             response = {
                                 "status": "success",
                                 "type": "ascii-result",

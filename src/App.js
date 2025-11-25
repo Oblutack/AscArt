@@ -6,6 +6,7 @@ import StylePanel from "./components/Generator/StylePanel";
 import AdjustmentPanel from "./components/Generator/AdjustmentPanel";
 import OutputViewer from "./components/Generator/OutputViewer";
 import ActionButtons from "./components/Generator/ActionButtons";
+import GalleryView from "./components/Gallery/GalleryView";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -31,6 +32,9 @@ function App() {
   const [invert, setInvert] = useState(false);
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(100);
+
+  // Gallery State
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
     // Listen for Python responses
@@ -168,8 +172,23 @@ function App() {
   };
 
   const handleHistory = () => {
-    console.log("📜 History clicked");
-    // TODO: Open history view
+    console.log("📜 Opening gallery");
+    setShowGallery(true);
+  };
+
+  const handleLoadFromGallery = (ascii, options) => {
+    console.log("🖼️ Loading from gallery");
+    setAsciiArt(ascii);
+    if (options) {
+      setWidth(options.width || 120);
+      setCharset(options.charset || "detailed");
+      setBrightness(options.brightness || 0);
+      setContrast(options.contrast || 100);
+      setInvert(options.invert || false);
+      setRemoveBackground(options.removeBackground || false);
+      setRatio(options.ratio || "--");
+      setKeepOriginal(options.keepOriginal || false);
+    }
   };
 
   const handleQuit = () => {
@@ -241,6 +260,13 @@ function App() {
           gifDelays={gifDelays}
         />
       </div>
+
+      {showGallery && (
+        <GalleryView
+          onClose={() => setShowGallery(false)}
+          onLoadAscii={handleLoadFromGallery}
+        />
+      )}
     </MainLayout>
   );
 }
