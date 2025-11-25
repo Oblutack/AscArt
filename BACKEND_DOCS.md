@@ -1,6 +1,6 @@
 # AscArt - Backend Implementation Complete! 🎉
 
-## ✅ What Was Built
+## What Was Built
 
 ### Python Backend (Complete Processing Pipeline)
 
@@ -52,7 +52,7 @@
 
 ---
 
-## 🚀 How It Works
+## How It Works
 
 ### Data Flow:
 
@@ -129,7 +129,7 @@ Expected response:
 
 ---
 
-## 📁 Output Structure
+## Output Structure
 
 Generated files are saved to:
 
@@ -142,7 +142,7 @@ python/output/
 
 ---
 
-## 🎨 Character Sets
+## Character Sets
 
 **Detailed** (70 chars):
 
@@ -164,7 +164,7 @@ $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
 ---
 
-## 🔧 Next Steps
+## Next Steps
 
 1. **Test the UI** - Load an image and watch it convert in real-time
 2. **Try different settings** - Adjust brightness, contrast, width, charset
@@ -174,7 +174,7 @@ $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Python errors in console?**
 
@@ -196,7 +196,7 @@ $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
 ---
 
-## 🎯 Features Implemented
+## Features Implemented
 
 ✅ Real-time image to ASCII conversion  
 ✅ Background removal (AI-powered)  
