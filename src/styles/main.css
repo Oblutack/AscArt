@@ -128,6 +128,9 @@ body {
   text-transform: uppercase;
   position: relative;
   padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .panel-header::after {
@@ -194,10 +197,46 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .output-panel .panel-header {
   color: #bf00ff;
+}
+
+.output-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-btn {
+  background: rgba(191, 0, 255, 0.2);
+  border: 1px solid rgba(191, 0, 255, 0.5);
+  color: #bf00ff;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.zoom-btn:hover {
+  background: rgba(191, 0, 255, 0.3);
+  border-color: #bf00ff;
+  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
+}
+
+.zoom-label {
+  font-size: 10px;
+  color: #888;
+  min-width: 30px;
+  text-align: center;
 }
 
 /* ==================== INPUT PANEL ==================== */
@@ -338,6 +377,9 @@ body {
   overflow: auto;
   padding: 15px;
   position: relative;
+  min-height: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .output-placeholder {
@@ -398,6 +440,10 @@ body {
   text-shadow: 0 0 5px rgba(191, 0, 255, 0.5);
   white-space: pre;
   margin: 0;
+  display: block;
+  width: fit-content;
+  max-width: none;
+  overflow-x: visible;
 }
 
 /* ==================== ACTION BUTTONS ==================== */

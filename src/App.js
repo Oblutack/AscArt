@@ -15,6 +15,7 @@ function App() {
   const [imagePath, setImagePath] = useState(null);
   const [asciiArt, setAsciiArt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
 
   // Settings State
   const [removeBackground, setRemoveBackground] = useState(false);
@@ -29,14 +30,28 @@ function App() {
   useEffect(() => {
     // Listen for Python responses
     ipcRenderer.on("python-response", (event, data) => {
-      console.log("Received from Python:", data);
+      console.log("📥 Received from Python:", data);
+      setDebugInfo(
+        `Received: ${data.type || data.status} | Length: ${
+          data.ascii?.length || 0
+        }`
+      );
 
       if (data.type === "ascii-result") {
+        console.log("✅ ASCII art received, length:", data.ascii?.length);
+        console.log("First 100 chars:", data.ascii?.substring(0, 100));
         setAsciiArt(data.ascii);
         setIsLoading(false);
+        console.log("State updated, isLoading:", false);
+        setDebugInfo(`✅ ASCII loaded: ${data.ascii?.length} chars`);
       } else if (data.error) {
-        console.error("Python Error:", data.error);
+        console.error("❌ Python Error:", data.error);
         setIsLoading(false);
+        setDebugInfo(`❌ Error: ${data.error}`);
+        alert(`Error: ${data.error}`);
+      } else if (data.status === "success" && data.message) {
+        console.log("ℹ️ Python message:", data.message);
+        setDebugInfo(`ℹ️ ${data.message}`);
       }
     });
 
@@ -46,10 +61,12 @@ function App() {
   }, []);
 
   const handleLoadImage = (file) => {
+    console.log("🖼️ Loading image:", file.path);
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
       setImagePath(file.path);
+      console.log("✅ Image loaded, starting conversion...");
 
       // Auto-generate when image loads
       generateAsciiArt(file.path);
@@ -58,7 +75,24 @@ function App() {
   };
 
   const generateAsciiArt = (path = imagePath) => {
-    if (!path) return;
+    if (!path) {
+      console.warn("⚠️ No image path provided");
+      return;
+    }
+
+    console.log("🚀 Generating ASCII art with options:");
+    const options = {
+      width: width,
+      charset: charset,
+      removeBackground: removeBackground,
+      brightness: brightness,
+      contrast: contrast,
+      invert: invert,
+      ratio: ratio !== "--" ? ratio : null,
+      keepOriginal: keepOriginal,
+    };
+    console.log("   Path:", path);
+    console.log("   Options:", options);
 
     setIsLoading(true);
 
@@ -66,22 +100,15 @@ function App() {
     ipcRenderer.send("to-python", {
       command: "convert",
       path: path,
-      options: {
-        width: width,
-        charset: charset,
-        removeBackground: removeBackground,
-        brightness: brightness,
-        contrast: contrast,
-        invert: invert,
-        ratio: ratio !== "--" ? ratio : null,
-        keepOriginal: keepOriginal,
-      },
+      options: options,
     });
+    console.log("📤 Sent to Python backend");
   };
 
   // Regenerate when settings change
   useEffect(() => {
     if (imagePath) {
+      console.log("⚙️ Settings changed, regenerating...");
       const timeout = setTimeout(() => {
         generateAsciiArt();
       }, 300); // Debounce
@@ -99,14 +126,19 @@ function App() {
   ]);
 
   const handleReset = () => {
+    console.log("🔄 Resetting adjustments");
     setBrightness(0);
     setContrast(100);
     setInvert(false);
   };
 
   const handleSave = () => {
-    if (!asciiArt) return;
+    if (!asciiArt) {
+      console.warn("⚠️ No ASCII art to save");
+      return;
+    }
 
+    console.log("💾 Saving ASCII art...");
     ipcRenderer.send("to-python", {
       command: "save",
       ascii: asciiArt,
@@ -115,20 +147,40 @@ function App() {
   };
 
   const handleWidget = () => {
+    console.log("🪟 Toggling widget mode");
     ipcRenderer.send("window-widget-mode");
   };
 
   const handleHistory = () => {
+    console.log("📜 History clicked");
     // TODO: Open history view
-    console.log("History clicked");
   };
 
   const handleQuit = () => {
+    console.log("👋 Quitting application");
     ipcRenderer.send("window-close");
   };
 
   return (
     <MainLayout>
+      {debugInfo && (
+        <div
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            background: "rgba(0,0,0,0.8)",
+            color: "#00ff00",
+            padding: "10px",
+            borderRadius: "5px",
+            fontSize: "12px",
+            zIndex: 9999,
+            fontFamily: "monospace",
+          }}
+        >
+          {debugInfo}
+        </div>
+      )}
       <div className="generator-grid">
         <div className="left-sidebar">
           <InputPanel

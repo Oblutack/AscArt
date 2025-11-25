@@ -1,9 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 
 const OutputViewer = ({ asciiArt, isLoading }) => {
+  const [fontSize, setFontSize] = useState(8);
+
   return (
     <div className="panel output-panel">
-      <div className="panel-header">OUTPUT</div>
+      <div className="panel-header">
+        OUTPUT
+        {asciiArt && (
+          <div className="output-controls">
+            <button
+              className="zoom-btn"
+              onClick={() => setFontSize(Math.max(4, fontSize - 1))}
+              title="Zoom Out"
+            >
+              −
+            </button>
+            <span className="zoom-label">{fontSize}px</span>
+            <button
+              className="zoom-btn"
+              onClick={() => setFontSize(Math.min(12, fontSize + 1))}
+              title="Zoom In"
+            >
+              +
+            </button>
+          </div>
+        )}
+      </div>
       <div className="output-content">
         {isLoading ? (
           <div className="output-loading">
@@ -11,7 +34,12 @@ const OutputViewer = ({ asciiArt, isLoading }) => {
             <p>Generating ASCII art...</p>
           </div>
         ) : asciiArt ? (
-          <pre className="ascii-display">{asciiArt}</pre>
+          <pre
+            className="ascii-display"
+            style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize}px` }}
+          >
+            {asciiArt}
+          </pre>
         ) : (
           <div className="output-placeholder">
             <svg
