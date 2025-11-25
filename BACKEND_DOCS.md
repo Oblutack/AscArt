@@ -1,4 +1,4 @@
-# AscArt - Backend Implementation Complete! 🎉
+# AscArt - Backend Implementation Complete! 
 
 ## What Was Built
 
@@ -213,4 +213,4 @@ $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
 ---
 
-**Ready to create some ASCII art!** 🎨
+**Ready to create some ASCII art!** 
