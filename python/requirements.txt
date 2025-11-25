@@ -1,0 +1,7 @@
+Pillow==10.3.0
+numpy==1.26.4
+rembg==2.0.60
+onnxruntime==1.17.3
+opencv-python-headless==4.9.0.80
+imageio==2.34.1
+pyinstaller==6.6.0
