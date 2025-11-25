@@ -172,6 +172,40 @@ def main():
                         "error": error_msg
                     }
             
+            # Delete history entry
+            elif command == 'delete_history':
+                try:
+                    index = data.get('index')
+                    log_info(f"Deleting history entry at index {index}")
+                    
+                    if index is None:
+                        response = {
+                            "status": "error",
+                            "error": "No index provided"
+                        }
+                    else:
+                        success = file_handler.delete_history_entry(index)
+                        if success:
+                            response = {
+                                "status": "success",
+                                "message": f"Deleted entry at index {index}"
+                            }
+                            log_info(f"Successfully deleted entry at index {index}")
+                        else:
+                            response = {
+                                "status": "error",
+                                "error": f"Invalid index: {index}"
+                            }
+                            log_error(f"Invalid index: {index}")
+                        
+                except Exception as e:
+                    error_msg = f"Delete failed: {str(e)}"
+                    log_error(error_msg)
+                    response = {
+                        "status": "error",
+                        "error": error_msg
+                    }
+            
             else:
                 log_error(f"Unknown command: {command}")
                 response = {"status": "error", "error": f"Unknown command: {command}"}

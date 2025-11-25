@@ -937,3 +937,17 @@ a {
 .gallery-btn-cancel:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+
+.gallery-btn-delete {
+  border-color: #b40000;
+  color: #ff4444;
+}
+
+.gallery-btn-delete:hover {
+  background: rgba(180, 0, 0, 0.1);
+}
+
+.gallery-footer-right {
+  display: flex;
+  gap: 10px;
+}

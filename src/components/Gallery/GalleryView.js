@@ -39,6 +39,24 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     onClose();
   };
 
+  const handleDeleteItem = () => {
+    if (!selectedItem) return;
+
+    const itemIndex = history.indexOf(selectedItem);
+    if (itemIndex === -1) return;
+
+    // Send delete command to Python
+    ipcRenderer.send("to-python", {
+      command: "delete_history",
+      index: itemIndex,
+    });
+
+    // Update local state
+    const newHistory = history.filter((item) => item !== selectedItem);
+    setHistory(newHistory);
+    setSelectedItem(null);
+  };
+
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleString();
@@ -89,7 +107,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                   onClick={() => handleItemClick(item)}
                 >
                   <div className="gallery-item-preview">
-                    <pre>{item.preview || item.ascii}</pre>
+                    <pre>{item.ascii}</pre>
                   </div>
                   <div className="gallery-item-info">
                     <span className="gallery-item-date">
@@ -108,17 +126,25 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
         {selectedItem && (
           <div className="gallery-footer">
             <button
-              className="gallery-btn gallery-btn-load"
-              onClick={handleLoadItem}
+              className="gallery-btn gallery-btn-delete"
+              onClick={handleDeleteItem}
             >
-              Load Selected
+              Delete
             </button>
-            <button
-              className="gallery-btn gallery-btn-cancel"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
+            <div className="gallery-footer-right">
+              <button
+                className="gallery-btn gallery-btn-load"
+                onClick={handleLoadItem}
+              >
+                Load Selected
+              </button>
+              <button
+                className="gallery-btn gallery-btn-cancel"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
       </div>

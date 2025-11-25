@@ -100,3 +100,28 @@ class FileHandler:
             json.dump(history, f, indent=2)
         
         return history_path
+    
+    def delete_history_entry(self, index, history_file='history.json'):
+        """Delete entry from history by index"""
+        history_path = os.path.join(self.output_dir, history_file)
+        
+        # Load existing history
+        history = []
+        if os.path.exists(history_path):
+            try:
+                with open(history_path, 'r', encoding='utf-8') as f:
+                    history = json.load(f)
+            except:
+                return False
+        
+        # Delete entry if index is valid
+        if 0 <= index < len(history):
+            history.pop(index)
+            
+            # Save updated history
+            with open(history_path, 'w', encoding='utf-8') as f:
+                json.dump(history, f, indent=2)
+            
+            return True
+        
+        return False
