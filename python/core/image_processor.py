@@ -32,6 +32,7 @@ class ImageProcessor:
     def __init__(self):
         self.image = None
         self.original_image = None
+        self.alpha_mask = None
         
     def load_image(self, path):
         """Load image from file path"""
@@ -70,7 +71,13 @@ class ImageProcessor:
         # Remove background
         output = remove_func(self.image)
         
-        # Create white background
+        # Store alpha mask for transparency detection
+        if output.mode == 'RGBA':
+            self.alpha_mask = output.split()[3]
+        else:
+            self.alpha_mask = None
+        
+        # Create white background for processing
         background = Image.new('RGB', output.size, (255, 255, 255))
         background.paste(output, mask=output.split()[3] if output.mode == 'RGBA' else None)
         
@@ -145,6 +152,13 @@ class ImageProcessor:
         # Get pixels as numpy array
         pixels = np.array(gray_image)
         
+        # Get alpha mask if background was removed
+        alpha_array = None
+        if hasattr(self, 'alpha_mask') and self.alpha_mask is not None:
+            # Resize alpha mask to match current image size
+            alpha_resized = self.alpha_mask.resize(gray_image.size, Image.Resampling.LANCZOS)
+            alpha_array = np.array(alpha_resized)
+        
         # Map pixel brightness (0-255) directly to character index
         # Dark pixels (0) -> dark chars (@), Bright pixels (255) -> light chars (space)
         char_count = len(chars) - 1
@@ -152,8 +166,14 @@ class ImageProcessor:
         
         # Map pixels to characters
         ascii_art = []
-        for row in char_indices:
-            ascii_row = ''.join([chars[i] for i in row])
+        for row_idx, row in enumerate(char_indices):
+            ascii_row = ''
+            for col_idx, char_idx in enumerate(row):
+                # If alpha mask exists and this pixel is transparent, use space
+                if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
+                    ascii_row += ' '
+                else:
+                    ascii_row += chars[char_idx]
             ascii_art.append(ascii_row)
         
         return '\n'.join(ascii_art)
@@ -164,6 +184,7 @@ class ImageProcessor:
             self.image = self.original_image.copy()
             if self.image.mode != 'RGB':
                 self.image = self.image.convert('RGB')
+            self.alpha_mask = None
     
     def process_and_convert(self, path, options):
         """Complete pipeline: load, process, and convert to ASCII"""

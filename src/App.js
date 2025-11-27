@@ -167,8 +167,21 @@ function App() {
   };
 
   const handleWidget = () => {
-    console.log("🪟 Toggling widget mode");
-    ipcRenderer.send("window-widget-mode");
+    if (!asciiArt) {
+      console.warn("⚠️ No ASCII art to display in widget");
+      return;
+    }
+    console.log("🪟 Opening widget window");
+
+    // Send widget data with GIF support
+    const widgetData = {
+      isGif: isGif,
+      ascii: asciiArt,
+      frames: isGif ? gifFrames : [],
+      delays: isGif ? gifDelays : [],
+    };
+
+    ipcRenderer.send("open-widget", widgetData);
   };
 
   const handleHistory = () => {
