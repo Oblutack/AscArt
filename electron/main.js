@@ -1,5 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
+const os = require("os");
 const { spawn } = require("child_process");
 
 let mainWindow;
@@ -365,18 +367,43 @@ function createWidgetWindow(widgetData) {
       <script>
         const { ipcRenderer } = require('electron');
         
-        // Widget data
+        // Widget data - store frames in memory, only first frame embedded
         const isGif = ${isGif};
-        const gifFrames = ${JSON.stringify(gifFrames)};
+        const gifFrames = ${
+          isGif ? JSON.stringify([gifFrames[0]]) : "[]"
+        }; // Only embed first frame
         const gifDelays = ${JSON.stringify(gifDelays)};
+        const totalFrames = ${gifFrames.length};
+        
+        // Cache for loaded frames
+        const frameCache = isGif && totalFrames > 0 ? { 0: ${JSON.stringify(
+          gifFrames[0] || ""
+        )} } : {};
+        const allFramesData = ${JSON.stringify(
+          gifFrames
+        )}; // Store all frames in script scope
+        
         let currentFrame = 0;
         let isPlaying = ${isGif};
         let animationTimer = null;
         let fontSize = 6;
         
+        // Helper to get frame (from cache or load on demand)
+        function getFrame(index) {
+          if (!isGif) return '';
+          if (frameCache[index]) return frameCache[index];
+          
+          // Load from pre-stored data
+          if (allFramesData[index]) {
+            frameCache[index] = allFramesData[index];
+            return frameCache[index];
+          }
+          return frameCache[0] || '';
+        }
+        
         // Set initial ASCII content (use innerHTML for colored HTML)
-        if (isGif && gifFrames.length > 0) {
-          document.getElementById('ascii-content').innerHTML = gifFrames[0];
+        if (isGif && totalFrames > 0) {
+          document.getElementById('ascii-content').innerHTML = getFrame(0);
           startAnimation();
         } else {
           document.getElementById('ascii-content').innerHTML = ${JSON.stringify(
@@ -424,13 +451,13 @@ function createWidgetWindow(widgetData) {
         
         // GIF Animation
         function startAnimation() {
-          if (!isGif || gifFrames.length === 0) return;
+          if (!isGif || totalFrames === 0) return;
           
           function showNextFrame() {
             if (!isPlaying) return;
             
-            currentFrame = (currentFrame + 1) % gifFrames.length;
-            document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
+            currentFrame = (currentFrame + 1) % totalFrames;
+            document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
             updateFrameInfo();
             
             const delay = gifDelays[currentFrame] || 100;
@@ -458,15 +485,15 @@ function createWidgetWindow(widgetData) {
         }
         
         function prevFrame() {
-          if (!isGif || gifFrames.length === 0) return;
+          if (!isGif || totalFrames === 0) return;
           
           if (animationTimer) {
             clearTimeout(animationTimer);
             animationTimer = null;
           }
           
-          currentFrame = (currentFrame - 1 + gifFrames.length) % gifFrames.length;
-          document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
+          currentFrame = (currentFrame - 1 + totalFrames) % totalFrames;
+          document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
           updateFrameInfo();
           
           if (isPlaying) {
@@ -475,15 +502,15 @@ function createWidgetWindow(widgetData) {
         }
         
         function nextFrame() {
-          if (!isGif || gifFrames.length === 0) return;
+          if (!isGif || totalFrames === 0) return;
           
           if (animationTimer) {
             clearTimeout(animationTimer);
             animationTimer = null;
           }
           
-          currentFrame = (currentFrame + 1) % gifFrames.length;
-          document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
+          currentFrame = (currentFrame + 1) % totalFrames;
+          document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
           updateFrameInfo();
           
           if (isPlaying) {
@@ -494,7 +521,7 @@ function createWidgetWindow(widgetData) {
         function updateFrameInfo() {
           const info = document.getElementById('frame-info');
           if (info) {
-            info.textContent = \`Frame \${currentFrame + 1}/\${gifFrames.length}\`;
+            info.textContent = \`Frame \${currentFrame + 1}/\${totalFrames}\`;
           }
         }
         
@@ -595,9 +622,29 @@ function createWidgetWindow(widgetData) {
     </html>
   `;
 
-  newWidget.loadURL(
-    `data:text/html;charset=utf-8,${encodeURIComponent(widgetHtml)}`
-  );
+  // Write HTML to temporary file to avoid data URL size limits
+  const tempDir = os.tmpdir();
+  const widgetId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  const tempFilePath = path.join(tempDir, `ascart_widget_${widgetId}.html`);
+
+  try {
+    fs.writeFileSync(tempFilePath, widgetHtml, "utf8");
+    newWidget.loadFile(tempFilePath);
+
+    // Clean up temp file when widget closes
+    newWidget.once("closed", () => {
+      try {
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+        }
+      } catch (err) {
+        console.error("Failed to clean up temp file:", err);
+      }
+    });
+  } catch (err) {
+    console.error("Failed to create widget:", err);
+    newWidget.close();
+  }
 }
 
 ipcMain.on("open-widget", (event, widgetData) => {
