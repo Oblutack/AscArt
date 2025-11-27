@@ -3,7 +3,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 
 let mainWindow;
-let widgetWindow = null;
+let widgetWindows = [];
 let pythonProcess;
 
 function createWindow() {
@@ -134,11 +134,7 @@ ipcMain.on("window-close", () => app.quit());
 
 // Widget Window Management
 function createWidgetWindow(widgetData) {
-  if (widgetWindow) {
-    widgetWindow.close();
-  }
-
-  widgetWindow = new BrowserWindow({
+  const newWidget = new BrowserWindow({
     width: 400,
     height: 450,
     frame: false,
@@ -152,11 +148,22 @@ function createWidgetWindow(widgetData) {
     },
   });
 
+  // Add to widgets array
+  widgetWindows.push(newWidget);
+
   // Keep window in background - set it behind other windows after creation
-  widgetWindow.once("ready-to-show", () => {
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.setAlwaysOnTop(false);
-      widgetWindow.blur(); // Remove focus so it stays in background
+  newWidget.once("ready-to-show", () => {
+    if (newWidget && !newWidget.isDestroyed()) {
+      newWidget.setAlwaysOnTop(false);
+      newWidget.blur(); // Remove focus so it stays in background
+    }
+  });
+
+  // Remove from array when closed
+  newWidget.on("closed", () => {
+    const index = widgetWindows.indexOf(newWidget);
+    if (index > -1) {
+      widgetWindows.splice(index, 1);
     }
   });
 
@@ -588,29 +595,27 @@ function createWidgetWindow(widgetData) {
     </html>
   `;
 
-  widgetWindow.loadURL(
+  newWidget.loadURL(
     `data:text/html;charset=utf-8,${encodeURIComponent(widgetHtml)}`
   );
-
-  widgetWindow.on("closed", () => {
-    widgetWindow = null;
-  });
 }
 
 ipcMain.on("open-widget", (event, widgetData) => {
   createWidgetWindow(widgetData);
 });
 
-ipcMain.on("close-widget", () => {
-  if (widgetWindow) {
-    widgetWindow.close();
-    widgetWindow = null;
+ipcMain.on("close-widget", (event) => {
+  // Close the widget window that sent the event
+  const sender = BrowserWindow.fromWebContents(event.sender);
+  if (sender) {
+    sender.close();
   }
 });
 
 ipcMain.on("move-widget-window", (event, { deltaX, deltaY }) => {
-  if (widgetWindow) {
-    const [currentX, currentY] = widgetWindow.getPosition();
-    widgetWindow.setPosition(currentX + deltaX, currentY + deltaY);
+  const sender = BrowserWindow.fromWebContents(event.sender);
+  if (sender) {
+    const [currentX, currentY] = sender.getPosition();
+    sender.setPosition(currentX + deltaX, currentY + deltaY);
   }
 });
