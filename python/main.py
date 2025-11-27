@@ -76,9 +76,15 @@ def main():
                             log_info("Processing as GIF")
                             result = gif_processor.process_and_convert(path, options)
                             
-                            # Save to history (first frame preview)
+                            # Save to history with all GIF data
                             if result['frames']:
-                                file_handler.save_history_entry(result['frames'][0], options)
+                                file_handler.save_history_entry(
+                                    result['frames'][0],  # First frame as preview
+                                    options,
+                                    is_gif=True,
+                                    frames=result['frames'],
+                                    delays=result['delays']
+                                )
                             
                             response = {
                                 "status": "success",

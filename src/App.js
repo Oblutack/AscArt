@@ -189,9 +189,26 @@ function App() {
     setShowGallery(true);
   };
 
-  const handleLoadFromGallery = (ascii, options) => {
-    console.log("🖼️ Loading from gallery");
-    setAsciiArt(ascii);
+  const handleLoadFromGallery = (ascii, options, isGifItem, frames, delays) => {
+    console.log("🖼️ Loading from gallery", {
+      isGifItem,
+      frameCount: frames?.length,
+    });
+
+    // Restore GIF state if it's a GIF
+    if (isGifItem && frames && delays) {
+      setIsGif(true);
+      setGifFrames(frames);
+      setGifDelays(delays);
+      setAsciiArt(frames[0] || ascii); // Use first frame
+    } else {
+      setIsGif(false);
+      setGifFrames([]);
+      setGifDelays([]);
+      setAsciiArt(ascii);
+    }
+
+    // Restore options
     if (options) {
       setWidth(options.width || 120);
       setCharset(options.charset || "detailed");

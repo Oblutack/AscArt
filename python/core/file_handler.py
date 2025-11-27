@@ -70,7 +70,7 @@ class FileHandler:
         
         return filepath
     
-    def save_history_entry(self, ascii_art, options, history_file='history.json'):
+    def save_history_entry(self, ascii_art, options, history_file='history.json', is_gif=False, frames=None, delays=None):
         """Save entry to history"""
         history_path = os.path.join(self.output_dir, history_file)
         
@@ -86,10 +86,17 @@ class FileHandler:
         # Add new entry
         entry = {
             'timestamp': datetime.now().isoformat(),
-            'ascii': ascii_art,  # Store full ASCII art
+            'ascii': ascii_art,  # Store full ASCII art (or first frame for GIFs)
             'preview': ascii_art[:500],  # Store preview for gallery display
-            'options': options
+            'options': options,
+            'isGif': is_gif
         }
+        
+        # Add GIF-specific data if applicable
+        if is_gif and frames and delays:
+            entry['frames'] = frames
+            entry['delays'] = delays
+        
         history.append(entry)
         
         # Keep last 50 entries

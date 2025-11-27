@@ -52,7 +52,15 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
 
   const handleLoadItem = () => {
     if (selectedItems.length === 1 && onLoadAscii) {
-      onLoadAscii(selectedItems[0].ascii, selectedItems[0].options);
+      const item = selectedItems[0];
+      // Pass full item data including GIF frames if available
+      onLoadAscii(
+        item.ascii,
+        item.options,
+        item.isGif,
+        item.frames,
+        item.delays
+      );
     }
     onClose();
   };
