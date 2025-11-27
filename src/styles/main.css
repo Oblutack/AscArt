@@ -479,11 +479,14 @@ a {
   font-family: "Courier New", Consolas, monospace;
   font-size: 8px;
   line-height: 1;
-  color: #8800b4;
   white-space: pre;
   margin: 0;
   display: inline-block;
   min-width: min-content;
+}
+
+.ascii-display span {
+  text-shadow: 0 0 5px currentColor;
 }
 
 /* ==================== ACTION BUTTONS ==================== */

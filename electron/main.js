@@ -202,11 +202,12 @@ function createWidgetWindow(widgetData) {
           font-family: 'Courier New', monospace;
           font-size: 6px;
           line-height: 1;
-          color: #8800b4;
-          text-shadow: 0 0 10px rgba(136, 0, 180, 0.5);
           white-space: pre;
           margin: 0;
           pointer-events: none;
+        }
+        #ascii-display pre span {
+          text-shadow: 0 0 5px currentColor;
         }
         #widget-controls {
           display: none;
@@ -349,12 +350,12 @@ function createWidgetWindow(widgetData) {
         let isPlaying = ${isGif};
         let animationTimer = null;
         
-        // Set initial ASCII content
+        // Set initial ASCII content (use innerHTML for colored HTML)
         if (isGif && gifFrames.length > 0) {
-          document.getElementById('ascii-content').textContent = gifFrames[0];
+          document.getElementById('ascii-content').innerHTML = gifFrames[0];
           startAnimation();
         } else {
-          document.getElementById('ascii-content').textContent = ${JSON.stringify(
+          document.getElementById('ascii-content').innerHTML = ${JSON.stringify(
             asciiArt
           )};
         }
@@ -384,7 +385,7 @@ function createWidgetWindow(widgetData) {
             if (!isPlaying) return;
             
             currentFrame = (currentFrame + 1) % gifFrames.length;
-            document.getElementById('ascii-content').textContent = gifFrames[currentFrame];
+            document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
             updateFrameInfo();
             
             const delay = gifDelays[currentFrame] || 100;
@@ -420,7 +421,7 @@ function createWidgetWindow(widgetData) {
           }
           
           currentFrame = (currentFrame - 1 + gifFrames.length) % gifFrames.length;
-          document.getElementById('ascii-content').textContent = gifFrames[currentFrame];
+          document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
           updateFrameInfo();
           
           if (isPlaying) {
@@ -437,7 +438,7 @@ function createWidgetWindow(widgetData) {
           }
           
           currentFrame = (currentFrame + 1) % gifFrames.length;
-          document.getElementById('ascii-content').textContent = gifFrames[currentFrame];
+          document.getElementById('ascii-content').innerHTML = gifFrames[currentFrame];
           updateFrameInfo();
           
           if (isPlaying) {

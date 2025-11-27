@@ -138,19 +138,20 @@ class ImageProcessor:
         
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
     
-    def convert_to_ascii(self, charset='detailed'):
-        """Convert image to ASCII art"""
+    def convert_to_ascii(self, charset='detailed', colored=True):
+        """Convert image to ASCII art (colored or monochrome)"""
         if self.image is None:
             raise ValueError("No image loaded")
         
         # Get character set (from dark to light: @ to space)
         chars = self.CHARSETS.get(charset, self.CHARSETS['detailed'])
         
-        # Convert to grayscale
+        # Convert to grayscale for brightness
         gray_image = self.image.convert('L')
+        gray_pixels = np.array(gray_image)
         
-        # Get pixels as numpy array
-        pixels = np.array(gray_image)
+        # Get color pixels
+        color_pixels = np.array(self.image)
         
         # Get alpha mask if background was removed
         alpha_array = None
@@ -162,21 +163,38 @@ class ImageProcessor:
         # Map pixel brightness (0-255) directly to character index
         # Dark pixels (0) -> dark chars (@), Bright pixels (255) -> light chars (space)
         char_count = len(chars) - 1
-        char_indices = ((pixels / 255) * char_count).astype(int)
+        char_indices = ((gray_pixels / 255) * char_count).astype(int)
         
-        # Map pixels to characters
-        ascii_art = []
-        for row_idx, row in enumerate(char_indices):
-            ascii_row = ''
-            for col_idx, char_idx in enumerate(row):
-                # If alpha mask exists and this pixel is transparent, use space
-                if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
-                    ascii_row += ' '
-                else:
-                    ascii_row += chars[char_idx]
-            ascii_art.append(ascii_row)
-        
-        return '\n'.join(ascii_art)
+        if colored:
+            # Generate colored HTML
+            html_lines = []
+            for row_idx, row in enumerate(char_indices):
+                line_spans = []
+                for col_idx, char_idx in enumerate(row):
+                    # If alpha mask exists and this pixel is transparent, use space
+                    if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
+                        line_spans.append(' ')
+                    else:
+                        char = chars[char_idx]
+                        r, g, b = color_pixels[row_idx, col_idx]
+                        line_spans.append(f'<span style="color:rgb({r},{g},{b})">{char}</span>')
+                html_lines.append(''.join(line_spans))
+            
+            return '\n'.join(html_lines)
+        else:
+            # Generate monochrome ASCII
+            ascii_art = []
+            for row_idx, row in enumerate(char_indices):
+                ascii_row = ''
+                for col_idx, char_idx in enumerate(row):
+                    # If alpha mask exists and this pixel is transparent, use space
+                    if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
+                        ascii_row += ' '
+                    else:
+                        ascii_row += chars[char_idx]
+                ascii_art.append(ascii_row)
+            
+            return '\n'.join(ascii_art)
     
     def reset(self):
         """Reset to original image"""

@@ -104,9 +104,8 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
           <pre
             className="ascii-display"
             style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize}px` }}
-          >
-            {displayArt}
-          </pre>
+            dangerouslySetInnerHTML={{ __html: displayArt }}
+          />
         ) : (
           <div className="output-placeholder">
             <svg
