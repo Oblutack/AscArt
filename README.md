@@ -4,7 +4,7 @@
 
 **A Modern Desktop Application for Converting Images and GIFs to ASCII Art**
 
-Transform your images into stunning ASCII art with real-time preview, advanced image processing, and animated GIF support.
+Transform your images into stunning colored ASCII art with real-time preview, advanced image processing, animated GIF support, and desktop widgets.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
@@ -17,31 +17,44 @@ Transform your images into stunning ASCII art with real-time preview, advanced i
 
 ## Overview
 
-AscArt is a powerful desktop application that converts images and animated GIFs into ASCII art with pixel-perfect precision. Built with a modern tech stack combining Electron, React, and Python, it offers real-time processing, customizable character sets, and comprehensive image adjustments.
+AscArt is a powerful desktop application that converts images and animated GIFs into colored ASCII art with pixel-perfect precision. Built with a modern tech stack combining Electron, React, and Python, it offers real-time processing, customizable character sets, comprehensive image adjustments, and desktop widget functionality for displaying your ASCII art on your desktop.
 
 ## Features
 
 ### Core Functionality
 
+- **Colored ASCII Art** - Converts images with full RGB color preservation in HTML format
 - **Image to ASCII Conversion** - Convert JPG, PNG, and other image formats with high fidelity
 - **Animated GIF Support** - Process and playback animated GIFs frame-by-frame with original timing
 - **Real-time Preview** - See your ASCII art update instantly as you adjust settings
-- **History Gallery** - Access previously converted art with full settings restoration
+- **Desktop Widgets** - Display ASCII art and animated GIFs as floating desktop widgets
+- **History Gallery** - Access previously converted art with full settings restoration and multi-select management
 
 ### Image Processing
 
-- **Background Removal** - Automatically remove backgrounds using advanced AI segmentation
-- **Brightness & Contrast** - Fine-tune image parameters with intuitive sliders
+- **Background Removal** - Automatically remove backgrounds using advanced AI segmentation (transparent pixels render as spaces)
+- **Brightness & Contrast** - Fine-tune image parameters with intuitive sliders (-100 to +100 brightness, 0 to 200% contrast)
 - **Color Inversion** - Invert colors for different artistic effects
 - **Aspect Ratio Control** - Maintain original ratios or choose from preset dimensions
 - **Width Adjustment** - Customize output width from 20 to 300 characters
 
 ### Output Options
 
-- **Multiple Character Sets** - Detailed or block character sets for different styles
-- **Export Formats** - Save as plain text (.txt) or styled HTML (.html)
+- **Multiple Character Sets** - Detailed, standard, or simple character sets for different styles
+- **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles
+- **Plain Text Export** - Save as monochrome .txt files
 - **Font Zoom Controls** - Adjust display size from 4px to 12px for optimal viewing
 - **Playback Controls** - For GIFs: play/pause, stop, speed adjustment (0.5x to 2x)
+
+### Widget Features
+
+- **Multiple Widgets** - Create and manage multiple desktop widgets simultaneously
+- **Draggable Windows** - Move widgets freely across your desktop
+- **Desktop-Level Positioning** - Widgets stay below other applications without covering your work
+- **Playback Controls** - Full GIF animation controls (play/pause, previous/next frame)
+- **Resizable Text** - Adjust font size from 2px to 20px with on-screen controls
+- **Context Menu** - Right-click for quick access to controls and removal
+- **Persistent State** - Widgets maintain settings and position until closed
 
 ## Technology Stack
 
@@ -64,8 +77,11 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 
 - **IPC Communication** - JSON-based stdin/stdout bridge between Electron and Python
 - **Asynchronous Processing** - Non-blocking UI with background Python subprocess
-- **State Management** - React hooks with debounced auto-regeneration
+- **State Management** - React hooks with debounced auto-regeneration (300ms)
 - **Modular Design** - Separated concerns with dedicated processor classes
+- **Widget System** - Multiple BrowserWindow instances with temporary file loading
+- **Color Preservation** - RGB data stored as inline span styles in HTML output
+- **Frame Optimization** - Caching system for GIF frames with lazy loading
 
 ## Prerequisites
 
@@ -134,24 +150,45 @@ The packaged application will be available in the `dist` folder.
 
 1. **Load Image** - Click "Load Image" or drag & drop an image/GIF into the input panel
 2. **Adjust Settings** - Use the panels on the left to customize your output:
-   - Width: Character width of the output
-   - Style: Choose character set (detailed or blocks)
+   - Width: Character width of the output (20-300 characters)
+   - Style: Choose character set (detailed, standard, or simple)
    - Adjustments: Brightness, contrast, color inversion
    - Options: Background removal, aspect ratio controls
-3. **View Output** - ASCII art generates automatically in the right panel
-4. **Save or Export** - Use action buttons to save as text or HTML
+3. **View Output** - Colored ASCII art generates automatically in the right panel
+4. **Save or Export** - Use action buttons to save as HTML (colored) or TXT (plain)
+5. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
 
 ### GIF Animation
 
-- Load a GIF file to see it converted with frame-by-frame ASCII animation
-- Use playback controls: play/pause, stop, and adjust speed
-- Original frame timing is preserved and can be adjusted
+- Load a GIF file to see it converted with frame-by-frame colored ASCII animation
+- Transparent backgrounds are preserved (render as spaces in ASCII)
+- Use playback controls: play/pause, stop, previous/next frame
+- Adjust playback speed from 0.5x to 2x
+- Original frame timing and delays are preserved
+
+### Desktop Widgets
+
+- Click "Widget" button to spawn a desktop widget window
+- Create multiple widgets simultaneously
+- Drag widgets by clicking on the ASCII display area
+- Right-click for context menu (show controls or remove widget)
+- Use control panel for:
+  - Hide/show controls
+  - GIF playback controls (for animated content)
+  - Font size adjustment (2px-20px)
+  - Close widget
+- Widgets stay at desktop level (behind other application windows)
+- Widgets are frameless and transparent for clean appearance
 
 ### History Gallery
 
-- Click "History" to view all previously converted images
-- Click any item to see details
-- Select and load to restore both the ASCII art and all settings used
+- Click "History" to view all previously converted images and GIFs
+- Thumbnails show preview of ASCII art with 500-character preview
+- Multi-select support: Ctrl+Click to select multiple items
+- "Select All" button for batch operations
+- Delete selected items with the delete button (X icon on selected items)
+- Load any item to restore both the ASCII art and all original settings
+- GIFs load with full animation data and frame information
 
 ## Project Structure
 
@@ -204,10 +241,28 @@ Modify `python/core/image_processor.py` to add custom character sets:
 
 ```python
 CHARSETS = {
-    'detailed': '@%#*+=-:. ',
-    'blocks': '█▓▒░ ',
+    'detailed': '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. ',
+    'standard': '@%#*+=-:. ',
+    'simple': '█▓▒░ ',
     'custom': 'your_characters_here'
 }
+```
+
+### Color Palette
+
+The application uses a modern grayscale aesthetic. Modify `src/styles/main.css` to customize:
+
+```css
+/* Main color variables */
+--bright-snow: #f8f9fa; /* Primary text */
+--platinum: #e9ecef; /* Reserved for highlights */
+--alabaster: #dee2e6; /* Secondary text */
+--pale-slate: #ced4da; /* Action panel accent */
+--pale-slate-2: #adb5bd; /* Primary UI accent */
+--slate-grey: #6c757d; /* Width panel accent */
+--iron-grey: #495057; /* Style/Output panel accent */
+--gunmetal: #343a40; /* Panel backgrounds */
+--shadow-grey: #212529; /* Main background */
 ```
 
 ## Troubleshooting
@@ -240,19 +295,39 @@ RemBG downloads ML models on first use. Ensure:
 
 ## Performance Optimization
 
-- **Large Images**: Images are automatically resized during processing
-- **GIF Frame Count**: High frame count GIFs may take longer to process
-- **Background Removal**: Disable for faster processing when not needed
-- **Width Setting**: Lower width values process faster
+- **Large Images**: Images are automatically resized during processing to maintain performance
+- **GIF Frame Count**: High frame count GIFs may take longer to process (optimized with frame caching)
+- **Background Removal**: Disable for faster processing when not needed (adds AI segmentation overhead)
+- **Width Setting**: Lower width values process faster (fewer pixels to process)
+- **Widget Optimization**: Widgets use temporary file loading instead of data URLs to handle large GIFs (no size limit)
+- **Color Processing**: Colored output adds minimal overhead due to efficient RGB extraction
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Known Limitations
+
+- Widget windows cannot be minimized to taskbar (by design - desktop overlay mode)
+- Very large GIFs (500+ frames) may take time to load in widgets
+- Background removal requires internet connection on first use (model download)
+- Maximum recommended width: 300 characters for optimal performance
+
+## Future Enhancements
+
+- Custom color palette selection
+- Video file support (.mp4, .avi)
+- Batch conversion mode
+- Export as animated GIF
+- Additional character set presets
+- Widget opacity controls
+- Saved widget configurations
+
 ## Acknowledgments
 
 - Character set mapping algorithm inspired by classic ASCII art converters
 - RemBG for AI-powered background removal
+- Pillow and NumPy for efficient image processing
 - Electron and React communities for excellent documentation
 
 ---
@@ -260,5 +335,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
 
 **Built with Python, React, and Electron**
+
+[GitHub Repository](https://github.com/Oblutack/AscArt) | [Report Issues](https://github.com/Oblutack/AscArt/issues)
 
 </div>
