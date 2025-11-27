@@ -143,13 +143,21 @@ function createWidgetWindow(widgetData) {
     height: 450,
     frame: false,
     transparent: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     skipTaskbar: true,
     resizable: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
+  });
+
+  // Keep window in background - set it behind other windows after creation
+  widgetWindow.once("ready-to-show", () => {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.setAlwaysOnTop(false);
+      widgetWindow.blur(); // Remove focus so it stays in background
+    }
   });
 
   // Parse widget data
@@ -337,6 +345,14 @@ function createWidgetWindow(widgetData) {
               gifFrames.length
             }</span>
           </div>
+          <div class="widget-controls-row">
+            <div class="widget-controls-left">
+              <span style="color: #8800b4; font-family: 'Courier New'; font-size: 11px; margin-right: 10px;">Size:</span>
+              <button class="widget-btn widget-btn-small" onclick="decreaseSize()">− Smaller</button>
+              <span class="frame-info" id="size-info" style="min-width: 50px;">6px</span>
+              <button class="widget-btn widget-btn-small" onclick="increaseSize()">Larger +</button>
+            </div>
+          </div>
         </div>
       </div>
       <script>
@@ -349,6 +365,7 @@ function createWidgetWindow(widgetData) {
         let currentFrame = 0;
         let isPlaying = ${isGif};
         let animationTimer = null;
+        let fontSize = 6;
         
         // Set initial ASCII content (use innerHTML for colored HTML)
         if (isGif && gifFrames.length > 0) {
@@ -361,6 +378,27 @@ function createWidgetWindow(widgetData) {
         }
         
         let controlsVisible = true;
+        
+        function decreaseSize() {
+          if (fontSize > 2) {
+            fontSize--;
+            updateFontSize();
+          }
+        }
+        
+        function increaseSize() {
+          if (fontSize < 20) {
+            fontSize++;
+            updateFontSize();
+          }
+        }
+        
+        function updateFontSize() {
+          const asciiContent = document.getElementById('ascii-content');
+          asciiContent.style.fontSize = fontSize + 'px';
+          asciiContent.style.lineHeight = fontSize + 'px';
+          document.getElementById('size-info').textContent = fontSize + 'px';
+        }
         
         function toggleControls() {
           controlsVisible = !controlsVisible;
