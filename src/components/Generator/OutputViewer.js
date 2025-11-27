@@ -45,20 +45,26 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
           <div className="output-controls">
             {isGif && gifFrames.length > 1 && (
               <>
-                <button
+                <div
                   className="zoom-btn"
                   onClick={togglePlayback}
                   title={isPlaying ? "Pause" : "Play"}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => e.key === "Enter" && togglePlayback()}
                 >
                   {isPlaying ? "⏸" : "▶"}
-                </button>
-                <button
+                </div>
+                <div
                   className="zoom-btn"
                   onClick={stopPlayback}
                   title="Stop"
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => e.key === "Enter" && stopPlayback()}
                 >
                   ⏹
-                </button>
+                </div>
                 <select
                   className="speed-select"
                   value={playbackSpeed}
@@ -76,21 +82,31 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
                 <span style={{ margin: "0 8px", color: "#666" }}>|</span>
               </>
             )}
-            <button
+            <div
               className="zoom-btn"
               onClick={() => setFontSize(Math.max(4, fontSize - 1))}
               title="Zoom Out"
+              role="button"
+              tabIndex={0}
+              onKeyPress={(e) =>
+                e.key === "Enter" && setFontSize(Math.max(4, fontSize - 1))
+              }
             >
               −
-            </button>
+            </div>
             <span className="zoom-label">{fontSize}px</span>
-            <button
+            <div
               className="zoom-btn"
               onClick={() => setFontSize(Math.min(12, fontSize + 1))}
               title="Zoom In"
+              role="button"
+              tabIndex={0}
+              onKeyPress={(e) =>
+                e.key === "Enter" && setFontSize(Math.min(12, fontSize + 1))
+              }
             >
               +
-            </button>
+            </div>
           </div>
         )}
       </div>

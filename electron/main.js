@@ -201,8 +201,8 @@ function createWidgetWindow(widgetData) {
           transition: background 0.3s ease;
         }
         #widget-container.controls-visible {
-          background: rgba(10, 10, 15, 0.95);
-          border: 2px solid #8800b4;
+          background: rgba(52, 58, 64, 0.95);
+          border: 2px solid #495057;
           border-radius: 8px;
         }
         #ascii-display {
@@ -229,8 +229,8 @@ function createWidgetWindow(widgetData) {
         #widget-controls {
           display: none;
           padding: 15px;
-          background: rgba(0, 0, 0, 0.8);
-          border-top: 1px solid #8800b4;
+          background: rgba(33, 37, 41, 0.8);
+          border-top: 1px solid #495057;
           flex-direction: column;
           gap: 10px;
           -webkit-app-region: no-drag;
@@ -249,9 +249,9 @@ function createWidgetWindow(widgetData) {
           align-items: center;
         }
         .widget-btn {
-          background: rgba(136, 0, 180, 0.2);
-          border: 2px solid #8800b4;
-          color: #8800b4;
+          background: rgba(73, 80, 87, 0.2);
+          border: 2px solid #495057;
+          color: #495057;
           padding: 8px 16px;
           border-radius: 4px;
           font-family: 'Courier New', monospace;
@@ -261,7 +261,7 @@ function createWidgetWindow(widgetData) {
           transition: all 0.3s ease;
         }
         .widget-btn:hover {
-          background: rgba(136, 0, 180, 0.4);
+          background: rgba(73, 80, 87, 0.4);
           transform: translateY(-2px);
         }
         .widget-btn-small {
@@ -269,11 +269,11 @@ function createWidgetWindow(widgetData) {
           font-size: 10px;
         }
         .widget-btn-close {
-          border-color: #b40000;
-          color: #ff4444;
+          border-color: #6c757d;
+          color: #6c757d;
         }
         .widget-btn-close:hover {
-          background: rgba(180, 0, 0, 0.3);
+          background: rgba(108, 117, 125, 0.3);
         }
         #playback-controls {
           display: ${isGif ? "flex" : "none"};
@@ -283,27 +283,27 @@ function createWidgetWindow(widgetData) {
         .frame-info {
           font-family: 'Courier New', monospace;
           font-size: 10px;
-          color: #8800b4;
+          color: #495057;
           min-width: 80px;
           text-align: center;
         }
         #context-menu {
           display: none;
           position: fixed;
-          background: rgba(10, 10, 15, 0.98);
-          border: 2px solid #8800b4;
+          background: rgba(52, 58, 64, 0.98);
+          border: 2px solid #495057;
           border-radius: 6px;
           padding: 5px 0;
           min-width: 180px;
           z-index: 10000;
-          box-shadow: 0 4px 20px rgba(136, 0, 180, 0.4);
+          box-shadow: 0 4px 20px rgba(73, 80, 87, 0.4);
         }
         #context-menu.visible {
           display: block;
         }
         .context-menu-item {
           padding: 10px 20px;
-          color: #8800b4;
+          color: #adb5bd;
           font-family: 'Courier New', monospace;
           font-size: 12px;
           cursor: pointer;
@@ -314,15 +314,15 @@ function createWidgetWindow(widgetData) {
           text-align: left;
         }
         .context-menu-item:hover {
-          background: rgba(136, 0, 180, 0.3);
-          color: #bf00ff;
+          background: rgba(73, 80, 87, 0.3);
+          color: #ced4da;
         }
         .context-menu-item.danger {
-          color: #ff4444;
+          color: #6c757d;
         }
         .context-menu-item.danger:hover {
-          background: rgba(180, 0, 0, 0.3);
-          color: #ff6666;
+          background: rgba(108, 117, 125, 0.3);
+          color: #adb5bd;
         }
       </style>
     </head>
@@ -356,7 +356,7 @@ function createWidgetWindow(widgetData) {
           </div>
           <div class="widget-controls-row">
             <div class="widget-controls-left">
-              <span style="color: #8800b4; font-family: 'Courier New'; font-size: 11px; margin-right: 10px;">Size:</span>
+              <span style="color: #adb5bd; font-family: 'Courier New'; font-size: 11px; margin-right: 10px;">Size:</span>
               <button class="widget-btn widget-btn-small" onclick="decreaseSize()">− Smaller</button>
               <span class="frame-info" id="size-info" style="min-width: 50px;">6px</span>
               <button class="widget-btn widget-btn-small" onclick="increaseSize()">Larger +</button>
