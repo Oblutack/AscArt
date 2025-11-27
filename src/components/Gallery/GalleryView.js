@@ -5,7 +5,7 @@ const { ipcRenderer } = window.require("electron");
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
     // Request history from Python backend
@@ -28,33 +28,56 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     };
   }, []);
 
-  const handleItemClick = (item) => {
-    setSelectedItem(item);
+  const handleItemClick = (item, event) => {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-select with Ctrl/Cmd
+      if (selectedItems.includes(item)) {
+        setSelectedItems(selectedItems.filter((i) => i !== item));
+      } else {
+        setSelectedItems([...selectedItems, item]);
+      }
+    } else {
+      // Single select
+      setSelectedItems([item]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === history.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems([...history]);
+    }
   };
 
   const handleLoadItem = () => {
-    if (selectedItem && onLoadAscii) {
-      onLoadAscii(selectedItem.ascii, selectedItem.options);
+    if (selectedItems.length === 1 && onLoadAscii) {
+      onLoadAscii(selectedItems[0].ascii, selectedItems[0].options);
     }
     onClose();
   };
 
-  const handleDeleteItem = () => {
-    if (!selectedItem) return;
+  const handleDeleteItems = () => {
+    if (selectedItems.length === 0) return;
 
-    const itemIndex = history.indexOf(selectedItem);
-    if (itemIndex === -1) return;
+    // Get indices of selected items (sorted in reverse to delete from end)
+    const indices = selectedItems
+      .map((item) => history.indexOf(item))
+      .filter((index) => index !== -1)
+      .sort((a, b) => b - a);
 
-    // Send delete command to Python
-    ipcRenderer.send("to-python", {
-      command: "delete_history",
-      index: itemIndex,
+    // Send delete commands for each item
+    indices.forEach((index) => {
+      ipcRenderer.send("to-python", {
+        command: "delete_history",
+        index: index,
+      });
     });
 
     // Update local state
-    const newHistory = history.filter((item) => item !== selectedItem);
+    const newHistory = history.filter((item) => !selectedItems.includes(item));
     setHistory(newHistory);
-    setSelectedItem(null);
+    setSelectedItems([]);
   };
 
   const formatDate = (isoString) => {
@@ -67,6 +90,16 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
       <div className="gallery-modal">
         <div className="gallery-header">
           <h2>History / Gallery</h2>
+          {history.length > 0 && (
+            <button
+              className="gallery-select-all-btn"
+              onClick={handleSelectAll}
+            >
+              {selectedItems.length === history.length
+                ? "Deselect All"
+                : "Select All"}
+            </button>
+          )}
           <button className="gallery-close-btn" onClick={onClose}>
             ×
           </button>
@@ -102,12 +135,12 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                 <div
                   key={index}
                   className={`gallery-item ${
-                    selectedItem === item ? "selected" : ""
+                    selectedItems.includes(item) ? "selected" : ""
                   }`}
-                  onClick={() => handleItemClick(item)}
+                  onClick={(e) => handleItemClick(item, e)}
                 >
                   <div className="gallery-item-preview">
-                    <pre>{item.ascii}</pre>
+                    <pre dangerouslySetInnerHTML={{ __html: item.ascii }} />
                   </div>
                   <div className="gallery-item-info">
                     <span className="gallery-item-date">
@@ -117,24 +150,29 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                       {item.options.width}ch · {item.options.charset}
                     </span>
                   </div>
+                  {selectedItems.includes(item) && (
+                    <div className="gallery-item-checkmark">✓</div>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {selectedItem && (
+        {selectedItems.length > 0 && (
           <div className="gallery-footer">
             <button
               className="gallery-btn gallery-btn-delete"
-              onClick={handleDeleteItem}
+              onClick={handleDeleteItems}
             >
-              Delete
+              Delete ({selectedItems.length})
             </button>
             <div className="gallery-footer-right">
               <button
                 className="gallery-btn gallery-btn-load"
                 onClick={handleLoadItem}
+                disabled={selectedItems.length !== 1}
+                style={{ opacity: selectedItems.length !== 1 ? 0.5 : 1 }}
               >
                 Load Selected
               </button>
