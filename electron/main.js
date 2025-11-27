@@ -345,7 +345,7 @@ function createWidgetWindow(widgetData) {
           <div id="playback-controls" class="widget-controls-row">
             <div class="widget-controls-left">
               <button class="widget-btn widget-btn-small" onclick="togglePlayPause()">${
-                isGif ? "⏸ Pause" : "▶ Play"
+                isGif ? "|| Pause" : "▶ Play"
               }</button>
               <button class="widget-btn widget-btn-small" onclick="prevFrame()">◀ Prev</button>
               <button class="widget-btn widget-btn-small" onclick="nextFrame()">Next ▶</button>
@@ -473,7 +473,7 @@ function createWidgetWindow(widgetData) {
           const btn = event.target;
           
           if (isPlaying) {
-            btn.textContent = '⏸ Pause';
+            btn.textContent = '|| Pause';
             startAnimation();
           } else {
             btn.textContent = '▶ Play';

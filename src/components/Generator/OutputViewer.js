@@ -52,8 +52,15 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
                   role="button"
                   tabIndex={0}
                   onKeyPress={(e) => e.key === "Enter" && togglePlayback()}
+                  style={{
+                    background: "rgba(73, 80, 87, 0.2)",
+                    border: "1px solid rgba(73, 80, 87, 0.5)",
+                    color: "#495057",
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: "12px",
+                  }}
                 >
-                  {isPlaying ? "⏸" : "▶"}
+                  {isPlaying ? "||" : "▶"}
                 </div>
                 <div
                   className="zoom-btn"
@@ -62,8 +69,15 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
                   role="button"
                   tabIndex={0}
                   onKeyPress={(e) => e.key === "Enter" && stopPlayback()}
+                  style={{
+                    background: "rgba(73, 80, 87, 0.2)",
+                    border: "1px solid rgba(73, 80, 87, 0.5)",
+                    color: "#495057",
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: "12px",
+                  }}
                 >
-                  ⏹
+                  ■
                 </div>
                 <select
                   className="speed-select"
