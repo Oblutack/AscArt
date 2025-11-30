@@ -277,9 +277,9 @@ function createWidgetWindow(widgetData) {
           align-items: center;
         }
         .widget-btn {
-          background: rgba(73, 80, 87, 0.2);
-          border: 2px solid #495057;
-          color: #495057;
+          background: rgba(173, 181, 189, 0.1);
+          border: 2px solid #adb5bd;
+          color: #adb5bd;
           padding: 8px 16px;
           border-radius: 4px;
           font-family: 'Courier New', monospace;
@@ -289,7 +289,7 @@ function createWidgetWindow(widgetData) {
           transition: all 0.3s ease;
         }
         .widget-btn:hover {
-          background: rgba(73, 80, 87, 0.4);
+          background: rgba(173, 181, 189, 0.2);
           transform: translateY(-2px);
         }
         .widget-btn-small {
@@ -297,11 +297,11 @@ function createWidgetWindow(widgetData) {
           font-size: 10px;
         }
         .widget-btn-close {
-          border-color: #6c757d;
-          color: #6c757d;
+          border-color: #dc3545;
+          color: #dc3545;
         }
         .widget-btn-close:hover {
-          background: rgba(108, 117, 125, 0.3);
+          background: rgba(220, 53, 69, 0.2);
         }
         #playback-controls {
           display: ${isGif ? "flex" : "none"};
