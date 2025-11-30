@@ -13,7 +13,7 @@ Transform your images into stunning colored ASCII art with real-time preview, ad
 
 ---
 
-### 🎬 Demo
+### Demo
 
 **Image Conversion with Color Schemes**
 
