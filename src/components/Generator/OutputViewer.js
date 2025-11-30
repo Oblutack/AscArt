@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
+const OutputViewer = ({
+  asciiArt,
+  isLoading,
+  isGif,
+  gifFrames,
+  gifDelays,
+  onStopProcessing,
+}) => {
   const [fontSize, setFontSize] = useState(8);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -41,88 +48,113 @@ const OutputViewer = ({ asciiArt, isLoading, isGif, gifFrames, gifDelays }) => {
     <div className="panel output-panel">
       <div className="panel-header">
         OUTPUT
-        {asciiArt && (
-          <div className="output-controls">
-            {isGif && gifFrames.length > 1 && (
-              <>
-                <div
-                  className="zoom-btn"
-                  onClick={togglePlayback}
-                  title={isPlaying ? "Pause" : "Play"}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === "Enter" && togglePlayback()}
-                  style={{
-                    background: "rgba(73, 80, 87, 0.2)",
-                    border: "1px solid rgba(73, 80, 87, 0.5)",
-                    color: "#495057",
-                    fontFamily: "Arial, sans-serif",
-                    fontSize: "12px",
-                  }}
-                >
-                  {isPlaying ? "||" : "▶"}
-                </div>
-                <div
-                  className="zoom-btn"
-                  onClick={stopPlayback}
-                  title="Stop"
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === "Enter" && stopPlayback()}
-                  style={{
-                    background: "rgba(73, 80, 87, 0.2)",
-                    border: "1px solid rgba(73, 80, 87, 0.5)",
-                    color: "#495057",
-                    fontFamily: "Arial, sans-serif",
-                    fontSize: "12px",
-                  }}
-                >
-                  ■
-                </div>
-                <select
-                  className="speed-select"
-                  value={playbackSpeed}
-                  onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
-                  title="Playback Speed"
-                >
-                  <option value="0.5">0.5×</option>
-                  <option value="1">1×</option>
-                  <option value="1.5">1.5×</option>
-                  <option value="2">2×</option>
-                </select>
-                <span className="zoom-label">
-                  {currentFrame + 1}/{gifFrames.length}
-                </span>
-                <span style={{ margin: "0 8px", color: "#666" }}>|</span>
-              </>
-            )}
+        <div className="output-controls">
+          {isLoading && (
             <div
               className="zoom-btn"
-              onClick={() => setFontSize(Math.max(4, fontSize - 1))}
-              title="Zoom Out"
+              onClick={onStopProcessing}
+              title="Stop Processing"
               role="button"
               tabIndex={0}
-              onKeyPress={(e) =>
-                e.key === "Enter" && setFontSize(Math.max(4, fontSize - 1))
-              }
+              onKeyPress={(e) => e.key === "Enter" && onStopProcessing()}
+              style={{
+                background: "rgba(220, 53, 69, 0.2)",
+                border: "1px solid rgba(220, 53, 69, 0.5)",
+                color: "#dc3545",
+                fontFamily: "Arial, sans-serif",
+                fontSize: "11px",
+                fontWeight: "bold",
+                padding: "5px 12px",
+              }}
             >
-              −
+              STOP
             </div>
-            <span className="zoom-label">{fontSize}px</span>
-            <div
-              className="zoom-btn"
-              onClick={() => setFontSize(Math.min(12, fontSize + 1))}
-              title="Zoom In"
-              role="button"
-              tabIndex={0}
-              onKeyPress={(e) =>
-                e.key === "Enter" && setFontSize(Math.min(12, fontSize + 1))
-              }
-            >
-              +
-            </div>
-          </div>
-        )}
+          )}
+          {asciiArt && (
+            <>
+              {isGif && gifFrames.length > 1 && (
+                <>
+                  <div
+                    className="zoom-btn"
+                    onClick={togglePlayback}
+                    title={isPlaying ? "Pause" : "Play"}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === "Enter" && togglePlayback()}
+                    style={{
+                      background: "rgba(73, 80, 87, 0.2)",
+                      border: "1px solid rgba(73, 80, 87, 0.5)",
+                      color: "#495057",
+                      fontFamily: "Arial, sans-serif",
+                      fontSize: "12px",
+                    }}
+                  >
+                    {isPlaying ? "||" : "▶"}
+                  </div>
+                  <div
+                    className="zoom-btn"
+                    onClick={stopPlayback}
+                    title="Stop"
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === "Enter" && stopPlayback()}
+                    style={{
+                      background: "rgba(73, 80, 87, 0.2)",
+                      border: "1px solid rgba(73, 80, 87, 0.5)",
+                      color: "#495057",
+                      fontFamily: "Arial, sans-serif",
+                      fontSize: "12px",
+                    }}
+                  >
+                    ■
+                  </div>
+                  <select
+                    className="speed-select"
+                    value={playbackSpeed}
+                    onChange={(e) =>
+                      setPlaybackSpeed(parseFloat(e.target.value))
+                    }
+                    title="Playback Speed"
+                  >
+                    <option value="0.5">0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2">2×</option>
+                  </select>
+                  <span className="zoom-label">
+                    {currentFrame + 1}/{gifFrames.length}
+                  </span>
+                  <span style={{ margin: "0 8px", color: "#666" }}>|</span>
+                </>
+              )}
+              <div
+                className="zoom-btn"
+                onClick={() => setFontSize(Math.max(4, fontSize - 1))}
+                title="Zoom Out"
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && setFontSize(Math.max(4, fontSize - 1))
+                }
+              >
+                −
+              </div>
+              <span className="zoom-label">{fontSize}px</span>
+              <div
+                className="zoom-btn"
+                onClick={() => setFontSize(Math.min(12, fontSize + 1))}
+                title="Zoom In"
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && setFontSize(Math.min(12, fontSize + 1))
+                }
+              >
+                +
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <div className="output-content">
         {isLoading ? (

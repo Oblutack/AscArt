@@ -5,7 +5,7 @@ const MainLayout = ({ children }) => {
     <div className="main-layout">
       <header className="app-header draggable">
         <h1 className="app-title">
-          <span className="title-main">ASCII GENERATOR</span>
+          <span className="title-main">AscArt</span>
           <span className="title-subtitle">// Image & GIF Converter</span>
         </h1>
         <div className="drag-hint no-drag">

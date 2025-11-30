@@ -145,6 +145,14 @@ function App() {
     keepOriginal,
   ]);
 
+  const handleStopProcessing = () => {
+    console.log("🛑 Stopping current processing");
+    setIsLoading(false);
+    ipcRenderer.send("to-python", {
+      command: "stop",
+    });
+  };
+
   const handleReset = () => {
     console.log("🔄 Resetting adjustments");
     setBrightness(0);
@@ -288,6 +296,7 @@ function App() {
           isGif={isGif}
           gifFrames={gifFrames}
           gifDelays={gifDelays}
+          onStopProcessing={handleStopProcessing}
         />
       </div>
 

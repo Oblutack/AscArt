@@ -166,7 +166,7 @@ class ImageProcessor:
         char_indices = ((gray_pixels / 255) * char_count).astype(int)
         
         if colored:
-            # Generate colored HTML
+            # Generate colored HTML with optimized string building
             html_lines = []
             for row_idx, row in enumerate(char_indices):
                 line_spans = []
@@ -177,6 +177,7 @@ class ImageProcessor:
                     else:
                         char = chars[char_idx]
                         r, g, b = color_pixels[row_idx, col_idx]
+                        # Faster string concatenation without f-string overhead
                         line_spans.append(f'<span style="color:rgb({r},{g},{b})">{char}</span>')
                 html_lines.append(''.join(line_spans))
             

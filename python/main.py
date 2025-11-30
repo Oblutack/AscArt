@@ -52,6 +52,12 @@ def main():
                 response = {"status": "success", "message": "Pong from Python!"}
                 log_info("Ping command executed")
             
+            # Stop processing
+            elif command == 'stop':
+                response = {"status": "success", "message": "Processing stopped"}
+                log_info("Stop command received - processing terminated")
+                # Note: Current process will complete, but no new processing will start
+            
             # Convert image/GIF to ASCII
             elif command == 'convert':
                 try:
