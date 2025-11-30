@@ -36,6 +36,63 @@ function App() {
   // Gallery State
   const [showGallery, setShowGallery] = useState(false);
 
+  // Track if settings have been loaded to prevent overwriting on startup
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // Load saved settings on startup
+  useEffect(() => {
+    ipcRenderer.send("load-settings");
+
+    ipcRenderer.on("settings-loaded", (event, settings) => {
+      if (settings) {
+        console.log("📂 Loading saved settings:", settings);
+        if (settings.removeBackground !== undefined)
+          setRemoveBackground(settings.removeBackground);
+        if (settings.width !== undefined) setWidth(settings.width);
+        if (settings.ratio !== undefined) setRatio(settings.ratio);
+        if (settings.keepOriginal !== undefined)
+          setKeepOriginal(settings.keepOriginal);
+        if (settings.charset !== undefined) setCharset(settings.charset);
+        if (settings.invert !== undefined) setInvert(settings.invert);
+        if (settings.brightness !== undefined)
+          setBrightness(settings.brightness);
+        if (settings.contrast !== undefined) setContrast(settings.contrast);
+      }
+      // Mark settings as loaded (even if null, so we know we tried)
+      setSettingsLoaded(true);
+    });
+
+    return () => {
+      ipcRenderer.removeAllListeners("settings-loaded");
+    };
+  }, []);
+
+  // Save settings when they change (but only after initial load)
+  useEffect(() => {
+    if (!settingsLoaded) return; // Don't save until settings are loaded
+
+    const settings = {
+      removeBackground,
+      width,
+      ratio,
+      keepOriginal,
+      charset,
+      invert,
+      brightness,
+      contrast,
+    };
+    ipcRenderer.send("save-settings", settings);
+  }, [
+    removeBackground,
+    width,
+    ratio,
+    keepOriginal,
+    charset,
+    invert,
+    brightness,
+    contrast,
+  ]);
+
   useEffect(() => {
     // Listen for Python responses
     ipcRenderer.on("python-response", (event, data) => {

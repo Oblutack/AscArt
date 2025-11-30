@@ -24,5 +24,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# --- User Data & Output ---
+python/output/history.json
+python/output/*.txt
+output/
+*.txt
 
+# --- Old Code ---
 OldCode/
+

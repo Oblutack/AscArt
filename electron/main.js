@@ -130,6 +130,34 @@ ipcMain.on("to-python", (event, args) => {
   }
 });
 
+// Settings Management
+const settingsPath = path.join(app.getPath("userData"), "settings.json");
+
+ipcMain.on("save-settings", (event, settings) => {
+  try {
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    console.log("✅ Settings saved:", settingsPath);
+  } catch (error) {
+    console.error("❌ Failed to save settings:", error);
+  }
+});
+
+ipcMain.on("load-settings", (event) => {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+      console.log("✅ Settings loaded:", settingsPath);
+      event.reply("settings-loaded", settings);
+    } else {
+      console.log("ℹ️ No saved settings found");
+      event.reply("settings-loaded", null);
+    }
+  } catch (error) {
+    console.error("❌ Failed to load settings:", error);
+    event.reply("settings-loaded", null);
+  }
+});
+
 // UI Window Controls
 ipcMain.on("window-min", () => mainWindow.minimize());
 ipcMain.on("window-close", () => app.quit());
