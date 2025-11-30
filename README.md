@@ -26,9 +26,11 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 - **Colored ASCII Art** - Converts images with full RGB color preservation in HTML format
 - **Image to ASCII Conversion** - Convert JPG, PNG, and other image formats with high fidelity
 - **Animated GIF Support** - Process and playback animated GIFs frame-by-frame with original timing
-- **Real-time Preview** - See your ASCII art update instantly as you adjust settings
+- **Manual Conversion Control** - Convert only when you're ready with the dedicated Convert button
+- **Color Schemes** - Choose from 8 color palettes including original, grayscale, sepia, and tinted variations
 - **Desktop Widgets** - Display ASCII art and animated GIFs as floating desktop widgets
 - **History Gallery** - Access previously converted art with full settings restoration and multi-select management
+- **Settings Persistence** - All preferences automatically saved and restored between sessions
 
 ### Image Processing
 
@@ -40,11 +42,13 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 
 ### Output Options
 
-- **Multiple Character Sets** - Detailed, standard, or simple character sets for different styles
+- **Multiple Character Sets** - Detailed and blocks character sets for different styles
+- **Color Schemes** - 8 palettes: Original, Grayscale, Sepia, Blue, Green, Red, Purple, Cyan
 - **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles
 - **Plain Text Export** - Save as monochrome .txt files
 - **Font Zoom Controls** - Adjust display size from 4px to 12px for optimal viewing
 - **Playback Controls** - For GIFs: play/pause, stop, speed adjustment (0.5x to 2x)
+- **Stop Processing** - Cancel long-running conversions with the stop button
 
 ### Widget Features
 
@@ -76,12 +80,13 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 ### Architecture
 
 - **IPC Communication** - JSON-based stdin/stdout bridge between Electron and Python
-- **Asynchronous Processing** - Non-blocking UI with background Python subprocess
-- **State Management** - React hooks with debounced auto-regeneration (300ms)
+- **Asynchronous Processing** - Non-blocking UI with background Python subprocess and cancellable operations
+- **State Management** - React hooks with manual conversion control for optimal performance
+- **Settings Persistence** - JSON-based user preferences stored in Electron's userData directory
 - **Modular Design** - Separated concerns with dedicated processor classes
 - **Widget System** - Multiple BrowserWindow instances with temporary file loading
-- **Color Preservation** - RGB data stored as inline span styles in HTML output
-- **Frame Optimization** - Caching system for GIF frames with lazy loading
+- **Color Transformation** - RGB manipulation with 8 different color scheme algorithms
+- **Frame Optimization** - Sequential GIF processing with BILINEAR resampling for speed
 
 ## Prerequisites
 
@@ -151,12 +156,17 @@ The packaged application will be available in the `dist` folder.
 1. **Load Image** - Click "Load Image" or drag & drop an image/GIF into the input panel
 2. **Adjust Settings** - Use the panels on the left to customize your output:
    - Width: Character width of the output (20-300 characters)
-   - Style: Choose character set (detailed, standard, or simple)
+   - Style: Choose character set (detailed or blocks)
+   - Colors: Select from 8 color schemes (original, grayscale, sepia, etc.)
+   - Ratio: Maintain aspect ratio or choose preset dimensions
    - Adjustments: Brightness, contrast, color inversion
-   - Options: Background removal, aspect ratio controls
-3. **View Output** - Colored ASCII art generates automatically in the right panel
-4. **Save or Export** - Use action buttons to save as HTML (colored) or TXT (plain)
-5. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
+   - Options: Background removal, keep original size
+3. **Click Convert** - Press the "CONVERT" button to generate ASCII art with your settings
+4. **View Output** - Colored ASCII art appears in the right panel with zoom controls
+5. **Save or Export** - Use action buttons to save as HTML (colored) or TXT (plain)
+6. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
+
+**Note:** Settings are automatically saved and restored when you reopen the app
 
 ### GIF Animation
 
