@@ -147,10 +147,7 @@ function App() {
     reader.onload = (e) => {
       setImagePreview(e.target.result);
       setImagePath(file.path);
-      console.log("✅ Image loaded, starting conversion...");
-
-      // Auto-generate when image loads
-      generateAsciiArt(file.path);
+      console.log("✅ Image loaded - ready to convert");
     };
     reader.readAsDataURL(file);
   };
@@ -187,26 +184,13 @@ function App() {
     console.log("📤 Sent to Python backend");
   };
 
-  // Regenerate when settings change
-  useEffect(() => {
+  // Manual conversion only - no auto-regeneration
+  const handleConvert = () => {
     if (imagePath) {
-      console.log("⚙️ Settings changed, regenerating...");
-      const timeout = setTimeout(() => {
-        generateAsciiArt();
-      }, 300); // Debounce
-      return () => clearTimeout(timeout);
+      console.log("🔄 Manual conversion triggered");
+      generateAsciiArt();
     }
-  }, [
-    width,
-    charset,
-    colorScheme,
-    removeBackground,
-    brightness,
-    contrast,
-    invert,
-    ratio,
-    keepOriginal,
-  ]);
+  };
 
   const handleStopProcessing = () => {
     console.log("🛑 Stopping current processing");
@@ -326,11 +310,14 @@ function App() {
             imagePreview={imagePreview}
           />
           <ActionButtons
+            onConvert={handleConvert}
             onSave={handleSave}
             onWidget={handleWidget}
             onHistory={handleHistory}
             onQuit={handleQuit}
             disabled={!asciiArt}
+            hasImage={!!imagePath}
+            isLoading={isLoading}
           />
           <WidthPanel
             width={width}

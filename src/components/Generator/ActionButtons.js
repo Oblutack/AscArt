@@ -1,11 +1,40 @@
 import React from "react";
 import Button from "../Shared/Button";
 
-const ActionButtons = ({ onSave, onWidget, onHistory, onQuit, disabled }) => {
+const ActionButtons = ({
+  onConvert,
+  onSave,
+  onWidget,
+  onHistory,
+  onQuit,
+  disabled,
+  hasImage,
+  isLoading,
+}) => {
   return (
     <div className="panel actions-panel">
       <div className="panel-header">ACTIONS</div>
       <div className="actions-buttons">
+        <Button
+          variant="history"
+          fullWidth
+          onClick={onConvert}
+          disabled={!hasImage || isLoading}
+          icon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          }
+        >
+          {isLoading ? "CONVERTING..." : "CONVERT"}
+        </Button>
         <Button
           variant="save"
           fullWidth
