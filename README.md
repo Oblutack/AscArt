@@ -13,6 +13,22 @@ Transform your images into stunning colored ASCII art with real-time preview, ad
 
 ---
 
+### 🎬 Demo
+
+**Image Conversion with Color Schemes**
+
+![conversion](https://github.com/user-attachments/assets/8f243c0b-1704-4c9d-87ef-f2069371e814)
+
+**GIF Animation Support**
+
+![conversion2](https://github.com/user-attachments/assets/a1261756-572d-4d92-af92-72484cda6bfd)
+
+**Desktop Widget**
+
+![widget](https://github.com/user-attachments/assets/2a99a32e-7bff-4f5a-9a72-97e06801cd9c)
+
+---
+
 </div>
 
 ## Overview
