@@ -12,6 +12,8 @@ const WidthPanel = ({
   setKeepOriginal,
   charset,
   setCharset,
+  colorScheme,
+  setColorScheme,
 }) => {
   const ratioOptions = [
     { value: "--", label: "--" },
@@ -24,6 +26,17 @@ const WidthPanel = ({
   const charsetOptions = [
     { value: "detailed", label: "Detailed" },
     { value: "blocks", label: "Blocks" },
+  ];
+
+  const colorSchemeOptions = [
+    { value: "original", label: "Original" },
+    { value: "grayscale", label: "Grayscale" },
+    { value: "sepia", label: "Sepia" },
+    { value: "blue", label: "Blue" },
+    { value: "green", label: "Green" },
+    { value: "red", label: "Red" },
+    { value: "purple", label: "Purple" },
+    { value: "cyan", label: "Cyan" },
   ];
 
   return (
@@ -56,6 +69,15 @@ const WidthPanel = ({
           value={charset}
           onChange={setCharset}
           options={charsetOptions}
+          className="ratio-dropdown"
+        />
+      </div>
+      <div className="ratio-section">
+        <label className="ratio-label">Colors:</label>
+        <Dropdown
+          value={colorScheme}
+          onChange={setColorScheme}
+          options={colorSchemeOptions}
           className="ratio-dropdown"
         />
       </div>

@@ -29,6 +29,7 @@ function App() {
   const [ratio, setRatio] = useState("--");
   const [keepOriginal, setKeepOriginal] = useState(false);
   const [charset, setCharset] = useState("detailed");
+  const [colorScheme, setColorScheme] = useState("original");
   const [invert, setInvert] = useState(false);
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(100);
@@ -53,6 +54,8 @@ function App() {
         if (settings.keepOriginal !== undefined)
           setKeepOriginal(settings.keepOriginal);
         if (settings.charset !== undefined) setCharset(settings.charset);
+        if (settings.colorScheme !== undefined)
+          setColorScheme(settings.colorScheme);
         if (settings.invert !== undefined) setInvert(settings.invert);
         if (settings.brightness !== undefined)
           setBrightness(settings.brightness);
@@ -77,6 +80,7 @@ function App() {
       ratio,
       keepOriginal,
       charset,
+      colorScheme,
       invert,
       brightness,
       contrast,
@@ -161,6 +165,7 @@ function App() {
     const options = {
       width: width,
       charset: charset,
+      colorScheme: colorScheme,
       removeBackground: removeBackground,
       brightness: brightness,
       contrast: contrast,
@@ -194,6 +199,7 @@ function App() {
   }, [
     width,
     charset,
+    colorScheme,
     removeBackground,
     brightness,
     contrast,
@@ -335,6 +341,8 @@ function App() {
             setKeepOriginal={setKeepOriginal}
             charset={charset}
             setCharset={setCharset}
+            colorScheme={colorScheme}
+            setColorScheme={setColorScheme}
           />
           <AdjustmentPanel
             invert={invert}

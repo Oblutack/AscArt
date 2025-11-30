@@ -138,7 +138,7 @@ class ImageProcessor:
         
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
     
-    def convert_to_ascii(self, charset='detailed', colored=True):
+    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
         """Convert image to ASCII art (colored or monochrome)"""
         if self.image is None:
             raise ValueError("No image loaded")
@@ -177,6 +177,32 @@ class ImageProcessor:
                     else:
                         char = chars[char_idx]
                         r, g, b = color_pixels[row_idx, col_idx]
+                        
+                        # Apply color scheme
+                        if color_scheme == 'grayscale':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray, gray, gray
+                        elif color_scheme == 'sepia':
+                            tr = int(0.393 * r + 0.769 * g + 0.189 * b)
+                            tg = int(0.349 * r + 0.686 * g + 0.168 * b)
+                            tb = int(0.272 * r + 0.534 * g + 0.131 * b)
+                            r, g, b = min(255, tr), min(255, tg), min(255, tb)
+                        elif color_scheme == 'blue':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray // 3, gray // 2, gray
+                        elif color_scheme == 'green':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray // 3, gray, gray // 2
+                        elif color_scheme == 'red':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray, gray // 3, gray // 3
+                        elif color_scheme == 'purple':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray, gray // 3, gray
+                        elif color_scheme == 'cyan':
+                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                            r, g, b = gray // 3, gray, gray
+                        
                         # Faster string concatenation without f-string overhead
                         line_spans.append(f'<span style="color:rgb({r},{g},{b})">{char}</span>')
                 html_lines.append(''.join(line_spans))
@@ -235,7 +261,8 @@ class ImageProcessor:
             
             # Convert to ASCII
             charset = options.get('charset', 'detailed')
-            ascii_art = self.convert_to_ascii(charset)
+            color_scheme = options.get('colorScheme', 'original')
+            ascii_art = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
             
             return ascii_art
             
