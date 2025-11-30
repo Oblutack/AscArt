@@ -31,10 +31,7 @@ function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  // Open DevTools in development
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
+  // DevTools disabled - press Ctrl+Shift+I to open manually if needed
 
   // DEV vs PROD Python Path
   let pythonPath;
