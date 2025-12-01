@@ -106,7 +106,7 @@ React UI → ipcRenderer.on('python-response', ...) → Updates state
 
 ---
 
-## 🧪 Testing the Backend
+## Testing the Backend
 
 To test Python processing independently:
 
