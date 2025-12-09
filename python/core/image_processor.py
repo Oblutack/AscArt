@@ -9,16 +9,20 @@ import os
 
 # Lazy import for rembg (only when background removal is needed)
 _rembg_remove = None
+_rembg_session = None
 
 def _get_rembg():
-    global _rembg_remove
+    global _rembg_remove, _rembg_session
     if _rembg_remove is None:
         try:
-            from rembg import remove
+            from rembg import remove, new_session
+            # Use u2netp model: 4.7MB vs 176MB for u2net
+            # 95% accuracy is perfect for ASCII art preprocessing
+            _rembg_session = new_session("u2netp")
             _rembg_remove = remove
         except ImportError:
             raise ImportError("rembg is not installed. Background removal is not available.")
-    return _rembg_remove
+    return _rembg_remove, _rembg_session
 
 
 class ImageProcessor:
@@ -33,6 +37,7 @@ class ImageProcessor:
         self.image = None
         self.original_image = None
         self.alpha_mask = None
+        self.dithered_brightness = None  # Store pure B/W dithered brightness map
         
     def load_image(self, path):
         """Load image from file path"""
@@ -61,15 +66,15 @@ class ImageProcessor:
         return True
     
     def remove_background(self):
-        """Remove background using rembg"""
+        """Remove background using rembg with optimized u2netp model"""
         if self.image is None:
             raise ValueError("No image loaded")
         
-        # Get rembg remove function
-        remove_func = _get_rembg()
+        # Get rembg remove function and session
+        remove_func, session = _get_rembg()
         
-        # Remove background
-        output = remove_func(self.image)
+        # Remove background using the optimized session
+        output = remove_func(self.image, session=session)
         
         # Store alpha mask for transparency detection
         if output.mode == 'RGBA':
@@ -111,6 +116,8 @@ class ImageProcessor:
         
         self.image = ImageOps.invert(self.image)
     
+
+    
     def resize_image(self, width, ratio=None, keep_original=False):
         """Resize image to target width while maintaining aspect ratio"""
         if self.image is None:
@@ -138,8 +145,8 @@ class ImageProcessor:
         
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
     
-    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
-        """Convert image to ASCII art (colored or monochrome)"""
+    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original', use_dithering=False):
+        """Convert image to ASCII art using character gradients"""
         if self.image is None:
             raise ValueError("No image loaded")
         
@@ -223,6 +230,59 @@ class ImageProcessor:
             
             return '\n'.join(ascii_art)
     
+    def convert_to_halftone(self):
+        """Convert image to pure black & white halftone (dithering only)"""
+        if self.image is None:
+            raise ValueError("No image loaded")
+        
+        # Convert to grayscale
+        gray_image = self.image.convert('L')
+        gray_pixels = np.array(gray_image)
+        
+        # Get alpha mask if background was removed
+        alpha_array = None
+        if hasattr(self, 'alpha_mask') and self.alpha_mask is not None:
+            alpha_resized = self.alpha_mask.resize(gray_image.size, Image.Resampling.LANCZOS)
+            alpha_array = np.array(alpha_resized)
+        
+        # Apply Floyd-Steinberg dithering - pure black/white only
+        height, width = gray_pixels.shape
+        dithered = gray_pixels.astype(np.float32).copy()
+        
+        for y in range(height):
+            for x in range(width):
+                old_pixel = dithered[y, x]
+                new_pixel = 255 if old_pixel > 128 else 0
+                dithered[y, x] = new_pixel
+                error = old_pixel - new_pixel
+                
+                if x + 1 < width:
+                    dithered[y, x + 1] += error * 7 / 16
+                if y + 1 < height:
+                    if x > 0:
+                        dithered[y + 1, x - 1] += error * 3 / 16
+                    dithered[y + 1, x] += error * 5 / 16
+                    if x + 1 < width:
+                        dithered[y + 1, x + 1] += error * 1 / 16
+        
+        # Generate pure BLACK and WHITE output
+        # Black pixels = █ (solid block)
+        # White pixels = space
+        halftone_lines = []
+        for row_idx, row in enumerate(dithered):
+            line = ''
+            for col_idx, pixel_value in enumerate(row):
+                # Check transparency
+                if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
+                    line += ' '
+                elif pixel_value < 128:  # Black
+                    line += '█'
+                else:  # White
+                    line += ' '
+            halftone_lines.append(line)
+        
+        return '\n'.join(halftone_lines)
+    
     def reset(self):
         """Reset to original image"""
         if self.original_image:
@@ -230,6 +290,7 @@ class ImageProcessor:
             if self.image.mode != 'RGB':
                 self.image = self.image.convert('RGB')
             self.alpha_mask = None
+            self.dithered_brightness = None
     
     def process_and_convert(self, path, options):
         """Complete pipeline: load, process, and convert to ASCII"""
@@ -253,18 +314,32 @@ class ImageProcessor:
             if options.get('invert', False):
                 self.invert_colors()
             
-            # Resize
-            width = options.get('width', 120)
-            ratio = options.get('ratio')
-            keep_original = options.get('keepOriginal', False)
-            self.resize_image(width, ratio, keep_original)
+            # Choose output mode: halftone dithering OR ASCII art
+            use_dithering = options.get('dither', False)
             
-            # Convert to ASCII
-            charset = options.get('charset', 'detailed')
-            color_scheme = options.get('colorScheme', 'original')
-            ascii_art = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
+            if use_dithering:
+                # For dithering: use higher resolution (3x width) for better quality
+                width = options.get('width', 120)
+                dither_width = width * 3  # Triple the resolution for better dithering
+                ratio = options.get('ratio')
+                keep_original = options.get('keepOriginal', False)
+                self.resize_image(dither_width, ratio, keep_original)
+                
+                # Generate pure black & white halftone (dithering)
+                result = self.convert_to_halftone()
+            else:
+                # For ASCII: use normal width
+                width = options.get('width', 120)
+                ratio = options.get('ratio')
+                keep_original = options.get('keepOriginal', False)
+                self.resize_image(width, ratio, keep_original)
+                
+                # Generate colored ASCII art (character gradients)
+                charset = options.get('charset', 'detailed')
+                color_scheme = options.get('colorScheme', 'original')
+                result = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme, use_dithering=False)
             
-            return ascii_art
+            return result
             
         except Exception as e:
             raise Exception(f"Processing error: {str(e)}")

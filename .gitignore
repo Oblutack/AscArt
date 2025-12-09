@@ -15,6 +15,13 @@ venv/
 env/
 *.spec
 
+# Python test/debug/analysis scripts
+python/test_*.py
+python/debug_*.py
+python/analyze_*.py
+python/check_*.py
+python/track_*.py
+
 # --- IDEs ---
 .vscode/
 .idea/

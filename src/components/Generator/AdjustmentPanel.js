@@ -5,6 +5,8 @@ import Toggle from "../Shared/Toggle";
 const AdjustmentPanel = ({
   invert,
   setInvert,
+  dither,
+  setDither,
   brightness,
   setBrightness,
   contrast,
@@ -16,6 +18,7 @@ const AdjustmentPanel = ({
       <div className="panel-header">ADJUSTMENTS</div>
       <div className="adjustment-top">
         <Toggle label="INVERT" checked={invert} onChange={setInvert} />
+        <Toggle label="DITHER" checked={dither} onChange={setDither} />
         <button className="reset-button" onClick={onReset}>
           <svg
             width="16"

@@ -53,6 +53,7 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 - **Background Removal** - Automatically remove backgrounds using advanced AI segmentation (transparent pixels render as spaces)
 - **Brightness & Contrast** - Fine-tune image parameters with intuitive sliders (-100 to +100 brightness, 0 to 200% contrast)
 - **Color Inversion** - Invert colors for different artistic effects
+- **Dithering** - Apply Floyd-Steinberg dithering for enhanced detail and reduced color banding
 - **Aspect Ratio Control** - Maintain original ratios or choose from preset dimensions
 - **Width Adjustment** - Customize output width from 20 to 300 characters
 

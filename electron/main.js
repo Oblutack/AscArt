@@ -51,10 +51,17 @@ function createWindow() {
   // Spawn the Python Backend
   console.log(`Starting Python Logic: ${pythonPath}`);
   console.log(`Script Args: ${scriptArgs}`);
+  console.log(
+    `Working directory: ${
+      app.isPackaged ? process.resourcesPath : path.join(__dirname, "../python")
+    }`
+  );
 
   pythonProcess = spawn(pythonPath, scriptArgs, {
     env: { ...process.env, PYTHONUNBUFFERED: "1" },
-    cwd: path.join(__dirname, "../python"),
+    cwd: app.isPackaged
+      ? process.resourcesPath
+      : path.join(__dirname, "../python"),
   });
 
   pythonProcess.on("error", (error) => {

@@ -31,6 +31,7 @@ function App() {
   const [charset, setCharset] = useState("detailed");
   const [colorScheme, setColorScheme] = useState("original");
   const [invert, setInvert] = useState(false);
+  const [dither, setDither] = useState(false);
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(100);
 
@@ -57,6 +58,7 @@ function App() {
         if (settings.colorScheme !== undefined)
           setColorScheme(settings.colorScheme);
         if (settings.invert !== undefined) setInvert(settings.invert);
+        if (settings.dither !== undefined) setDither(settings.dither);
         if (settings.brightness !== undefined)
           setBrightness(settings.brightness);
         if (settings.contrast !== undefined) setContrast(settings.contrast);
@@ -82,6 +84,7 @@ function App() {
       charset,
       colorScheme,
       invert,
+      dither,
       brightness,
       contrast,
     };
@@ -93,6 +96,7 @@ function App() {
     keepOriginal,
     charset,
     invert,
+    dither,
     brightness,
     contrast,
   ]);
@@ -167,6 +171,7 @@ function App() {
       brightness: brightness,
       contrast: contrast,
       invert: invert,
+      dither: dither,
       ratio: ratio !== "--" ? ratio : null,
       keepOriginal: keepOriginal,
     };
@@ -205,6 +210,7 @@ function App() {
     setBrightness(0);
     setContrast(100);
     setInvert(false);
+    setDither(false);
   };
 
   const handleSave = () => {
@@ -334,6 +340,8 @@ function App() {
           <AdjustmentPanel
             invert={invert}
             setInvert={setInvert}
+            dither={dither}
+            setDither={setDither}
             brightness={brightness}
             setBrightness={setBrightness}
             contrast={contrast}

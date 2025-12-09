@@ -1,6 +1,6 @@
 {
   "name": "asc-art",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Cyberpunk Desktop ASCII Generator",
   "main": "electron/main.js",
   "homepage": "./",
@@ -15,14 +15,38 @@
   "author": "Oblutack",
   "build": {
     "appId": "com.ascart.app",
+    "productName": "AscArt",
+    "extends": null,
     "files": [
-      "dist/**/*",
+      "build/**/*",
       "electron/**/*",
-      "python/dist/**/*"
+      "!build/icon.ico"
     ],
     "directories": {
-      "buildResources": "assets"
-    }
+      "output": "dist"
+    },
+    "win": {
+      "target": "7z"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.png",
+      "uninstallerIcon": "build/icon.png",
+      "deleteAppDataOnUninstall": false
+    },
+    "extraResources": [
+      {
+        "from": "python/dist",
+        "to": "python",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   },
   "dependencies": {
     "electron-store": "^8.1.0",
