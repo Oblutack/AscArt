@@ -53,10 +53,113 @@ function sendToRenderer(message) {
   }
 }
 
+// How to launch the backend: the bundled engine when packaged, otherwise
+// main.py through whatever resolveDevPython() finds.
+function pythonLaunchInfo() {
+  if (app.isPackaged) {
+    return {
+      command: path.join(process.resourcesPath, "python", "engine.exe"),
+      args: [],
+      cwd: process.resourcesPath,
+    };
+  }
+  return {
+    command: resolveDevPython(),
+    args: [path.join(__dirname, "../python/main.py")],
+    cwd: path.join(__dirname, "../python"),
+  };
+}
+
+const MAX_BACKEND_RESTARTS = 3;
+let backendRestarts = 0;
+let quitting = false;
+// Processes we killed on purpose (Stop button), so their exit isn't a crash
+const killedOnPurpose = new WeakSet();
+
+function startPython() {
+  const { command, args, cwd } = pythonLaunchInfo();
+  debug(`Starting Python: ${command} ${args.join(" ")} (cwd ${cwd})`);
+
+  const proc = spawn(command, args, {
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: "1",
+      PYTHONIOENCODING: "utf-8",
+      ASCART_DATA_DIR: dataDir,
+    },
+    cwd,
+  });
+  pythonProcess = proc;
+
+  proc.on("error", (error) => {
+    console.error("Failed to start Python process:", error);
+    sendToRenderer({
+      status: "error",
+      error: `Could not start the Python backend (${command}). Set ASCART_PYTHON or create python/venv.`,
+    });
+  });
+
+  proc.on("exit", (code, signal) => {
+    debug(`Python process exited with code ${code} and signal ${signal}`);
+    if (pythonProcess === proc) pythonProcess = null;
+    if (quitting || killedOnPurpose.has(proc)) return;
+
+    if (backendRestarts < MAX_BACKEND_RESTARTS) {
+      backendRestarts++;
+      sendToRenderer({
+        status: "error",
+        error: `The Python backend stopped unexpectedly (exit code ${code}). Restarting it...`,
+      });
+      startPython();
+    } else {
+      sendToRenderer({
+        status: "error",
+        error: "The Python backend keeps crashing. Restart the app to try again.",
+      });
+    }
+  });
+
+  // Python answers with one JSON object per line
+  let outputBuffer = "";
+  proc.stdout.on("data", (data) => {
+    outputBuffer += data.toString();
+    const lines = outputBuffer.split("\n");
+    outputBuffer = lines.pop() || "";
+
+    lines.forEach((line) => {
+      if (!line.trim()) return;
+      try {
+        const message = JSON.parse(line);
+        backendRestarts = 0; // it is talking, so it is healthy
+        sendToRenderer(message);
+      } catch (parseError) {
+        console.warn("Failed to parse line:", line.substring(0, 100));
+        console.warn("Parse error:", parseError.message);
+      }
+    });
+  });
+
+  proc.stderr.on("data", (data) => {
+    console.error(`Python: ${data}`);
+  });
+}
+
+// Python handles one command at a time, so the only way to cancel a running
+// conversion is to restart it.
+ipcMain.on("stop-python", () => {
+  const old = pythonProcess;
+  if (old) {
+    killedOnPurpose.add(old);
+    old.kill();
+  }
+  startPython();
+  sendToRenderer({ status: "success", type: "stopped" });
+});
+
 function createWindow() {
   migrateLegacyHistory();
 
-  mainWindow =new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 700,
     frame: false, // Frameless for custom Figma design
@@ -80,111 +183,19 @@ function createWindow() {
 
   // DevTools disabled - press Ctrl+Shift+I to open manually if needed
 
-  // DEV vs PROD Python Path
-  let pythonPath;
-  let scriptArgs;
-
-  if (app.isPackaged) {
-    // PRODUCTION: Run the compiled .exe included in resources
-    pythonPath = path.join(process.resourcesPath, "python", "engine.exe");
-    scriptArgs = [];
-  } else {
-    // DEVELOPMENT: venv / ASCART_PYTHON / system Python
-    pythonPath = resolveDevPython();
-    scriptArgs = [path.join(__dirname, "../python/main.py")];
-  }
-
-  // Spawn the Python Backend
-  debug(`Starting Python Logic: ${pythonPath}`);
-  debug(`Script Args: ${scriptArgs}`);
-  debug(
-    `Working directory: ${
-      app.isPackaged ? process.resourcesPath : path.join(__dirname, "../python")
-    }`
-  );
-
-  pythonProcess = spawn(pythonPath, scriptArgs, {
-    env: {
-      ...process.env,
-      PYTHONUNBUFFERED: "1",
-      PYTHONIOENCODING: "utf-8",
-      ASCART_DATA_DIR: dataDir,
-    },
-    cwd: app.isPackaged
-      ? process.resourcesPath
-      : path.join(__dirname, "../python"),
-  });
-
-  pythonProcess.on("error", (error) => {
-    console.error("Failed to start Python process:", error);
-    sendToRenderer({
-      status: "error",
-      error: `Could not start the Python backend (${pythonPath}). Set ASCART_PYTHON or create python/venv.`,
-    });
-  });
-
-  pythonProcess.on("exit", (code, signal) => {
-    debug(`Python process exited with code ${code} and signal ${signal}`);
-    pythonProcess = null;
-    if (code !== 0 && code !== null) {
-      sendToRenderer({
-        status: "error",
-        error: `The Python backend stopped unexpectedly (exit code ${code}).`,
-      });
-    }
-  });
-
-  // Buffer for incomplete JSON lines
-  let outputBuffer = "";
-
-  // Listen for Python Output
-  pythonProcess.stdout.on("data", (data) => {
-    try {
-      // Append new data to buffer
-      outputBuffer += data.toString();
-
-      // Split by newlines
-      const lines = outputBuffer.split("\n");
-
-      // Keep the last incomplete line in buffer
-      outputBuffer = lines.pop() || "";
-
-      // Process complete lines
-      lines.forEach((line) => {
-        if (line.trim()) {
-          try {
-            const jsonResponse = JSON.parse(line);
-            debug(
-              "✅ Parsed JSON response:",
-              jsonResponse.status || jsonResponse.type
-            );
-            if (jsonResponse.ascii) {
-              debug("📊 ASCII length:", jsonResponse.ascii.length);
-            }
-            sendToRenderer(jsonResponse);
-            debug("📤 Sent to React");
-          } catch (parseError) {
-            console.warn("Failed to parse line:", line.substring(0, 100));
-            console.warn("Parse error:", parseError.message);
-          }
-        }
-      });
-    } catch (e) {
-      console.error("Error processing Python output:", e);
-      console.warn("Raw data:", data.toString().substring(0, 200));
-    }
-  });
-
-  pythonProcess.stderr.on("data", (data) => {
-    console.error(`Python Error: ${data}`);
-  });
+  startPython();
 
   mainWindow.on("closed", () => (mainWindow = null));
 }
 
 app.on("ready", createWindow);
 
+app.on("before-quit", () => {
+  quitting = true;
+});
+
 app.on("window-all-closed", () => {
+  quitting = true;
   if (pythonProcess) pythonProcess.kill();
   app.quit();
 });
@@ -230,7 +241,9 @@ ipcMain.on("load-settings", (event) => {
 });
 
 // UI Window Controls
-ipcMain.on("window-min", () => mainWindow.minimize());
+ipcMain.on("window-min", () => {
+  if (mainWindow) mainWindow.minimize();
+});
 ipcMain.on("window-close", () => app.quit());
 
 // Widget Window Management
