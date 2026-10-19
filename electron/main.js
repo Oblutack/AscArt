@@ -1,7 +1,6 @@
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const os = require("os");
 const { spawn } = require("child_process");
 const { stripTags, buildHtml } = require("./export");
 
@@ -277,7 +276,7 @@ ipcMain.on("window-close", () => app.quit());
 
 // Widget Window Management
 function createWidgetWindow(widgetData) {
-  const newWidget = new BrowserWindow({
+  const widget = new BrowserWindow({
     width: 400,
     height: 450,
     frame: false,
@@ -286,524 +285,57 @@ function createWidgetWindow(widgetData) {
     skipTaskbar: true,
     resizable: true,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, "widget", "widget-preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
 
-  // Add to widgets array
-  widgetWindows.push(newWidget);
+  widgetWindows.push(widget);
 
-  // Keep window in background - set it behind other windows after creation
-  newWidget.once("ready-to-show", () => {
-    if (newWidget && !newWidget.isDestroyed()) {
-      newWidget.setAlwaysOnTop(false);
-      newWidget.blur(); // Remove focus so it stays in background
+  // Keep the widget in the background once it is up
+  widget.once("ready-to-show", () => {
+    if (!widget.isDestroyed()) {
+      widget.setAlwaysOnTop(false);
+      widget.blur();
     }
   });
 
-  // Remove from array when closed
-  newWidget.on("closed", () => {
-    const index = widgetWindows.indexOf(newWidget);
-    if (index > -1) {
-      widgetWindows.splice(index, 1);
-    }
+  widget.on("closed", () => {
+    const index = widgetWindows.indexOf(widget);
+    if (index > -1) widgetWindows.splice(index, 1);
   });
 
-  // Parse widget data
-  const isGif = widgetData.isGif || false;
-  const asciiArt = widgetData.ascii || "";
-  const gifFrames = widgetData.frames || [];
-  const gifDelays = widgetData.delays || [];
-
-  // Create HTML content for widget
-  const widgetHtml = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        body {
-          background: transparent;
-          overflow: hidden;
-          cursor: move;
-          -webkit-app-region: drag;
-        }
-        #widget-container {
-          width: 100vw;
-          height: 100vh;
-          display: flex;
-          flex-direction: column;
-          transition: background 0.3s ease;
-        }
-        #widget-container.controls-visible {
-          background: rgba(52, 58, 64, 0.95);
-          border: 2px solid #495057;
-          border-radius: 8px;
-        }
-        #ascii-display {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          overflow: visible;
-          cursor: move;
-          -webkit-app-region: no-drag;
-        }
-        #ascii-display pre {
-          font-family: 'Courier New', monospace;
-          font-size: 6px;
-          line-height: 1;
-          white-space: pre;
-          margin: 0;
-          pointer-events: none;
-        }
-        #ascii-display pre span {
-          text-shadow: 0 0 5px currentColor;
-        }
-        #widget-controls {
-          display: none;
-          padding: 15px;
-          background: rgba(33, 37, 41, 0.8);
-          border-top: 1px solid #495057;
-          flex-direction: column;
-          gap: 10px;
-          -webkit-app-region: no-drag;
-        }
-        #widget-container.controls-visible #widget-controls {
-          display: flex;
-        }
-        .widget-controls-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .widget-controls-left {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-        }
-        .widget-btn {
-          background: rgba(173, 181, 189, 0.1);
-          border: 2px solid #adb5bd;
-          color: #adb5bd;
-          padding: 8px 16px;
-          border-radius: 4px;
-          font-family: 'Courier New', monospace;
-          font-size: 11px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .widget-btn:hover {
-          background: rgba(173, 181, 189, 0.2);
-          transform: translateY(-2px);
-        }
-        .widget-btn-small {
-          padding: 6px 12px;
-          font-size: 10px;
-        }
-        .widget-btn-close {
-          border-color: #dc3545;
-          color: #dc3545;
-        }
-        .widget-btn-close:hover {
-          background: rgba(220, 53, 69, 0.2);
-        }
-        #playback-controls {
-          display: ${isGif ? "flex" : "none"};
-          gap: 8px;
-          align-items: center;
-        }
-        .frame-info {
-          font-family: 'Courier New', monospace;
-          font-size: 10px;
-          color: #495057;
-          min-width: 80px;
-          text-align: center;
-        }
-        #context-menu {
-          display: none;
-          position: fixed;
-          background: rgba(52, 58, 64, 0.98);
-          border: 2px solid #495057;
-          border-radius: 6px;
-          padding: 5px 0;
-          min-width: 180px;
-          z-index: 10000;
-          box-shadow: 0 4px 20px rgba(73, 80, 87, 0.4);
-        }
-        #context-menu.visible {
-          display: block;
-        }
-        .context-menu-item {
-          padding: 10px 20px;
-          color: #adb5bd;
-          font-family: 'Courier New', monospace;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border: none;
-          background: transparent;
-          width: 100%;
-          text-align: left;
-        }
-        .context-menu-item:hover {
-          background: rgba(73, 80, 87, 0.3);
-          color: #ced4da;
-        }
-        .context-menu-item.danger {
-          color: #6c757d;
-        }
-        .context-menu-item.danger:hover {
-          background: rgba(108, 117, 125, 0.3);
-          color: #adb5bd;
-        }
-      </style>
-    </head>
-    <body>
-      <div id="context-menu">
-        <button class="context-menu-item" onclick="showControlsFromMenu()">Show Controls</button>
-        <button class="context-menu-item danger" onclick="closeWidget()">Remove Widget</button>
-      </div>
-      <div id="widget-container">
-        <div id="ascii-display">
-          <pre id="ascii-content"></pre>
-        </div>
-        <div id="widget-controls">
-          <div class="widget-controls-row">
-            <div class="widget-controls-left">
-              <button class="widget-btn" onclick="toggleControls()">Hide Controls</button>
-            </div>
-            <button class="widget-btn widget-btn-close" onclick="closeWidget()">Close Widget</button>
-          </div>
-          <div id="playback-controls" class="widget-controls-row">
-            <div class="widget-controls-left">
-              <button class="widget-btn widget-btn-small" onclick="togglePlayPause()">${
-                isGif ? "|| Pause" : "▶ Play"
-              }</button>
-              <button class="widget-btn widget-btn-small" onclick="prevFrame()">◀ Prev</button>
-              <button class="widget-btn widget-btn-small" onclick="nextFrame()">Next ▶</button>
-            </div>
-            <span class="frame-info" id="frame-info">Frame 1/${
-              gifFrames.length
-            }</span>
-          </div>
-          <div class="widget-controls-row">
-            <div class="widget-controls-left">
-              <span style="color: #adb5bd; font-family: 'Courier New'; font-size: 11px; margin-right: 10px;">Size:</span>
-              <button class="widget-btn widget-btn-small" onclick="decreaseSize()">− Smaller</button>
-              <span class="frame-info" id="size-info" style="min-width: 50px;">6px</span>
-              <button class="widget-btn widget-btn-small" onclick="increaseSize()">Larger +</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <script>
-        const { ipcRenderer } = require('electron');
-        
-        // Widget data - store frames in memory, only first frame embedded
-        const isGif = ${isGif};
-        const gifFrames = ${
-          isGif ? JSON.stringify([gifFrames[0]]) : "[]"
-        }; // Only embed first frame
-        const gifDelays = ${JSON.stringify(gifDelays)};
-        const totalFrames = ${gifFrames.length};
-        
-        // Cache for loaded frames
-        const frameCache = isGif && totalFrames > 0 ? { 0: ${JSON.stringify(
-          gifFrames[0] || ""
-        )} } : {};
-        const allFramesData = ${JSON.stringify(
-          gifFrames
-        )}; // Store all frames in script scope
-        
-        let currentFrame = 0;
-        let isPlaying = ${isGif};
-        let animationTimer = null;
-        let fontSize = 6;
-        
-        // Helper to get frame (from cache or load on demand)
-        function getFrame(index) {
-          if (!isGif) return '';
-          if (frameCache[index]) return frameCache[index];
-          
-          // Load from pre-stored data
-          if (allFramesData[index]) {
-            frameCache[index] = allFramesData[index];
-            return frameCache[index];
-          }
-          return frameCache[0] || '';
-        }
-        
-        // Set initial ASCII content (use innerHTML for colored HTML)
-        if (isGif && totalFrames > 0) {
-          document.getElementById('ascii-content').innerHTML = getFrame(0);
-          startAnimation();
-        } else {
-          document.getElementById('ascii-content').innerHTML = ${JSON.stringify(
-            asciiArt
-          )};
-        }
-        
-        let controlsVisible = true;
-        
-        function decreaseSize() {
-          if (fontSize > 2) {
-            fontSize--;
-            updateFontSize();
-          }
-        }
-        
-        function increaseSize() {
-          if (fontSize < 20) {
-            fontSize++;
-            updateFontSize();
-          }
-        }
-        
-        function updateFontSize() {
-          const asciiContent = document.getElementById('ascii-content');
-          asciiContent.style.fontSize = fontSize + 'px';
-          asciiContent.style.lineHeight = fontSize + 'px';
-          document.getElementById('size-info').textContent = fontSize + 'px';
-        }
-        
-        function toggleControls() {
-          controlsVisible = !controlsVisible;
-          const container = document.getElementById('widget-container');
-          if (controlsVisible) {
-            container.classList.add('controls-visible');
-          } else {
-            container.classList.remove('controls-visible');
-          }
-        }
-        
-        function closeWidget() {
-          if (animationTimer) clearTimeout(animationTimer);
-          ipcRenderer.send('close-widget');
-        }
-        
-        // GIF Animation
-        function startAnimation() {
-          if (!isGif || totalFrames === 0) return;
-          
-          function showNextFrame() {
-            if (!isPlaying) return;
-            
-            currentFrame = (currentFrame + 1) % totalFrames;
-            document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
-            updateFrameInfo();
-            
-            const delay = gifDelays[currentFrame] || 100;
-            animationTimer = setTimeout(showNextFrame, delay);
-          }
-          
-          const delay = gifDelays[currentFrame] || 100;
-          animationTimer = setTimeout(showNextFrame, delay);
-        }
-        
-        function togglePlayPause() {
-          isPlaying = !isPlaying;
-          const btn = event.target;
-          
-          if (isPlaying) {
-            btn.textContent = '|| Pause';
-            startAnimation();
-          } else {
-            btn.textContent = '▶ Play';
-            if (animationTimer) {
-              clearTimeout(animationTimer);
-              animationTimer = null;
-            }
-          }
-        }
-        
-        function prevFrame() {
-          if (!isGif || totalFrames === 0) return;
-          
-          if (animationTimer) {
-            clearTimeout(animationTimer);
-            animationTimer = null;
-          }
-          
-          currentFrame = (currentFrame - 1 + totalFrames) % totalFrames;
-          document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
-          updateFrameInfo();
-          
-          if (isPlaying) {
-            startAnimation();
-          }
-        }
-        
-        function nextFrame() {
-          if (!isGif || totalFrames === 0) return;
-          
-          if (animationTimer) {
-            clearTimeout(animationTimer);
-            animationTimer = null;
-          }
-          
-          currentFrame = (currentFrame + 1) % totalFrames;
-          document.getElementById('ascii-content').innerHTML = getFrame(currentFrame);
-          updateFrameInfo();
-          
-          if (isPlaying) {
-            startAnimation();
-          }
-        }
-        
-        function updateFrameInfo() {
-          const info = document.getElementById('frame-info');
-          if (info) {
-            info.textContent = \`Frame \${currentFrame + 1}/\${totalFrames}\`;
-          }
-        }
-        
-        // Context menu and window dragging
-        const contextMenu = document.getElementById('context-menu');
-        const asciiDisplay = document.getElementById('ascii-display');
-        
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let hasMoved = false;
-        
-        // Mouse down - prepare for drag or click
-        asciiDisplay.addEventListener('mousedown', (e) => {
-          if (e.button === 0) { // Left click only
-            isDragging = true;
-            hasMoved = false;
-            dragStartX = e.screenX;
-            dragStartY = e.screenY;
-            e.preventDefault();
-          }
-        });
-        
-        // Mouse move - drag window
-        asciiDisplay.addEventListener('mousemove', (e) => {
-          if (isDragging && e.button === 0) {
-            const deltaX = e.screenX - dragStartX;
-            const deltaY = e.screenY - dragStartY;
-            
-            // If moved more than 3 pixels, consider it a drag
-            if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
-              hasMoved = true;
-              ipcRenderer.send('move-widget-window', { deltaX, deltaY });
-              dragStartX = e.screenX;
-              dragStartY = e.screenY;
-            }
-          }
-        });
-        
-        // Mouse up - detect click vs drag
-        asciiDisplay.addEventListener('mouseup', (e) => {
-          if (e.button === 0) {
-            isDragging = false;
-            
-            // If didn't move, it's a click
-            if (!hasMoved) {
-              // Hide context menu if visible
-              if (contextMenu.classList.contains('visible')) {
-                contextMenu.classList.remove('visible');
-                return;
-              }
-              
-              // Show controls if hidden
-              if (!controlsVisible) {
-                controlsVisible = true;
-                document.getElementById('widget-container').classList.add('controls-visible');
-              }
-            }
-            
-            hasMoved = false;
-          }
-        });
-        
-        // Prevent default drag behavior
-        asciiDisplay.addEventListener('dragstart', (e) => {
-          e.preventDefault();
-        });
-        
-        // Right-click to show context menu
-        asciiDisplay.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Position menu at mouse location
-          contextMenu.style.left = e.clientX + 'px';
-          contextMenu.style.top = e.clientY + 'px';
-          contextMenu.classList.add('visible');
-        });
-        
-        // Click anywhere else to hide context menu
-        document.addEventListener('mousedown', (e) => {
-          if (!contextMenu.contains(e.target) && !asciiDisplay.contains(e.target)) {
-            contextMenu.classList.remove('visible');
-          }
-        });
-        
-        // Show controls from context menu
-        function showControlsFromMenu() {
-          controlsVisible = true;
-          document.getElementById('widget-container').classList.add('controls-visible');
-          contextMenu.classList.remove('visible');
-        }
-        
-        // Start with controls visible
-        document.getElementById('widget-container').classList.add('controls-visible');
-      </script>
-    </body>
-    </html>
-  `;
-
-  // Write HTML to temporary file to avoid data URL size limits
-  const tempDir = os.tmpdir();
-  const widgetId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-  const tempFilePath = path.join(tempDir, `ascart_widget_${widgetId}.html`);
-
-  try {
-    fs.writeFileSync(tempFilePath, widgetHtml, "utf8");
-    newWidget.loadFile(tempFilePath);
-
-    // Clean up temp file when widget closes
-    newWidget.once("closed", () => {
-      try {
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
-        }
-      } catch (err) {
-        console.error("Failed to clean up temp file:", err);
-      }
+  // The page asks for its data once it has loaded
+  widget.webContents.once("did-finish-load", () => {
+    if (widget.isDestroyed()) return;
+    widget.webContents.send("widget-data", {
+      isGif: Boolean(widgetData.isGif),
+      ascii: widgetData.ascii || "",
+      frames: widgetData.frames || [],
+      delays: widgetData.delays || [],
     });
-  } catch (err) {
-    console.error("Failed to create widget:", err);
-    newWidget.close();
-  }
+  });
+
+  widget.loadFile(path.join(__dirname, "widget", "widget.html"));
 }
 
 ipcMain.on("open-widget", (event, widgetData) => {
+  if (!widgetData || typeof widgetData.ascii !== "string") return;
   createWidgetWindow(widgetData);
 });
 
 ipcMain.on("close-widget", (event) => {
   // Close the widget window that sent the event
   const sender = BrowserWindow.fromWebContents(event.sender);
-  if (sender) {
-    sender.close();
-  }
+  if (sender) sender.close();
 });
 
 ipcMain.on("move-widget-window", (event, { deltaX, deltaY }) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
-  if (sender) {
+  if (sender && Number.isFinite(deltaX) && Number.isFinite(deltaY)) {
     const [currentX, currentY] = sender.getPosition();
-    sender.setPosition(currentX + deltaX, currentY + deltaY);
+    sender.setPosition(currentX + Math.round(deltaX), currentY + Math.round(deltaY));
   }
 });
