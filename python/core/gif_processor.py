@@ -46,12 +46,14 @@ class GifProcessor:
         
         return len(self.frames)
     
-    def convert_frames_to_ascii(self, options):
+    def convert_frames_to_ascii(self, options, progress=None):
         """Convert all frames to ASCII or halftone"""
         ascii_frames = []
         use_dithering = options.get('dither', False)
         
-        for frame in self.frames:
+        total = len(self.frames)
+
+        for index, frame in enumerate(self.frames):
             # Set frame as processor's image
             self.processor.image = frame
             self.processor.original_image = frame.copy()
@@ -89,14 +91,16 @@ class GifProcessor:
                 ascii_frame = self.processor.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
             
             ascii_frames.append(ascii_frame)
+            if progress:
+                progress(index + 1, total)
         
         return ascii_frames
     
-    def process_and_convert(self, path, options):
+    def process_and_convert(self, path, options, progress=None):
         """Complete GIF processing pipeline"""
         try:
             frame_count = self.load_gif(path)
-            ascii_frames = self.convert_frames_to_ascii(options)
+            ascii_frames = self.convert_frames_to_ascii(options, progress)
             
             return {
                 'type': 'gif',
