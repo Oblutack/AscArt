@@ -45,7 +45,6 @@ class ImageProcessor:
         self.image = None
         self.original_image = None
         self.alpha_mask = None
-        self.dithered_brightness = None  # Store pure B/W dithered brightness map
         
     def load_image(self, path):
         """Load image from file path"""
@@ -56,7 +55,6 @@ class ImageProcessor:
         self.image = self.original_image.copy()
         # A mask from a previous image must not leak into this one
         self.alpha_mask = None
-        self.dithered_brightness = None
         
         # Handle transparency: convert RGBA to RGB with white background
         if self.image.mode in ('RGBA', 'LA', 'P'):
@@ -155,145 +153,131 @@ class ImageProcessor:
 
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
     
-    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original', use_dithering=False):
+    # Colour schemes that tint the luminance: divisors for (r, g, b)
+    TINT_DIVISORS = {
+        'blue': (3, 2, 1),
+        'green': (3, 1, 2),
+        'red': (1, 3, 3),
+        'purple': (1, 3, 1),
+        'cyan': (3, 1, 1),
+    }
+
+    # Colours are rounded to multiples of this so neighbouring characters share
+    # a <span>. 8 is invisible at the font sizes the app uses.
+    COLOR_STEP = 8
+
+    def _alpha_array(self, size):
+        """Background-removal mask resized to the working image, or None"""
+        if self.alpha_mask is None:
+            return None
+        return np.array(self.alpha_mask.resize(size, Image.Resampling.LANCZOS))
+
+    @classmethod
+    def _apply_color_scheme(cls, rgb, color_scheme):
+        """Recolour an (H, W, 3) uint8 array according to the scheme"""
+        rgb = rgb.astype(np.int32)
+        if color_scheme == 'original' or (
+                color_scheme not in ('grayscale', 'sepia') and color_scheme not in cls.TINT_DIVISORS):
+            return rgb
+
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+
+        if color_scheme == 'sepia':
+            return np.minimum(255, np.stack([
+                (0.393 * r + 0.769 * g + 0.189 * b).astype(np.int32),
+                (0.349 * r + 0.686 * g + 0.168 * b).astype(np.int32),
+                (0.272 * r + 0.534 * g + 0.131 * b).astype(np.int32),
+            ], axis=-1))
+
+        gray = (0.299 * r + 0.587 * g + 0.114 * b).astype(np.int32)
+        if color_scheme == 'grayscale':
+            return np.stack([gray, gray, gray], axis=-1)
+
+        return gray[..., None] // np.array(cls.TINT_DIVISORS[color_scheme])
+
+    @classmethod
+    def _quantize(cls, rgb):
+        """Round colours to COLOR_STEP so runs of similar cells merge"""
+        step = cls.COLOR_STEP
+        return np.minimum(255, (rgb + step // 2) // step * step)
+
+    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
         """Convert image to ASCII art using character gradients"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
+
         # Get character set (from dark to light: @ to space)
         charset = self.CHARSET_ALIASES.get(charset, charset)
-        chars = self.CHARSETS.get(charset, self.CHARSETS['detailed'])
-        
-        # Convert to grayscale for brightness
-        gray_image = self.image.convert('L')
-        gray_pixels = np.array(gray_image)
-        
-        # Get color pixels
-        color_pixels = np.array(self.image)
-        
-        # Get alpha mask if background was removed
-        alpha_array = None
-        if hasattr(self, 'alpha_mask') and self.alpha_mask is not None:
-            # Resize alpha mask to match current image size
-            alpha_resized = self.alpha_mask.resize(gray_image.size, Image.Resampling.LANCZOS)
-            alpha_array = np.array(alpha_resized)
-        
+        chars = np.array(list(self.CHARSETS.get(charset, self.CHARSETS['detailed'])))
+
+        gray_pixels = np.array(self.image.convert('L'))
+        height, width = gray_pixels.shape
+
         # Map pixel brightness (0-255) directly to character index
         # Dark pixels (0) -> dark chars (@), Bright pixels (255) -> light chars (space)
-        char_count = len(chars) - 1
-        char_indices = ((gray_pixels / 255) * char_count).astype(int)
-        
-        if colored:
-            # Generate colored HTML with optimized string building
-            html_lines = []
-            for row_idx, row in enumerate(char_indices):
-                line_spans = []
-                for col_idx, char_idx in enumerate(row):
-                    # If alpha mask exists and this pixel is transparent, use space
-                    if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
-                        line_spans.append(' ')
-                    else:
-                        char = chars[char_idx]
-                        r, g, b = color_pixels[row_idx, col_idx]
-                        
-                        # Apply color scheme
-                        if color_scheme == 'grayscale':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray, gray, gray
-                        elif color_scheme == 'sepia':
-                            tr = int(0.393 * r + 0.769 * g + 0.189 * b)
-                            tg = int(0.349 * r + 0.686 * g + 0.168 * b)
-                            tb = int(0.272 * r + 0.534 * g + 0.131 * b)
-                            r, g, b = min(255, tr), min(255, tg), min(255, tb)
-                        elif color_scheme == 'blue':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray // 3, gray // 2, gray
-                        elif color_scheme == 'green':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray // 3, gray, gray // 2
-                        elif color_scheme == 'red':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray, gray // 3, gray // 3
-                        elif color_scheme == 'purple':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray, gray // 3, gray
-                        elif color_scheme == 'cyan':
-                            gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                            r, g, b = gray // 3, gray, gray
-                        
-                        # Faster string concatenation without f-string overhead
-                        line_spans.append(f'<span style="color:rgb({r},{g},{b})">{char}</span>')
-                html_lines.append(''.join(line_spans))
-            
-            return '\n'.join(html_lines)
-        else:
-            # Generate monochrome ASCII
-            ascii_art = []
-            for row_idx, row in enumerate(char_indices):
-                ascii_row = ''
-                for col_idx, char_idx in enumerate(row):
-                    # If alpha mask exists and this pixel is transparent, use space
-                    if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
-                        ascii_row += ' '
-                    else:
-                        ascii_row += chars[char_idx]
-                ascii_art.append(ascii_row)
-            
-            return '\n'.join(ascii_art)
-    
+        char_indices = ((gray_pixels / 255) * (len(chars) - 1)).astype(int)
+        glyphs = chars[char_indices]
+
+        # Cells the background removal made transparent are plain spaces
+        alpha_array = self._alpha_array(self.image.size)
+        if alpha_array is not None:
+            glyphs = np.where(alpha_array < 10, ' ', glyphs)
+
+        if not colored:
+            return '\n'.join(''.join(row) for row in glyphs.tolist())
+
+        rgb = self._apply_color_scheme(np.array(self.image), color_scheme)
+        rgb = self._quantize(rgb)
+
+        # A space shows no colour, so let it take the colour of the cell before
+        # it. That keeps runs of text and blanks inside one <span>.
+        columns = np.arange(width)
+        last_visible = np.maximum.accumulate(
+            np.where(glyphs != ' ', columns, 0), axis=1)
+        rgb = np.take_along_axis(rgb, last_visible[..., None], axis=1)
+
+        # One <span> per run of equal colour instead of one per character
+        lines = []
+        for y in range(height):
+            row_rgb = rgb[y]
+            text = ''.join(glyphs[y].tolist())
+
+            breaks = np.flatnonzero((row_rgb[1:] != row_rgb[:-1]).any(axis=1)) + 1
+            starts = [0] + breaks.tolist()
+            ends = breaks.tolist() + [width]
+
+            parts = []
+            for start, end in zip(starts, ends):
+                segment = text[start:end]
+                if segment.isspace():
+                    parts.append(segment)
+                else:
+                    r, g, b = row_rgb[start].tolist()
+                    parts.append(f'<span style="color:rgb({r},{g},{b})">{segment}</span>')
+            lines.append(''.join(parts))
+
+        return '\n'.join(lines)
+
     def convert_to_halftone(self):
         """Convert image to pure black & white halftone (dithering only)"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
-        # Convert to grayscale
+
         gray_image = self.image.convert('L')
-        gray_pixels = np.array(gray_image)
-        
-        # Get alpha mask if background was removed
-        alpha_array = None
-        if hasattr(self, 'alpha_mask') and self.alpha_mask is not None:
-            alpha_resized = self.alpha_mask.resize(gray_image.size, Image.Resampling.LANCZOS)
-            alpha_array = np.array(alpha_resized)
-        
-        # Apply Floyd-Steinberg dithering - pure black/white only
-        height, width = gray_pixels.shape
-        dithered = gray_pixels.astype(np.float32).copy()
-        
-        for y in range(height):
-            for x in range(width):
-                old_pixel = dithered[y, x]
-                new_pixel = 255 if old_pixel > 128 else 0
-                dithered[y, x] = new_pixel
-                error = old_pixel - new_pixel
-                
-                if x + 1 < width:
-                    dithered[y, x + 1] += error * 7 / 16
-                if y + 1 < height:
-                    if x > 0:
-                        dithered[y + 1, x - 1] += error * 3 / 16
-                    dithered[y + 1, x] += error * 5 / 16
-                    if x + 1 < width:
-                        dithered[y + 1, x + 1] += error * 1 / 16
-        
-        # Generate pure BLACK and WHITE output
-        # Black pixels = █ (solid block)
-        # White pixels = space
-        halftone_lines = []
-        for row_idx, row in enumerate(dithered):
-            line = ''
-            for col_idx, pixel_value in enumerate(row):
-                # Check transparency
-                if alpha_array is not None and alpha_array[row_idx, col_idx] < 10:
-                    line += ' '
-                elif pixel_value < 128:  # Black
-                    line += '█'
-                else:  # White
-                    line += ' '
-            halftone_lines.append(line)
-        
-        return '\n'.join(halftone_lines)
-    
+
+        # Floyd-Steinberg, done by Pillow in C
+        dithered = np.array(
+            gray_image.convert('1', dither=Image.Dither.FLOYDSTEINBERG).convert('L'))
+
+        # Black pixels = █ (solid block), white pixels = space
+        glyphs = np.where(dithered < 128, '█', ' ')
+
+        alpha_array = self._alpha_array(gray_image.size)
+        if alpha_array is not None:
+            glyphs = np.where(alpha_array < 10, ' ', glyphs)
+
+        return '\n'.join(''.join(row) for row in glyphs.tolist())
+
     def reset(self):
         """Reset to original image"""
         if self.original_image:
@@ -301,8 +285,7 @@ class ImageProcessor:
             if self.image.mode != 'RGB':
                 self.image = self.image.convert('RGB')
             self.alpha_mask = None
-            self.dithered_brightness = None
-    
+        
     def process_and_convert(self, path, options):
         """Complete pipeline: load, process, and convert to ASCII"""
         try:
@@ -348,7 +331,7 @@ class ImageProcessor:
                 # Generate colored ASCII art (character gradients)
                 charset = options.get('charset', 'detailed')
                 color_scheme = options.get('colorScheme', 'original')
-                result = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme, use_dithering=False)
+                result = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
             
             return result
             
