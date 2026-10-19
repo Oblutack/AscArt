@@ -6,6 +6,7 @@ const Button = ({
   variant = "primary",
   icon,
   fullWidth = false,
+  disabled = false,
   className = "",
 }) => {
   const getVariantClass = () => {
@@ -31,6 +32,7 @@ const Button = ({
         fullWidth ? "full-width" : ""
       } ${className}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {icon && <span className="btn-icon">{icon}</span>}
       {children}

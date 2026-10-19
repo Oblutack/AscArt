@@ -60,6 +60,7 @@ const ActionButtons = ({
           variant="widget"
           fullWidth
           onClick={onWidget}
+          disabled={disabled}
           icon={
             <svg
               width="16"
