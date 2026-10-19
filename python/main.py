@@ -40,8 +40,8 @@ def main():
                 log_info("EOF received, exiting")
                 break
             
-            log_info(f"Received input: {line.strip()}")
             data = json.loads(line)
+            log_info(f"Received input: {len(line)} bytes")
             command = data.get('command')
             log_info(f"Command: {command}")
             

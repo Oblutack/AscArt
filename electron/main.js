@@ -4,6 +4,11 @@ const fs = require("fs");
 const os = require("os");
 const { spawn } = require("child_process");
 
+// Chatty logging only while developing
+const debug = (...args) => {
+  if (!app.isPackaged) console.log(...args);
+};
+
 let mainWindow;
 let widgetWindows = [];
 let pythonProcess;
@@ -83,9 +88,9 @@ function createWindow() {
   }
 
   // Spawn the Python Backend
-  console.log(`Starting Python Logic: ${pythonPath}`);
-  console.log(`Script Args: ${scriptArgs}`);
-  console.log(
+  debug(`Starting Python Logic: ${pythonPath}`);
+  debug(`Script Args: ${scriptArgs}`);
+  debug(
     `Working directory: ${
       app.isPackaged ? process.resourcesPath : path.join(__dirname, "../python")
     }`
@@ -108,7 +113,7 @@ function createWindow() {
   });
 
   pythonProcess.on("exit", (code, signal) => {
-    console.log(`Python process exited with code ${code} and signal ${signal}`);
+    debug(`Python process exited with code ${code} and signal ${signal}`);
   });
 
   // Buffer for incomplete JSON lines
@@ -131,24 +136,24 @@ function createWindow() {
         if (line.trim()) {
           try {
             const jsonResponse = JSON.parse(line);
-            console.log(
+            debug(
               "✅ Parsed JSON response:",
               jsonResponse.status || jsonResponse.type
             );
             if (jsonResponse.ascii) {
-              console.log("📊 ASCII length:", jsonResponse.ascii.length);
+              debug("📊 ASCII length:", jsonResponse.ascii.length);
             }
             mainWindow.webContents.send("python-response", jsonResponse);
-            console.log("📤 Sent to React");
+            debug("📤 Sent to React");
           } catch (parseError) {
-            console.log("❌ Failed to parse line:", line.substring(0, 100));
-            console.log("Parse error:", parseError.message);
+            console.warn("Failed to parse line:", line.substring(0, 100));
+            console.warn("Parse error:", parseError.message);
           }
         }
       });
     } catch (e) {
       console.error("Error processing Python output:", e);
-      console.log("Raw data:", data.toString().substring(0, 200));
+      console.warn("Raw data:", data.toString().substring(0, 200));
     }
   });
 
@@ -179,7 +184,7 @@ const settingsPath = path.join(app.getPath("userData"), "settings.json");
 ipcMain.on("save-settings", (event, settings) => {
   try {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-    console.log("✅ Settings saved:", settingsPath);
+    debug("✅ Settings saved:", settingsPath);
   } catch (error) {
     console.error("❌ Failed to save settings:", error);
   }
@@ -189,10 +194,10 @@ ipcMain.on("load-settings", (event) => {
   try {
     if (fs.existsSync(settingsPath)) {
       const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-      console.log("✅ Settings loaded:", settingsPath);
+      debug("✅ Settings loaded:", settingsPath);
       event.reply("settings-loaded", settings);
     } else {
-      console.log("ℹ️ No saved settings found");
+      debug("ℹ️ No saved settings found");
       event.reply("settings-loaded", null);
     }
   } catch (error) {

@@ -271,7 +271,7 @@ function App() {
 
   return (
     <MainLayout>
-      {debugInfo && (
+      {process.env.NODE_ENV === "development" && debugInfo && (
         <div
           style={{
             position: "fixed",
