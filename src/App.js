@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
 import WidthPanel from "./components/Generator/WidthPanel";
-import StylePanel from "./components/Generator/StylePanel";
 import AdjustmentPanel from "./components/Generator/AdjustmentPanel";
 import OutputViewer from "./components/Generator/OutputViewer";
 import ActionButtons from "./components/Generator/ActionButtons";

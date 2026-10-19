@@ -29,8 +29,13 @@ class ImageProcessor:
     # Character sets for different detail levels (from dark to light)
     CHARSETS = {
         'detailed': '@%#*+=-:. ',
-        'standard': '@%#*+=-:. ',
-        'simple': '█▓▒░ '
+        'blocks': '█▓▒░ ',
+    }
+
+    # Old names that may still be stored in saved settings / history
+    CHARSET_ALIASES = {
+        'standard': 'detailed',
+        'simple': 'blocks',
     }
     
     def __init__(self):
@@ -151,6 +156,7 @@ class ImageProcessor:
             raise ValueError("No image loaded")
         
         # Get character set (from dark to light: @ to space)
+        charset = self.CHARSET_ALIASES.get(charset, charset)
         chars = self.CHARSETS.get(charset, self.CHARSETS['detailed'])
         
         # Convert to grayscale for brightness
