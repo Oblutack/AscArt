@@ -1,216 +1,153 @@
-# AscArt - Backend Implementation Complete! 
+# Backend reference
 
-## What Was Built
+How the React app, Electron and the Python backend talk to each other.
 
-### Python Backend (Complete Processing Pipeline)
-
-#### **Core Modules Created:**
-
-1. **`core/image_processor.py`** - Main image processing engine
-
-   - Loads images from file paths
-   - Background removal using `rembg`
-   - Brightness adjustment (-100 to +100)
-   - Contrast adjustment (0 to 200)
-   - Color inversion
-   - Smart resizing with aspect ratio control
-   - Pixel-to-ASCII conversion with 3 character sets:
-     - **Detailed**: 70+ characters for high detail
-     - **Standard**: 10 characters for moderate detail
-     - **Simple**: 5 block characters for minimal style
-
-2. **`core/gif_processor.py`** - Animated GIF support
-
-   - Extracts all frames from GIF
-   - Applies same processing as static images
-   - Returns array of ASCII frames
-   - Frame preview generation
-
-3. **`core/file_handler.py`** - File management
-
-   - Saves ASCII art as `.txt` files
-   - Saves as `.html` with cyberpunk styling
-   - History tracking (last 50 conversions)
-   - Auto-creates `output/` directory
-
-4. **`main.py`** - Communication bridge
-   - Continuous `stdin/stdout` loop
-   - JSON command parsing
-   - Error handling and logging
-   - Commands supported:
-     - `ping` - Connection test
-     - `convert` - Process image/GIF to ASCII
-     - `save` - Save ASCII art to file
-     - `get_history` - Retrieve conversion history
-
-### Electron Integration
-
-- **Widget Mode** - Click-through transparent window
-- **Window Controls** - Minimize, close, always-on-top
-- **Python Process Management** - Spawns and monitors backend
-- **Dev/Prod Paths** - Handles both development and production environments
-
----
-
-## How It Works
-
-### Data Flow:
+## Overview
 
 ```
-React UI → ipcRenderer.send('to-python', {...})
-    ↓
-Electron main.js → pythonProcess.stdin.write(JSON)
-    ↓
-Python main.py → Reads JSON from stdin
-    ↓
-Core Processors → image_processor / gif_processor / file_handler
-    ↓
-Python main.py → Prints JSON result to stdout
-    ↓
-Electron main.js → mainWindow.webContents.send('python-response', data)
-    ↓
-React UI → ipcRenderer.on('python-response', ...) → Updates state
+React UI  --window.ascart-->  preload.js  --IPC-->  electron/main.js
+                                                        |  JSON, one object per line
+                                                        v
+                                           python/main.py  (stdin / stdout)
+                                                        |
+                                    core/image_processor, gif_processor, file_handler
 ```
 
-### Command Format:
+- The page has no Node access. `electron/preload.js` exposes `window.ascart` and nothing else.
+- `electron/main.js` only forwards the commands listed below to Python.
+- Python reads one JSON object per line from stdin and answers with one or more JSON lines on stdout. Logs go to stderr.
+- Saving files is handled by Electron (Save As dialog), not by Python.
 
-**Convert Image:**
+## Commands
 
-```json
-{
-  "command": "convert",
-  "path": "C:/path/to/image.jpg",
-  "options": {
-    "width": 120,
-    "charset": "detailed",
-    "removeBackground": false,
-    "brightness": 0,
-    "contrast": 100,
-    "invert": false,
-    "ratio": "16:9",
-    "keepOriginal": false
-  }
-}
-```
+Every command may carry a `requestId`. Python copies it onto every message it sends back for that command, so the UI can ignore answers to requests it has stopped waiting for.
 
-**Response:**
-
-```json
-{
-  "status": "success",
-  "type": "ascii-result",
-  "ascii": "... ASCII art string ...",
-  "isGif": false
-}
-```
-
----
-
-## Testing the Backend
-
-To test Python processing independently:
-
-```powershell
-cd python
-"C:/Users/DT User3/AppData/Local/Programs/Python/Python312/python.exe" main.py
-```
-
-Then send JSON commands via stdin (followed by Enter):
+### `ping`
 
 ```json
 { "command": "ping" }
 ```
 
-Expected response:
+```json
+{ "status": "success", "type": "pong", "message": "Pong from Python!" }
+```
+
+### `convert`
 
 ```json
-{ "status": "success", "message": "Pong from Python!" }
+{
+  "command": "convert",
+  "requestId": 3,
+  "path": "C:/path/to/image.jpg",
+  "options": {
+    "width": 120,
+    "charset": "detailed",
+    "colorScheme": "original",
+    "removeBackground": false,
+    "brightness": 0,
+    "contrast": 100,
+    "invert": false,
+    "dither": false,
+    "ratio": null,
+    "keepOriginal": false
+  }
+}
 ```
 
----
+| option | meaning |
+| --- | --- |
+| `width` | Output width in characters. Halftone (`dither`) renders at 3x this width. |
+| `charset` | `detailed` (`@%#*+=-:. `) or `blocks` (`█▓▒░ `). `standard` and `simple` are accepted as old names. |
+| `colorScheme` | `original`, `grayscale`, `sepia`, `blue`, `green`, `red`, `purple`, `cyan` |
+| `removeBackground` | Cut out the subject with rembg; removed cells become spaces. |
+| `brightness` / `contrast` | -100..100 and 0..200 (100 = unchanged). |
+| `invert` | Invert the colors before converting. |
+| `dither` | Black-and-white Floyd-Steinberg halftone made of `█` and spaces instead of the character ramp. |
+| `ratio` | `"16:9"`, `"4:3"`, `"1:1"`, `"9:16"` or `null` for the image's own ratio. |
+| `keepOriginal` | Use the native size, capped at 400 characters wide. Ignores `ratio`. |
 
-## Output Structure
+A `.gif` path is converted frame by frame. While it runs, Python sends progress messages:
 
-Generated files are saved to:
-
-```
-python/output/
-├── ascii_20250125_143022.txt    # Plain text ASCII art
-├── ascii_20250125_143022.html   # Styled HTML version
-└── history.json                  # Last 50 conversions
-```
-
----
-
-## Character Sets
-
-**Detailed** (70 chars):
-
-```
-$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
+```json
+{ "status": "success", "type": "progress", "current": 4, "total": 24, "requestId": 3 }
 ```
 
-**Standard** (10 chars):
+Results:
 
-```
-@%#*+=-:.
-```
-
-**Simple** (5 chars):
-
-```
-█▓▒░
+```json
+{ "status": "success", "type": "ascii-result", "ascii": "<span ...>@</span>...", "isGif": false, "requestId": 3 }
 ```
 
----
+```json
+{
+  "status": "success",
+  "type": "gif-result",
+  "frames": ["...", "..."],
+  "delays": [80, 80],
+  "frameCount": 2,
+  "requestId": 3
+}
+```
 
-## Next Steps
+`ascii` and `frames` are HTML: one `<span style="color:rgb(r,g,b)">` per run of equal color, with `\n` between rows. Halftone output is plain text.
 
-1. **Test the UI** - Load an image and watch it convert in real-time
-2. **Try different settings** - Adjust brightness, contrast, width, charset
-3. **Test GIF support** - Load an animated GIF (first frame shown for now)
-4. **Save outputs** - Click SAVE to export as .txt or .html
-5. **Widget Mode** - Click WIDGET to make the window transparent and click-through
+Every successful conversion is also written to the history.
 
----
+### `get_history`
 
-## Troubleshooting
+```json
+{ "command": "get_history" }
+```
 
-**Python errors in console?**
+```json
+{ "status": "success", "type": "history", "history": [ { "id": "…", "timestamp": "…", "ascii": "…", "preview": "…", "options": {}, "isGif": false } ] }
+```
 
-- Check that all packages from `requirements.txt` are installed
-- Verify Python 3.12 is being used
-- Check file paths are valid (use absolute paths)
+GIF entries also carry `frames` and `delays`. Entries written by older versions get an `id` the first time the history is read.
 
-**ASCII art looks wrong?**
+### `delete_history`
 
-- Try different character sets (Simple works well for testing)
-- Adjust contrast/brightness
-- Reduce width for clearer output
+```json
+{ "command": "delete_history", "ids": ["…", "…"] }
+```
 
-**Background removal not working?**
+```json
+{ "status": "success", "type": "deleted", "removed": 2 }
+```
 
-- First run may download AI model (500MB+)
-- Check internet connection
-- Verify `rembg` is properly installed
+### Errors
 
----
+Any command can fail with:
 
-## Features Implemented
+```json
+{ "status": "error", "error": "Conversion failed: …", "requestId": 3 }
+```
 
-✅ Real-time image to ASCII conversion  
-✅ Background removal (AI-powered)  
-✅ Brightness/Contrast adjustments  
-✅ Color inversion  
-✅ Multiple character sets  
-✅ Aspect ratio control  
-✅ Width customization (20-300 chars)  
-✅ GIF support (frame extraction)  
-✅ File saving (.txt and .html)  
-✅ Widget mode (transparent overlay)  
-✅ Error handling and validation  
-✅ Auto-debounced live preview (300ms)
+## Messages Electron adds
 
----
+| message | when |
+| --- | --- |
+| `{ "status": "success", "type": "stopped" }` | After `ascart.stop()`. |
+| `{ "status": "error", "error": "…" }` (no `requestId`) | Python could not start, crashed, or is not running. |
 
-**Ready to create some ASCII art!** 
+**Stop** kills the Python process and starts a fresh one, because Python only reads its next command after finishing the current one. After an unexpected exit Electron restarts Python up to three times in a row.
+
+## Data
+
+| what | where |
+| --- | --- |
+| history | `<userData>/output/history.json` (last 50 entries) |
+| settings | `<userData>/settings.json` |
+
+`<userData>` is Electron's per-user folder (`%APPDATA%\asc-art` on Windows). When running the backend by hand, set `ASCART_DATA_DIR`, otherwise it uses `./output`.
+
+## Trying the backend by hand
+
+```bash
+cd python
+python main.py
+```
+
+Then type one JSON command per line, for example `{"command": "ping"}`.
+
+Run the tests with `python -m pytest` from `python/` (install `requirements-dev.txt` first). `python benchmarks/bench_convert.py` prints conversion timings.
