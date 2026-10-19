@@ -53,19 +53,19 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 - **Background Removal** - Automatically remove backgrounds using advanced AI segmentation (transparent pixels render as spaces)
 - **Brightness & Contrast** - Fine-tune image parameters with intuitive sliders (-100 to +100 brightness, 0 to 200% contrast)
 - **Color Inversion** - Invert colors for different artistic effects
-- **Dithering** - Apply Floyd-Steinberg dithering for enhanced detail and reduced color banding
+- **Halftone Dithering** - Switch the output to a black-and-white Floyd-Steinberg halftone drawn with block characters
 - **Aspect Ratio Control** - Maintain original ratios or choose from preset dimensions
-- **Width Adjustment** - Customize output width from 20 to 300 characters
+- **Width Adjustment** - Customize output width from 20 to 300 characters (or keep the native size, capped at 400)
 
 ### Output Options
 
 - **Multiple Character Sets** - Detailed and blocks character sets for different styles
 - **Color Schemes** - 8 palettes: Original, Grayscale, Sepia, Blue, Green, Red, Purple, Cyan
-- **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles
+- **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles; GIFs export as a self-contained animated page
 - **Plain Text Export** - Save as monochrome .txt files
 - **Font Zoom Controls** - Adjust display size from 4px to 12px for optimal viewing
 - **Playback Controls** - For GIFs: play/pause, stop, speed adjustment (0.5x to 2x)
-- **Stop Processing** - Cancel long-running conversions with the stop button
+- **Stop Processing** - Cancel a long-running conversion; the Python backend is restarted so nothing stale comes back
 
 ### Widget Features
 
@@ -88,22 +88,20 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 ### Backend
 
 - **Python 3.12** - High-performance image processing engine
-- **Pillow (PIL)** - Core image manipulation library
-- **NumPy** - Efficient array operations for pixel data
+- **Pillow (PIL)** - Image loading, LANCZOS resizing and Floyd-Steinberg dithering
+- **NumPy** - Vectorised character mapping and color schemes
 - **RemBG** - AI-powered background removal (lazy-loaded)
-- **OpenCV** - Advanced image processing capabilities
-- **ImageIO** - GIF frame extraction and handling
 
 ### Architecture
 
-- **IPC Communication** - JSON-based stdin/stdout bridge between Electron and Python
+- **IPC Communication** - JSON-based stdin/stdout bridge between Electron and Python; the UI only sees a small `window.ascart` API exposed by a preload script (context isolation, sandbox and a Content-Security-Policy are on)
 - **Asynchronous Processing** - Non-blocking UI with background Python subprocess and cancellable operations
 - **State Management** - React hooks with manual conversion control for optimal performance
 - **Settings Persistence** - JSON-based user preferences stored in Electron's userData directory
 - **Modular Design** - Separated concerns with dedicated processor classes
-- **Widget System** - Multiple BrowserWindow instances with temporary file loading
+- **Widget System** - Multiple BrowserWindow instances, each loading `electron/widget/widget.html`
 - **Color Transformation** - RGB manipulation with 8 different color scheme algorithms
-- **Frame Optimization** - Sequential GIF processing with BILINEAR resampling for speed
+- **Compact Output** - Neighbouring characters with the same (rounded) color share one `<span>`, which keeps results and history small
 
 ## Prerequisites
 
@@ -147,6 +145,8 @@ pip install -r requirements.txt
 
 ### Development Mode
 
+In development the app starts the Python backend with the first of these it finds: the `ASCART_PYTHON` environment variable, `python/venv`, or `python` / `python3` on your PATH.
+
 ```bash
 npm start
 ```
@@ -161,26 +161,36 @@ This will:
 
 ```bash
 npm run build
-npm run electron-pack
 ```
 
-The packaged application will be available in the `dist` folder.
+This builds the React app, bundles the Python backend into `python/dist/engine.exe` with PyInstaller (`python/engine.spec`), and packages everything with electron-builder. The result is in the `dist` folder. The steps are also available separately as `npm run react-build`, `npm run build:engine` and `npm run dist`.
+
+### Tests
+
+```bash
+npm test                       # Electron export helpers
+
+pip install -r python/requirements-dev.txt
+cd python && python -m pytest  # image / GIF processing, history, backend commands
+```
+
+GitHub Actions runs both on every push and pull request.
 
 ## Usage
 
 ### Basic Workflow
 
-1. **Load Image** - Click "Load Image" or drag & drop an image/GIF into the input panel
+1. **Load Image** - Click "LOAD" or drop an image/GIF anywhere in the window
 2. **Adjust Settings** - Use the panels on the left to customize your output:
    - Width: Character width of the output (20-300 characters)
    - Style: Choose character set (detailed or blocks)
    - Colors: Select from 8 color schemes (original, grayscale, sepia, etc.)
    - Ratio: Maintain aspect ratio or choose preset dimensions
    - Adjustments: Brightness, contrast, color inversion
-   - Options: Background removal, keep original size
+   - Options: Background removal, keep original size (up to 400 characters wide)
 3. **Click Convert** - Press the "CONVERT" button to generate ASCII art with your settings
 4. **View Output** - Colored ASCII art appears in the right panel with zoom controls
-5. **Save or Export** - Use action buttons to save as HTML (colored) or TXT (plain)
+5. **Save or Export** - "SAVE" opens a Save As dialog: HTML keeps the colors (animated for GIFs), TXT is plain text (first frame for GIFs)
 6. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
 
 **Note:** Settings are automatically saved and restored when you reopen the app
@@ -222,37 +232,41 @@ The packaged application will be available in the `dist` folder.
 ```
 AscArt/
 ├── electron/
-│   └── main.js              # Electron main process, Python subprocess management
+│   ├── main.js              # Main process: windows, Python subprocess, Save As, IPC
+│   ├── preload.js           # The window.ascart API exposed to the React app
+│   ├── export.js            # Plain-text / standalone-HTML export helpers (+ export.test.js)
+│   └── widget/              # Desktop widget page, styles, script and preload
 ├── python/
-│   ├── main.py              # Python entry point, IPC handler
+│   ├── main.py              # Python entry point, command handlers
+│   ├── engine.spec          # PyInstaller recipe for the bundled backend
 │   ├── requirements.txt     # Python dependencies
-│   └── core/
-│       ├── image_processor.py   # Image to ASCII conversion engine
-│       ├── gif_processor.py     # GIF frame processing
-│       └── file_handler.py      # File I/O and history management
+│   ├── requirements-dev.txt # Just enough to run the tests
+│   ├── core/
+│   │   ├── image_processor.py   # Image to ASCII / halftone conversion
+│   │   ├── gif_processor.py     # GIF frame processing
+│   │   └── file_handler.py      # History storage
+│   ├── tests/               # pytest suite
+│   └── benchmarks/          # Conversion timings
 ├── src/
 │   ├── App.js               # Main React component
 │   ├── components/
 │   │   ├── Generator/       # Input, output, and control panels
 │   │   ├── Gallery/         # History gallery modal
-│   │   └── Shared/          # Reusable UI components
+│   │   └── Shared/          # Reusable UI components (buttons, toast, ...)
 │   ├── layouts/
 │   │   └── MainLayout.js    # Application layout wrapper
 │   └── styles/
 │       └── main.css         # Global styling and theming
-└── public/
-    └── index.html           # HTML entry point
+├── public/
+│   └── index.html           # HTML entry point (with the CSP)
+└── BACKEND_DOCS.md          # Electron <-> Python message reference
 ```
 
 ## Configuration
 
-### Python Settings
+### Where your data lives
 
-Edit `python/main.py` to adjust:
-
-- Output directory for saved files
-- History file location and entry limit
-- Logging verbosity
+History is stored in Electron's per-user data folder (on Windows `%APPDATA%\asc-art\output\history.json`), next to `settings.json`. Set `ASCART_DATA_DIR` to put the history somewhere else when running the backend by hand. The entry limit (50) is `MAX_HISTORY_ENTRIES` in `python/core/file_handler.py`.
 
 ### Electron Settings
 
@@ -268,12 +282,12 @@ Modify `python/core/image_processor.py` to add custom character sets:
 
 ```python
 CHARSETS = {
-    'detailed': '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. ',
-    'standard': '@%#*+=-:. ',
-    'simple': '█▓▒░ ',
-    'custom': 'your_characters_here'
+    'detailed': '@%#*+=-:. ',
+    'blocks': '█▓▒░ ',
 }
 ```
+
+Characters run from dark to light. Add the new name to the Style dropdown in `src/components/Generator/WidthPanel.js` as well. (`standard` and `simple` still work as aliases for `detailed` and `blocks`, so older history entries load.)
 
 ### Color Palette
 
@@ -296,11 +310,17 @@ The application uses a modern grayscale aesthetic. Modify `src/styles/main.css` 
 
 ### Python Path Issues
 
-If the app can't find Python, update the path in `electron/main.js`:
+If the app can't find Python, point it at one with an environment variable before starting:
 
-```javascript
-const pythonPath = "C:/path/to/your/python.exe";
+```bash
+# Windows (PowerShell)
+$env:ASCART_PYTHON = "C:\path\to\python.exe"; npm start
+
+# macOS / Linux
+ASCART_PYTHON=/path/to/python npm start
 ```
+
+Otherwise create the `python/venv` described above, or make sure `python` is on your PATH.
 
 ### Port Already in Use
 
@@ -322,12 +342,12 @@ RemBG downloads ML models on first use. Ensure:
 
 ## Performance Optimization
 
-- **Large Images**: Images are automatically resized during processing to maintain performance
-- **GIF Frame Count**: High frame count GIFs may take longer to process (optimized with frame caching)
+- **Large Images**: Images are resized to the chosen width; "Keep Original" is capped at 400 characters wide
+- **GIF Frame Count**: High frame count GIFs take longer to process; progress is shown per frame
 - **Background Removal**: Disable for faster processing when not needed (adds AI segmentation overhead)
 - **Width Setting**: Lower width values process faster (fewer pixels to process)
-- **Widget Optimization**: Widgets use temporary file loading instead of data URLs to handle large GIFs (no size limit)
-- **Color Processing**: Colored output adds minimal overhead due to efficient RGB extraction
+- **Widget Optimization**: Widgets receive their frames once over IPC instead of through a generated temp file
+- **Color Processing**: Colors and character mapping are computed on whole arrays, so color schemes cost almost nothing
 
 ## License
 
