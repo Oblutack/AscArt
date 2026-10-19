@@ -9,6 +9,27 @@ import GalleryView from "./components/Gallery/GalleryView";
 
 const { ipcRenderer } = window.require("electron");
 
+const DEFAULT_SETTINGS = {
+  removeBackground: false,
+  width: 120,
+  ratio: "--",
+  keepOriginal: false,
+  charset: "detailed",
+  colorScheme: "original",
+  invert: false,
+  dither: false,
+  brightness: 0,
+  contrast: 100,
+};
+
+// Only the keys we know about are restored, so old or odd files can't inject junk
+const pickSettings = (saved) =>
+  Object.fromEntries(
+    Object.keys(DEFAULT_SETTINGS)
+      .filter((key) => saved && saved[key] !== undefined && saved[key] !== null)
+      .map((key) => [key, saved[key]])
+  );
+
 function App() {
   // Image & Processing State
   const [imagePreview, setImagePreview] = useState(null);
@@ -22,17 +43,22 @@ function App() {
   const [gifFrames, setGifFrames] = useState([]);
   const [gifDelays, setGifDelays] = useState([]);
 
-  // Settings State
-  const [removeBackground, setRemoveBackground] = useState(false);
-  const [width, setWidth] = useState(120);
-  const [ratio, setRatio] = useState("--");
-  const [keepOriginal, setKeepOriginal] = useState(false);
-  const [charset, setCharset] = useState("detailed");
-  const [colorScheme, setColorScheme] = useState("original");
-  const [invert, setInvert] = useState(false);
-  const [dither, setDither] = useState(false);
-  const [brightness, setBrightness] = useState(0);
-  const [contrast, setContrast] = useState(100);
+  // Settings State (one object, so persistence can't forget a field)
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const {
+    removeBackground,
+    width,
+    ratio,
+    keepOriginal,
+    charset,
+    colorScheme,
+    invert,
+    dither,
+    brightness,
+    contrast,
+  } = settings;
+  const setter = (key) => (value) =>
+    setSettings((prev) => ({ ...prev, [key]: value }));
 
   // Gallery State
   const [showGallery, setShowGallery] = useState(false);
@@ -44,23 +70,10 @@ function App() {
   useEffect(() => {
     ipcRenderer.send("load-settings");
 
-    ipcRenderer.on("settings-loaded", (event, settings) => {
-      if (settings) {
-        console.log("📂 Loading saved settings:", settings);
-        if (settings.removeBackground !== undefined)
-          setRemoveBackground(settings.removeBackground);
-        if (settings.width !== undefined) setWidth(settings.width);
-        if (settings.ratio !== undefined) setRatio(settings.ratio);
-        if (settings.keepOriginal !== undefined)
-          setKeepOriginal(settings.keepOriginal);
-        if (settings.charset !== undefined) setCharset(settings.charset);
-        if (settings.colorScheme !== undefined)
-          setColorScheme(settings.colorScheme);
-        if (settings.invert !== undefined) setInvert(settings.invert);
-        if (settings.dither !== undefined) setDither(settings.dither);
-        if (settings.brightness !== undefined)
-          setBrightness(settings.brightness);
-        if (settings.contrast !== undefined) setContrast(settings.contrast);
+    ipcRenderer.on("settings-loaded", (event, saved) => {
+      if (saved) {
+        console.log("📂 Loading saved settings:", saved);
+        setSettings((prev) => ({ ...prev, ...pickSettings(saved) }));
       }
       // Mark settings as loaded (even if null, so we know we tried)
       setSettingsLoaded(true);
@@ -75,30 +88,8 @@ function App() {
   useEffect(() => {
     if (!settingsLoaded) return; // Don't save until settings are loaded
 
-    const settings = {
-      removeBackground,
-      width,
-      ratio,
-      keepOriginal,
-      charset,
-      colorScheme,
-      invert,
-      dither,
-      brightness,
-      contrast,
-    };
     ipcRenderer.send("save-settings", settings);
-  }, [
-    removeBackground,
-    width,
-    ratio,
-    keepOriginal,
-    charset,
-    invert,
-    dither,
-    brightness,
-    contrast,
-  ]);
+  }, [settings, settingsLoaded]);
 
   useEffect(() => {
     // Listen for Python responses
@@ -206,10 +197,8 @@ function App() {
 
   const handleReset = () => {
     console.log("🔄 Resetting adjustments");
-    setBrightness(0);
-    setContrast(100);
-    setInvert(false);
-    setDither(false);
+    const { brightness, contrast, invert, dither } = DEFAULT_SETTINGS;
+    setSettings((prev) => ({ ...prev, brightness, contrast, invert, dither }));
   };
 
   const handleSave = () => {
@@ -269,15 +258,9 @@ function App() {
     }
 
     // Restore options
+    // (history stores ratio as null for "--", which pickSettings skips)
     if (options) {
-      setWidth(options.width || 120);
-      setCharset(options.charset || "detailed");
-      setBrightness(options.brightness || 0);
-      setContrast(options.contrast || 100);
-      setInvert(options.invert || false);
-      setRemoveBackground(options.removeBackground || false);
-      setRatio(options.ratio || "--");
-      setKeepOriginal(options.keepOriginal || false);
+      setSettings({ ...DEFAULT_SETTINGS, ...pickSettings(options) });
     }
   };
 
@@ -311,7 +294,7 @@ function App() {
           <InputPanel
             onLoadImage={handleLoadImage}
             removeBackground={removeBackground}
-            setRemoveBackground={setRemoveBackground}
+            setRemoveBackground={setter("removeBackground")}
             imagePreview={imagePreview}
           />
           <ActionButtons
@@ -326,25 +309,25 @@ function App() {
           />
           <WidthPanel
             width={width}
-            setWidth={setWidth}
+            setWidth={setter("width")}
             ratio={ratio}
-            setRatio={setRatio}
+            setRatio={setter("ratio")}
             keepOriginal={keepOriginal}
-            setKeepOriginal={setKeepOriginal}
+            setKeepOriginal={setter("keepOriginal")}
             charset={charset}
-            setCharset={setCharset}
+            setCharset={setter("charset")}
             colorScheme={colorScheme}
-            setColorScheme={setColorScheme}
+            setColorScheme={setter("colorScheme")}
           />
           <AdjustmentPanel
             invert={invert}
-            setInvert={setInvert}
+            setInvert={setter("invert")}
             dither={dither}
-            setDither={setDither}
+            setDither={setter("dither")}
             brightness={brightness}
-            setBrightness={setBrightness}
+            setBrightness={setter("brightness")}
             contrast={contrast}
-            setContrast={setContrast}
+            setContrast={setter("contrast")}
             onReset={handleReset}
           />
         </div>
