@@ -153,16 +153,39 @@ function App() {
     };
   }, [showToast]);
 
-  const handleLoadImage = (file) => {
-    console.log("🖼️ Loading image:", file.path);
+  const handleLoadImage = useCallback((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
       setImagePath(file.path);
-      console.log("✅ Image loaded - ready to convert");
     };
     reader.readAsDataURL(file);
-  };
+  }, []);
+
+  // Accept dropped images anywhere in the window. Without this, a drop
+  // outside the preview box would make the window navigate to the file.
+  useEffect(() => {
+    const handleDragOver = (e) => e.preventDefault();
+    const handleDrop = (e) => {
+      e.preventDefault();
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length === 0) return;
+
+      const image = files.find((file) => file.type.startsWith("image/"));
+      if (image) {
+        handleLoadImage(image);
+      } else {
+        showToast("That file is not an image", "error");
+      }
+    };
+
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+    return () => {
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
+  }, [handleLoadImage, showToast]);
 
   const generateAsciiArt = (path = imagePath) => {
     if (!path) {

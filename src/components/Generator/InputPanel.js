@@ -15,28 +15,10 @@ const InputPanel = ({
     }
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer.files[0];
-    if (file && (file.type.startsWith("image/") || file.type === "image/gif")) {
-      onLoadImage(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   return (
     <div className="panel input-panel">
       <div className="panel-header">INPUT</div>
-      <div
-        className="image-preview-box"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-      >
+      <div className="image-preview-box">
         {imagePreview ? (
           <img src={imagePreview} alt="Preview" className="preview-image" />
         ) : (
