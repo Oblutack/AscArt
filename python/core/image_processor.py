@@ -51,6 +51,9 @@ class ImageProcessor:
         
         self.original_image = Image.open(path)
         self.image = self.original_image.copy()
+        # A mask from a previous image must not leak into this one
+        self.alpha_mask = None
+        self.dithered_brightness = None
         
         # Handle transparency: convert RGBA to RGB with white background
         if self.image.mode in ('RGBA', 'LA', 'P'):

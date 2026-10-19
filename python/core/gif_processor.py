@@ -55,7 +55,8 @@ class GifProcessor:
             # Set frame as processor's image
             self.processor.image = frame
             self.processor.original_image = frame.copy()
-            
+            self.processor.alpha_mask = None
+
             # Apply same processing as images
             if options.get('removeBackground', False):
                 self.processor.remove_background()
