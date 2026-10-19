@@ -8,6 +8,21 @@ let mainWindow;
 let widgetWindows = [];
 let pythonProcess;
 
+// Which Python to run in development. ASCART_PYTHON wins, then the venv the
+// README sets up in python/venv, then whatever is on PATH.
+function resolveDevPython() {
+  if (process.env.ASCART_PYTHON) return process.env.ASCART_PYTHON;
+
+  const venvDir = path.join(__dirname, "../python/venv");
+  const venvPython =
+    process.platform === "win32"
+      ? path.join(venvDir, "Scripts", "python.exe")
+      : path.join(venvDir, "bin", "python");
+  if (fs.existsSync(venvPython)) return venvPython;
+
+  return process.platform === "win32" ? "python" : "python3";
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -42,9 +57,8 @@ function createWindow() {
     pythonPath = path.join(process.resourcesPath, "python", "engine.exe");
     scriptArgs = [];
   } else {
-    // DEVELOPMENT: Use system Python
-    pythonPath =
-      "C:/Users/DT User3/AppData/Local/Programs/Python/Python312/python.exe";
+    // DEVELOPMENT: venv / ASCART_PYTHON / system Python
+    pythonPath = resolveDevPython();
     scriptArgs = [path.join(__dirname, "../python/main.py")];
   }
 
