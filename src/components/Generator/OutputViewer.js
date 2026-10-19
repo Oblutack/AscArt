@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 const OutputViewer = ({
   asciiArt,
   isLoading,
+  progress,
   isGif,
   gifFrames,
   gifDelays,
@@ -160,7 +161,11 @@ const OutputViewer = ({
         {isLoading ? (
           <div className="output-loading">
             <div className="loading-spinner"></div>
-            <p>Generating ASCII art...</p>
+            <p>
+              {progress
+                ? `Converting frame ${progress.current}/${progress.total}...`
+                : "Generating ASCII art..."}
+            </p>
           </div>
         ) : displayArt ? (
           <pre

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
 import WidthPanel from "./components/Generator/WidthPanel";
@@ -6,6 +6,7 @@ import AdjustmentPanel from "./components/Generator/AdjustmentPanel";
 import OutputViewer from "./components/Generator/OutputViewer";
 import ActionButtons from "./components/Generator/ActionButtons";
 import GalleryView from "./components/Gallery/GalleryView";
+import Toast from "./components/Shared/Toast";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -37,6 +38,18 @@ function App() {
   const [asciiArt, setAsciiArt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState("");
+  const [progress, setProgress] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  // Id of the conversion we are waiting for; late answers to older ones are ignored
+  const activeRequest = useRef(null);
+  const requestCounter = useRef(0);
+
+  const showToast = useCallback(
+    (message, kind = "info") => setToast({ id: Date.now(), message, kind }),
+    []
+  );
+  const dismissToast = useCallback(() => setToast(null), []);
 
   // GIF Animation State
   const [isGif, setIsGif] = useState(false);
@@ -93,47 +106,52 @@ function App() {
 
   useEffect(() => {
     // Listen for Python responses
-    ipcRenderer.on("python-response", (event, data) => {
-      console.log("📥 Received from Python:", data);
-      setDebugInfo(
-        `Received: ${data.type || data.status} | Length: ${
-          data.ascii?.length || 0
-        }`
-      );
+    const handleResponse = (event, data) => {
+      setDebugInfo(`Received: ${data.type || data.status}`);
 
-      if (data.type === "ascii-result") {
-        console.log("✅ ASCII art received, length:", data.ascii?.length);
-        console.log("First 100 chars:", data.ascii?.substring(0, 100));
+      // Answers to a conversion we have since stopped or replaced
+      const isStale =
+        data.requestId !== undefined && data.requestId !== activeRequest.current;
+
+      if (data.type === "progress") {
+        if (!isStale) setProgress({ current: data.current, total: data.total });
+      } else if (data.type === "ascii-result") {
+        if (isStale) return;
+        activeRequest.current = null;
         setAsciiArt(data.ascii);
         setIsGif(false);
         setGifFrames([]);
         setGifDelays([]);
         setIsLoading(false);
-        console.log("State updated, isLoading:", false);
-        setDebugInfo(`✅ ASCII loaded: ${data.ascii?.length} chars`);
+        setProgress(null);
       } else if (data.type === "gif-result") {
-        console.log("🎬 GIF received:", data.frames?.length, "frames");
+        if (isStale) return;
+        activeRequest.current = null;
         setIsGif(true);
         setGifFrames(data.frames || []);
         setGifDelays(data.delays || []);
         setAsciiArt(data.frames?.[0] || "");
         setIsLoading(false);
-        setDebugInfo(`🎬 GIF loaded: ${data.frames?.length} frames`);
-      } else if (data.error) {
-        console.error("❌ Python Error:", data.error);
+        setProgress(null);
+      } else if (data.type === "stopped") {
         setIsLoading(false);
-        setDebugInfo(`❌ Error: ${data.error}`);
-        alert(`Error: ${data.error}`);
-      } else if (data.status === "success" && data.message) {
-        console.log("ℹ️ Python message:", data.message);
-        setDebugInfo(`ℹ️ ${data.message}`);
+        setProgress(null);
+        showToast("Conversion stopped", "info");
+      } else if (data.status === "error") {
+        if (isStale) return;
+        console.error("Python error:", data.error);
+        activeRequest.current = null;
+        setIsLoading(false);
+        setProgress(null);
+        showToast(data.error, "error");
       }
-    });
+    };
+    ipcRenderer.on("python-response", handleResponse);
 
     return () => {
-      ipcRenderer.removeAllListeners("python-response");
+      ipcRenderer.removeListener("python-response", handleResponse);
     };
-  }, []);
+  }, [showToast]);
 
   const handleLoadImage = (file) => {
     console.log("🖼️ Loading image:", file.path);
@@ -168,11 +186,19 @@ function App() {
     console.log("   Path:", path);
     console.log("   Options:", options);
 
+    if (removeBackground && path.toLowerCase().endsWith(".gif")) {
+      showToast("Background removal on a GIF runs per frame and can take a while", "info");
+    }
+
+    const requestId = ++requestCounter.current;
+    activeRequest.current = requestId;
+    setProgress(null);
     setIsLoading(true);
 
     // Send command to Python backend
     ipcRenderer.send("to-python", {
       command: "convert",
+      requestId,
       path: path,
       options: options,
     });
@@ -189,10 +215,10 @@ function App() {
 
   const handleStopProcessing = () => {
     console.log("🛑 Stopping current processing");
+    activeRequest.current = null;
     setIsLoading(false);
-    ipcRenderer.send("to-python", {
-      command: "stop",
-    });
+    setProgress(null);
+    ipcRenderer.send("stop-python");
   };
 
   const handleReset = () => {
@@ -335,12 +361,15 @@ function App() {
         <OutputViewer
           asciiArt={asciiArt}
           isLoading={isLoading}
+          progress={progress}
           isGif={isGif}
           gifFrames={gifFrames}
           gifDelays={gifDelays}
           onStopProcessing={handleStopProcessing}
         />
       </div>
+
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       {showGallery && (
         <GalleryView
