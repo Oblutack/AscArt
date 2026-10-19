@@ -10,7 +10,10 @@
     "electron-start": "electron .",
     "start": "concurrently \"cross-env BROWSER=none npm run react-start\" \"wait-on http://localhost:3000 && electron .\"",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "test": "node --test electron/export.test.js",
+    "build:engine": "cd python && pyinstaller engine.spec --clean --noconfirm",
+    "build": "npm run react-build && npm run build:engine && npm run dist"
   },
   "author": "Oblutack",
   "build": {
@@ -20,6 +23,7 @@
     "files": [
       "build/**/*",
       "electron/**/*",
+      "!electron/**/*.test.js",
       "!build/icon.ico"
     ],
     "directories": {
@@ -27,16 +31,6 @@
     },
     "win": {
       "target": "7z"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "installerIcon": "build/icon.png",
-      "uninstallerIcon": "build/icon.png",
-      "deleteAppDataOnUninstall": false
     },
     "extraResources": [
       {
@@ -49,8 +43,6 @@
     ]
   },
   "dependencies": {
-    "electron-store": "^8.1.0",
-    "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
@@ -58,8 +50,8 @@
   "devDependencies": {
     "concurrently": "^8.2.0",
     "cross-env": "^7.0.3",
-    "electron": "^25.3.0",
-    "electron-builder": "^24.6.3",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "wait-on": "^7.0.1"
   },
   "browserslist": {
