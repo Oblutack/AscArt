@@ -1018,3 +1018,28 @@ a {
   display: flex;
   gap: 10px;
 }
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 70%;
+  padding: 12px 20px;
+  background: rgba(33, 37, 41, 0.97);
+  border: 2px solid #adb5bd;
+  border-radius: 6px;
+  color: #dee2e6;
+  font-family: "Courier New", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.toast-error {
+  border-color: #dc3545;
+  color: #f1aeb5;
+}
