@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
+const { pathToFileURL } = require("url");
 const { stripTags, buildHtml } = require("./export");
 
 // Chatty logging only while developing
@@ -165,21 +166,30 @@ function createWindow() {
     frame: false, // Frameless for custom Figma design
     transparent: true, // Allows rounded corners / transparency
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false, // Allowed for local desktop apps
-      webSecurity: false,
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
     icon: path.join(__dirname, "../public/icons/icon.ico"),
   });
 
   // DEV vs PROD Loading
   const devUrl = "http://localhost:3000";
-  const prodUrl = `file://${path.join(__dirname, "../build/index.html")}`;
+  const prodUrl = pathToFileURL(path.join(__dirname, "../build/index.html")).href;
 
   // If not packaged (Development), use localhost. If packaged (Production), use the build file.
   const startUrl = app.isPackaged ? prodUrl : devUrl;
 
   mainWindow.loadURL(startUrl);
+
+  // The app never navigates away from itself. A stray file drop or a link in
+  // the art must not turn the window into a browser.
+  const appBase = new URL(".", startUrl).href;
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!url.startsWith(appBase)) event.preventDefault();
+  });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
   // DevTools disabled - press Ctrl+Shift+I to open manually if needed
 
@@ -200,8 +210,14 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
-// Communication Bridge
+// Communication Bridge. The page may only send commands the backend offers.
+const BACKEND_COMMANDS = new Set(["convert", "get_history", "delete_history", "ping"]);
+
 ipcMain.on("to-python", (event, args) => {
+  if (!args || !BACKEND_COMMANDS.has(args.command)) {
+    console.warn("Ignoring unknown backend command:", args && args.command);
+    return;
+  }
   if (!pythonProcess || !pythonProcess.stdin.writable) {
     sendToRenderer({
       status: "error",
@@ -244,6 +260,7 @@ ipcMain.handle("save-ascii", async (event, art) => {
 const settingsPath = path.join(app.getPath("userData"), "settings.json");
 
 ipcMain.on("save-settings", (event, settings) => {
+  if (!settings || typeof settings !== "object") return;
   try {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
     debug("✅ Settings saved:", settingsPath);
@@ -252,20 +269,15 @@ ipcMain.on("save-settings", (event, settings) => {
   }
 });
 
-ipcMain.on("load-settings", (event) => {
+ipcMain.handle("load-settings", () => {
   try {
     if (fs.existsSync(settingsPath)) {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-      debug("✅ Settings loaded:", settingsPath);
-      event.reply("settings-loaded", settings);
-    } else {
-      debug("ℹ️ No saved settings found");
-      event.reply("settings-loaded", null);
+      return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
     }
   } catch (error) {
-    console.error("❌ Failed to load settings:", error);
-    event.reply("settings-loaded", null);
+    console.error("Failed to load settings:", error);
   }
+  return null;
 });
 
 // UI Window Controls

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
-const { ipcRenderer } = window.require("electron");
+// Provided by electron/preload.js
+const ascart = window.ascart;
 
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState([]);
@@ -8,24 +9,19 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
   const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
-    // Request history from Python backend
-    ipcRenderer.send("to-python", {
-      command: "get_history",
-    });
-
-    // Listen for history response
-    const handleResponse = (event, data) => {
+    // Listen for the history response, then ask for it
+    const unsubscribe = ascart.onResponse((data) => {
       if (data.type === "history") {
         setHistory(data.history);
         setIsLoading(false);
+      } else if (data.status === "error") {
+        // The app shows the error; just don't spin forever
+        setIsLoading(false);
       }
-    };
+    });
+    ascart.getHistory();
 
-    ipcRenderer.on("python-response", handleResponse);
-
-    return () => {
-      ipcRenderer.removeListener("python-response", handleResponse);
-    };
+    return unsubscribe;
   }, []);
 
   const handleItemClick = (item, event) => {
@@ -68,10 +64,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
   const handleDeleteItems = () => {
     if (selectedItems.length === 0) return;
 
-    ipcRenderer.send("to-python", {
-      command: "delete_history",
-      ids: selectedItems.map((item) => item.id),
-    });
+    ascart.deleteHistory(selectedItems.map((item) => item.id));
 
     // Update local state
     const newHistory = history.filter((item) => !selectedItems.includes(item));

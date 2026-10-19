@@ -1,6 +1,6 @@
 import React from "react";
 
-const { ipcRenderer } = window.require("electron");
+const ascart = window.ascart;
 
 const MainLayout = ({ children }) => {
   return (
@@ -27,7 +27,7 @@ const MainLayout = ({ children }) => {
         <div className="window-controls no-drag">
           <button
             className="window-btn"
-            onClick={() => ipcRenderer.send("window-min")}
+            onClick={() => ascart.minimize()}
             title="Minimize"
             aria-label="Minimize"
           >
@@ -35,7 +35,7 @@ const MainLayout = ({ children }) => {
           </button>
           <button
             className="window-btn window-btn-close"
-            onClick={() => ipcRenderer.send("window-close")}
+            onClick={() => ascart.quit()}
             title="Close"
             aria-label="Close"
           >

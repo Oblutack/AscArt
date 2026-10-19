@@ -8,7 +8,8 @@ import ActionButtons from "./components/Generator/ActionButtons";
 import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
 
-const { ipcRenderer } = window.require("electron");
+// Provided by electron/preload.js
+const ascart = window.ascart;
 
 const DEFAULT_SETTINGS = {
   removeBackground: false,
@@ -81,19 +82,19 @@ function App() {
 
   // Load saved settings on startup
   useEffect(() => {
-    ipcRenderer.send("load-settings");
+    let cancelled = false;
 
-    ipcRenderer.on("settings-loaded", (event, saved) => {
+    ascart.loadSettings().then((saved) => {
+      if (cancelled) return;
       if (saved) {
-        console.log("📂 Loading saved settings:", saved);
         setSettings((prev) => ({ ...prev, ...pickSettings(saved) }));
       }
-      // Mark settings as loaded (even if null, so we know we tried)
+      // Mark settings as loaded (even if nothing was saved, so we know we tried)
       setSettingsLoaded(true);
     });
 
     return () => {
-      ipcRenderer.removeAllListeners("settings-loaded");
+      cancelled = true;
     };
   }, []);
 
@@ -101,12 +102,12 @@ function App() {
   useEffect(() => {
     if (!settingsLoaded) return; // Don't save until settings are loaded
 
-    ipcRenderer.send("save-settings", settings);
+    ascart.saveSettings(settings);
   }, [settings, settingsLoaded]);
 
   useEffect(() => {
     // Listen for Python responses
-    const handleResponse = (event, data) => {
+    const handleResponse = (data) => {
       setDebugInfo(`Received: ${data.type || data.status}`);
 
       // Answers to a conversion we have since stopped or replaced
@@ -146,18 +147,14 @@ function App() {
         showToast(data.error, "error");
       }
     };
-    ipcRenderer.on("python-response", handleResponse);
-
-    return () => {
-      ipcRenderer.removeListener("python-response", handleResponse);
-    };
+    return ascart.onResponse(handleResponse);
   }, [showToast]);
 
   const handleLoadImage = useCallback((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
-      setImagePath(file.path);
+      setImagePath(ascart.getPathForFile(file));
     };
     reader.readAsDataURL(file);
   }, []);
@@ -219,12 +216,7 @@ function App() {
     setIsLoading(true);
 
     // Send command to Python backend
-    ipcRenderer.send("to-python", {
-      command: "convert",
-      requestId,
-      path: path,
-      options: options,
-    });
+    ascart.convert(requestId, path, options);
     console.log("📤 Sent to Python backend");
   };
 
@@ -241,7 +233,7 @@ function App() {
     activeRequest.current = null;
     setIsLoading(false);
     setProgress(null);
-    ipcRenderer.send("stop-python");
+    ascart.stop();
   };
 
   const handleReset = () => {
@@ -253,7 +245,7 @@ function App() {
   const handleSave = async () => {
     if (!asciiArt) return;
 
-    const result = await ipcRenderer.invoke("save-ascii", {
+    const result = await ascart.saveAscii({
       ascii: asciiArt, // first frame for GIFs (used for plain text)
       isGif,
       frames: isGif ? gifFrames : [],
@@ -282,7 +274,7 @@ function App() {
       delays: isGif ? gifDelays : [],
     };
 
-    ipcRenderer.send("open-widget", widgetData);
+    ascart.openWidget(widgetData);
   };
 
   const handleHistory = () => {
@@ -318,7 +310,7 @@ function App() {
 
   const handleQuit = () => {
     console.log("👋 Quitting application");
-    ipcRenderer.send("window-close");
+    ascart.quit();
   };
 
   return (
