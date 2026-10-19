@@ -47,8 +47,9 @@ class GifProcessor:
         return len(self.frames)
     
     def convert_frames_to_ascii(self, options):
-        """Convert all frames to ASCII"""
+        """Convert all frames to ASCII or halftone"""
         ascii_frames = []
+        use_dithering = options.get('dither', False)
         
         for frame in self.frames:
             # Set frame as processor's image
@@ -73,11 +74,19 @@ class GifProcessor:
             width = options.get('width', 120)
             ratio = options.get('ratio')
             keep_original = options.get('keepOriginal', False)
-            self.processor.resize_image(width, ratio, keep_original)
             
-            charset = options.get('charset', 'detailed')
-            color_scheme = options.get('colorScheme', 'original')
-            ascii_frame = self.processor.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
+            # Branch based on dithering mode
+            if use_dithering:
+                # Use 3x width for better dithering quality
+                self.processor.resize_image(width * 3, ratio, keep_original)
+                ascii_frame = self.processor.convert_to_halftone()
+            else:
+                # Normal ASCII conversion
+                self.processor.resize_image(width, ratio, keep_original)
+                charset = options.get('charset', 'detailed')
+                color_scheme = options.get('colorScheme', 'original')
+                ascii_frame = self.processor.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
+            
             ascii_frames.append(ascii_frame)
         
         return ascii_frames
