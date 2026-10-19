@@ -227,18 +227,21 @@ function App() {
     setSettings((prev) => ({ ...prev, brightness, contrast, invert, dither }));
   };
 
-  const handleSave = () => {
-    if (!asciiArt) {
-      console.warn("⚠️ No ASCII art to save");
-      return;
-    }
+  const handleSave = async () => {
+    if (!asciiArt) return;
 
-    console.log("💾 Saving ASCII art...");
-    ipcRenderer.send("to-python", {
-      command: "save",
-      ascii: asciiArt,
-      filename: `ascii_${Date.now()}.txt`,
+    const result = await ipcRenderer.invoke("save-ascii", {
+      ascii: asciiArt, // first frame for GIFs (used for plain text)
+      isGif,
+      frames: isGif ? gifFrames : [],
+      delays: isGif ? gifDelays : [],
     });
+
+    if (result.error) {
+      showToast(`Save failed: ${result.error}`, "error");
+    } else if (!result.canceled) {
+      showToast(`Saved to ${result.filePath}`, "info");
+    }
   };
 
   const handleWidget = () => {

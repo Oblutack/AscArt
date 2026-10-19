@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const { spawn } = require("child_process");
+const { stripTags, buildHtml } = require("./export");
 
 // Chatty logging only while developing
 const debug = (...args) => {
@@ -210,6 +211,34 @@ ipcMain.on("to-python", (event, args) => {
     return;
   }
   pythonProcess.stdin.write(JSON.stringify(args) + "\n");
+});
+
+// Save As: colored HTML (animated for GIFs) or plain text
+ipcMain.handle("save-ascii", async (event, art) => {
+  if (!art || typeof art.ascii !== "string") {
+    return { error: "Nothing to save" };
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: "Save ASCII art",
+    defaultPath: path.join(app.getPath("documents"), `ascii_${stamp}.html`),
+    filters: [
+      { name: "HTML (colored)", extensions: ["html"] },
+      { name: "Text (plain)", extensions: ["txt"] },
+    ],
+  });
+  if (canceled || !filePath) return { canceled: true };
+
+  try {
+    const asText = path.extname(filePath).toLowerCase() === ".txt";
+    const content = asText ? stripTags(art.ascii) : buildHtml(art);
+    await fs.promises.writeFile(filePath, content, "utf8");
+    return { filePath };
+  } catch (error) {
+    console.error("Failed to save file:", error);
+    return { error: error.message };
+  }
 });
 
 // Settings Management
