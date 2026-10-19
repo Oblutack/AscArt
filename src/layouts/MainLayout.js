@@ -1,5 +1,7 @@
 import React from "react";
 
+const { ipcRenderer } = window.require("electron");
+
 const MainLayout = ({ children }) => {
   return (
     <div className="main-layout">
@@ -21,6 +23,24 @@ const MainLayout = ({ children }) => {
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
           Drag & Drop files here
+        </div>
+        <div className="window-controls no-drag">
+          <button
+            className="window-btn"
+            onClick={() => ipcRenderer.send("window-min")}
+            title="Minimize"
+            aria-label="Minimize"
+          >
+            &minus;
+          </button>
+          <button
+            className="window-btn window-btn-close"
+            onClick={() => ipcRenderer.send("window-close")}
+            title="Close"
+            aria-label="Close"
+          >
+            &times;
+          </button>
         </div>
       </header>
       <main className="app-content">{children}</main>

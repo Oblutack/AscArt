@@ -1043,3 +1043,32 @@ a {
   border-color: #dc3545;
   color: #f1aeb5;
 }
+
+/* Window controls (minimize / close) */
+.window-controls {
+  display: flex;
+  gap: 6px;
+  margin-left: 20px;
+}
+
+.window-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid rgba(173, 181, 189, 0.4);
+  border-radius: 4px;
+  color: #adb5bd;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.window-btn:hover {
+  background: rgba(173, 181, 189, 0.15);
+}
+
+.window-btn-close:hover {
+  background: rgba(220, 53, 69, 0.25);
+  border-color: #dc3545;
+  color: #f1aeb5;
+}
