@@ -82,7 +82,7 @@ const WidthPanel = ({
         />
       </div>
       <Toggle
-        label="Keep Original"
+        label="Keep Original (max 400)"
         checked={keepOriginal}
         onChange={setKeepOriginal}
       />

@@ -38,6 +38,9 @@ class ImageProcessor:
         'simple': 'blocks',
     }
     
+    # Widest output "Keep Original" will produce, in characters
+    MAX_KEEP_ORIGINAL_WIDTH = 400
+
     def __init__(self):
         self.image = None
         self.original_image = None
@@ -130,27 +133,26 @@ class ImageProcessor:
         """Resize image to target width while maintaining aspect ratio"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
-        if keep_original:
-            return
-        
+
         orig_width, orig_height = self.image.size
-        
+
+        if keep_original:
+            # Native size, but capped: one span per character on a 4000px photo
+            # would freeze the app. Height still gets the character correction.
+            width = min(orig_width, self.MAX_KEEP_ORIGINAL_WIDTH)
+            ratio = None
+
+        # Height of a character cell is about twice its width, hence 0.55
+        aspect_ratio = orig_width / orig_height
         if ratio:
-            # Parse ratio like "16:9"
             try:
                 ratio_w, ratio_h = map(int, ratio.split(':'))
                 aspect_ratio = ratio_w / ratio_h
-                height = int(width / aspect_ratio * 0.55)  # 0.55 compensates for char height
-            except:
-                # Fall back to original aspect ratio
-                aspect_ratio = orig_width / orig_height
-                height = int(width / aspect_ratio * 0.55)
-        else:
-            # Maintain original aspect ratio
-            aspect_ratio = orig_width / orig_height
-            height = int(width / aspect_ratio * 0.55)
-        
+            except (ValueError, ZeroDivisionError):
+                pass  # fall back to the image's own aspect ratio
+
+        height = max(1, int(width / aspect_ratio * 0.55))
+
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
     
     def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original', use_dithering=False):
