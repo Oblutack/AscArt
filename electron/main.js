@@ -46,6 +46,13 @@ function resolveDevPython() {
   return process.platform === "win32" ? "python" : "python3";
 }
 
+// The main window can be gone while Python is still talking (shutdown)
+function sendToRenderer(message) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("python-response", message);
+  }
+}
+
 function createWindow() {
   migrateLegacyHistory();
 
@@ -110,10 +117,21 @@ function createWindow() {
 
   pythonProcess.on("error", (error) => {
     console.error("Failed to start Python process:", error);
+    sendToRenderer({
+      status: "error",
+      error: `Could not start the Python backend (${pythonPath}). Set ASCART_PYTHON or create python/venv.`,
+    });
   });
 
   pythonProcess.on("exit", (code, signal) => {
     debug(`Python process exited with code ${code} and signal ${signal}`);
+    pythonProcess = null;
+    if (code !== 0 && code !== null) {
+      sendToRenderer({
+        status: "error",
+        error: `The Python backend stopped unexpectedly (exit code ${code}).`,
+      });
+    }
   });
 
   // Buffer for incomplete JSON lines
@@ -143,7 +161,7 @@ function createWindow() {
             if (jsonResponse.ascii) {
               debug("📊 ASCII length:", jsonResponse.ascii.length);
             }
-            mainWindow.webContents.send("python-response", jsonResponse);
+            sendToRenderer(jsonResponse);
             debug("📤 Sent to React");
           } catch (parseError) {
             console.warn("Failed to parse line:", line.substring(0, 100));
@@ -173,9 +191,14 @@ app.on("window-all-closed", () => {
 
 // Communication Bridge
 ipcMain.on("to-python", (event, args) => {
-  if (pythonProcess) {
-    pythonProcess.stdin.write(JSON.stringify(args) + "\n");
+  if (!pythonProcess || !pythonProcess.stdin.writable) {
+    sendToRenderer({
+      status: "error",
+      error: "The Python backend is not running.",
+    });
+    return;
   }
+  pythonProcess.stdin.write(JSON.stringify(args) + "\n");
 });
 
 // Settings Management

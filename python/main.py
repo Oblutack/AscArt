@@ -31,6 +31,9 @@ def main():
     except Exception as e:
         log_error(f"Failed to initialize processors: {str(e)}")
         log_error(traceback.format_exc())
+        print(json.dumps({"status": "error", "error": f"Backend failed to start: {e}"}))
+        sys.stdout.flush()
+        sys.exit(1)
     
     while True:
         try:
