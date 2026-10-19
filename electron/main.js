@@ -8,6 +8,24 @@ let mainWindow;
 let widgetWindows = [];
 let pythonProcess;
 
+// History and saved files live in the per-user data folder, not next to the
+// code (the install folder usually isn't writable).
+const dataDir = path.join(app.getPath("userData"), "output");
+
+// Older dev builds kept history in python/output; bring it along once.
+function migrateLegacyHistory() {
+  const legacy = path.join(__dirname, "../python/output/history.json");
+  const target = path.join(dataDir, "history.json");
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    if (!app.isPackaged && fs.existsSync(legacy) && !fs.existsSync(target)) {
+      fs.copyFileSync(legacy, target);
+    }
+  } catch (err) {
+    console.error("Could not migrate old history:", err);
+  }
+}
+
 // Which Python to run in development. ASCART_PYTHON wins, then the venv the
 // README sets up in python/venv, then whatever is on PATH.
 function resolveDevPython() {
@@ -24,7 +42,9 @@ function resolveDevPython() {
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  migrateLegacyHistory();
+
+  mainWindow =new BrowserWindow({
     width: 1200,
     height: 700,
     frame: false, // Frameless for custom Figma design
@@ -72,7 +92,12 @@ function createWindow() {
   );
 
   pythonProcess = spawn(pythonPath, scriptArgs, {
-    env: { ...process.env, PYTHONUNBUFFERED: "1" },
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: "1",
+      PYTHONIOENCODING: "utf-8",
+      ASCART_DATA_DIR: dataDir,
+    },
     cwd: app.isPackaged
       ? process.resourcesPath
       : path.join(__dirname, "../python"),

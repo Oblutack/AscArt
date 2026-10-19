@@ -9,8 +9,10 @@ from datetime import datetime
 
 
 class FileHandler:
-    def __init__(self, output_dir='output'):
-        self.output_dir = output_dir
+    def __init__(self, output_dir=None):
+        # Electron passes the per-user data folder; plain 'output' is the
+        # fallback when the backend is run by hand.
+        self.output_dir = output_dir or os.environ.get('ASCART_DATA_DIR') or 'output'
         self.ensure_output_dir()
     
     def ensure_output_dir(self):
