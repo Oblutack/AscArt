@@ -36,6 +36,7 @@ python/output/history.json
 python/output/*.txt
 output/
 *.txt
+!python/requirements*.txt
 
 # --- Old Code ---
 OldCode/
