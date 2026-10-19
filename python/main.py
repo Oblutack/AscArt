@@ -19,231 +19,165 @@ def log_info(message):
     sys.stderr.flush()
 
 
+def send(message):
+    """Write one JSON line for Electron"""
+    print(json.dumps(message))
+    sys.stdout.flush()
+
+
+def error_response(message):
+    return {"status": "error", "error": message}
+
+
+class Backend:
+    def __init__(self):
+        self.image_processor = ImageProcessor()
+        self.gif_processor = GifProcessor()
+        self.file_handler = FileHandler()
+
+    def handle_ping(self, data):
+        return {"status": "success", "type": "pong", "message": "Pong from Python!"}
+
+    def handle_convert(self, data):
+        path = data.get('path')
+        options = data.get('options', {})
+        request_id = data.get('requestId')
+
+        if not path:
+            return error_response("No file path provided")
+        if not os.path.exists(path):
+            return error_response(f"File not found: {path}")
+
+        log_info(f"Convert: {os.path.basename(path)}")
+
+        try:
+            if os.path.splitext(path)[1].lower() == '.gif':
+                def report_progress(current, total):
+                    send({
+                        "status": "success",
+                        "type": "progress",
+                        "current": current,
+                        "total": total,
+                        "requestId": request_id,
+                    })
+
+                result = self.gif_processor.process_and_convert(path, options, report_progress)
+
+                if result['frames']:
+                    self.file_handler.save_history_entry(
+                        result['frames'][0],  # First frame as preview
+                        options,
+                        is_gif=True,
+                        frames=result['frames'],
+                        delays=result['delays']
+                    )
+
+                log_info(f"GIF processed, {result['frame_count']} frames")
+                return {
+                    "status": "success",
+                    "type": "gif-result",
+                    "frames": result['frames'],
+                    "delays": result['delays'],
+                    "frameCount": result['frame_count']
+                }
+
+            ascii_art = self.image_processor.process_and_convert(path, options)
+            log_info(f"ASCII art generated, length: {len(ascii_art) if ascii_art else 0}")
+
+            if ascii_art:
+                self.file_handler.save_history_entry(ascii_art, options)
+
+            return {
+                "status": "success",
+                "type": "ascii-result",
+                "ascii": ascii_art,
+                "isGif": False
+            }
+
+        except Exception as e:
+            log_error(f"Conversion failed: {e}")
+            log_error(traceback.format_exc())
+            return error_response(f"Conversion failed: {e}")
+
+    def handle_get_history(self, data):
+        try:
+            history = self.file_handler.get_history()
+            log_info(f"History loaded: {len(history)} entries")
+            return {"status": "success", "type": "history", "history": history}
+        except Exception as e:
+            log_error(f"History load failed: {e}")
+            return error_response(f"History load failed: {e}")
+
+    def handle_delete_history(self, data):
+        ids = data.get('ids')
+        if not ids:
+            return error_response("No history ids provided")
+
+        try:
+            removed = self.file_handler.delete_history_entries(ids)
+            log_info(f"Deleted {removed} history entries")
+            return {
+                "status": "success",
+                "type": "deleted",
+                "removed": removed,
+            }
+        except Exception as e:
+            log_error(f"Delete failed: {e}")
+            return error_response(f"Delete failed: {e}")
+
+
 def main():
     log_info("Python backend started")
-    
-    # Initialize processors
+
     try:
-        image_processor = ImageProcessor()
-        gif_processor = GifProcessor()
-        file_handler = FileHandler()
+        backend = Backend()
         log_info("Processors initialized successfully")
     except Exception as e:
-        log_error(f"Failed to initialize processors: {str(e)}")
+        log_error(f"Failed to initialize processors: {e}")
         log_error(traceback.format_exc())
-        print(json.dumps({"status": "error", "error": f"Backend failed to start: {e}"}))
-        sys.stdout.flush()
+        send(error_response(f"Backend failed to start: {e}"))
         sys.exit(1)
-    
+
+    handlers = {
+        'ping': backend.handle_ping,
+        'convert': backend.handle_convert,
+        'get_history': backend.handle_get_history,
+        'delete_history': backend.handle_delete_history,
+    }
+
     while True:
+        request_id = None
         try:
-            # Read input from Electron
             line = sys.stdin.readline()
             if not line:
                 log_info("EOF received, exiting")
                 break
-            
-            data = json.loads(line)
-            log_info(f"Received input: {len(line)} bytes")
-            command = data.get('command')
-            log_info(f"Command: {command}")
-            
-            response = {}
-            
-            # Ping test
-            if command == 'ping':
-                response = {"status": "success", "message": "Pong from Python!"}
-                log_info("Ping command executed")
-            
-            # Stop processing
-            elif command == 'stop':
-                response = {"status": "success", "message": "Processing stopped"}
-                log_info("Stop command received - processing terminated")
-                # Note: Current process will complete, but no new processing will start
-            
-            # Convert image/GIF to ASCII
-            elif command == 'convert':
-                try:
-                    path = data.get('path')
-                    options = data.get('options', {})
-                    
-                    log_info(f"Convert command - Path: {path}")
-                    log_info(f"Options: {options}")
-                    
-                    if not path:
-                        log_error("No path provided")
-                        response = {"status": "error", "error": "No file path provided"}
-                    elif not os.path.exists(path):
-                        log_error(f"File does not exist: {path}")
-                        response = {"status": "error", "error": f"File not found: {path}"}
-                    else:
-                        # Check if GIF or image
-                        file_ext = os.path.splitext(path)[1].lower()
-                        log_info(f"File extension: {file_ext}")
-                        
-                        if file_ext == '.gif':
-                            log_info("Processing as GIF")
-                            result = gif_processor.process_and_convert(path, options)
-                            
-                            # Save to history with all GIF data
-                            if result['frames']:
-                                file_handler.save_history_entry(
-                                    result['frames'][0],  # First frame as preview
-                                    options,
-                                    is_gif=True,
-                                    frames=result['frames'],
-                                    delays=result['delays']
-                                )
-                            
-                            response = {
-                                "status": "success",
-                                "type": "gif-result",
-                                "frames": result['frames'],
-                                "delays": result['delays'],
-                                "frameCount": result['frame_count']
-                            }
-                            log_info(f"GIF processed successfully, {result['frame_count']} frames")
-                        else:
-                            log_info("Processing as image")
-                            ascii_art = image_processor.process_and_convert(path, options)
-                            log_info(f"ASCII art generated, length: {len(ascii_art) if ascii_art else 0}")
-                            
-                            # Save to history
-                            if ascii_art:
-                                file_handler.save_history_entry(ascii_art, options)
-                            
-                            response = {
-                                "status": "success",
-                                "type": "ascii-result",
-                                "ascii": ascii_art,
-                                "isGif": False
-                            }
-                    
-                except Exception as e:
-                    error_msg = f"Conversion failed: {str(e)}"
-                    log_error(error_msg)
-                    log_error(traceback.format_exc())
-                    response = {
-                        "status": "error",
-                        "error": error_msg
-                    }
-            
-            # Save ASCII art
-            elif command == 'save':
-                try:
-                    ascii_art = data.get('ascii')
-                    filename = data.get('filename')
-                    save_format = data.get('format', 'txt')  # 'txt' or 'html'
-                    
-                    log_info(f"Saving ASCII art to {filename} as {save_format}")
-                    
-                    if save_format == 'html':
-                        filepath = file_handler.save_ascii_html(ascii_art, filename)
-                    else:
-                        filepath = file_handler.save_ascii_text(ascii_art, filename)
-                    
-                    response = {
-                        "status": "success",
-                        "message": f"Saved to {filepath}",
-                        "filepath": filepath
-                    }
-                    log_info(f"Saved successfully to {filepath}")
-                    
-                except Exception as e:
-                    error_msg = f"Save failed: {str(e)}"
-                    log_error(error_msg)
-                    log_error(traceback.format_exc())
-                    response = {
-                        "status": "error",
-                        "error": error_msg
-                    }
-            
-            # Get history
-            elif command == 'get_history':
-                try:
-                    history_file = os.path.join(file_handler.output_dir, 'history.json')
-                    log_info(f"Loading history from {history_file}")
-                    
-                    if os.path.exists(history_file):
-                        with open(history_file, 'r', encoding='utf-8') as f:
-                            history = json.load(f)
-                        response = {
-                            "status": "success",
-                            "history": history
-                        }
-                        log_info(f"History loaded: {len(history)} entries")
-                    else:
-                        response = {
-                            "status": "success",
-                            "history": []
-                        }
-                        log_info("No history file found, returning empty array")
-                        
-                except Exception as e:
-                    error_msg = f"History load failed: {str(e)}"
-                    log_error(error_msg)
-                    response = {
-                        "status": "error",
-                        "error": error_msg
-                    }
-            
-            # Delete history entry
-            elif command == 'delete_history':
-                try:
-                    index = data.get('index')
-                    log_info(f"Deleting history entry at index {index}")
-                    
-                    if index is None:
-                        response = {
-                            "status": "error",
-                            "error": "No index provided"
-                        }
-                    else:
-                        success = file_handler.delete_history_entry(index)
-                        if success:
-                            response = {
-                                "status": "success",
-                                "message": f"Deleted entry at index {index}"
-                            }
-                            log_info(f"Successfully deleted entry at index {index}")
-                        else:
-                            response = {
-                                "status": "error",
-                                "error": f"Invalid index: {index}"
-                            }
-                            log_error(f"Invalid index: {index}")
-                        
-                except Exception as e:
-                    error_msg = f"Delete failed: {str(e)}"
-                    log_error(error_msg)
-                    response = {
-                        "status": "error",
-                        "error": error_msg
-                    }
-            
-            else:
-                log_error(f"Unknown command: {command}")
-                response = {"status": "error", "error": f"Unknown command: {command}"}
 
-            # Send JSON back to Electron
-            log_info(f"Sending response: {response.get('status', 'unknown')}")
-            print(json.dumps(response))
-            sys.stdout.flush()
+            data = json.loads(line)
+            command = data.get('command')
+            request_id = data.get('requestId')
+            log_info(f"Command: {command} ({len(line)} bytes)")
+
+            handler = handlers.get(command)
+            if handler is None:
+                log_error(f"Unknown command: {command}")
+                response = error_response(f"Unknown command: {command}")
+            else:
+                response = handler(data)
 
         except json.JSONDecodeError as e:
-            error_msg = f"Invalid JSON: {str(e)}"
-            log_error(error_msg)
-            error_response = {"status": "error", "error": error_msg}
-            print(json.dumps(error_response))
-            sys.stdout.flush()
-            
+            log_error(f"Invalid JSON: {e}")
+            response = error_response(f"Invalid JSON: {e}")
+
         except Exception as e:
-            error_msg = f"Unexpected error: {str(e)}"
-            log_error(error_msg)
+            log_error(f"Unexpected error: {e}")
             log_error(traceback.format_exc())
-            error_response = {"status": "error", "error": error_msg}
-            print(json.dumps(error_response))
-            sys.stdout.flush()
+            response = error_response(f"Unexpected error: {e}")
+
+        # Lets the UI ignore answers to requests it has already given up on
+        if request_id is not None:
+            response["requestId"] = request_id
+        send(response)
 
 
 if __name__ == '__main__':

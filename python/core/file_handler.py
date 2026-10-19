@@ -1,11 +1,14 @@
 """
 File Handler Module
-Manages saving ASCII art to files
+Keeps the conversion history on disk
 """
 
 import os
 import json
+import uuid
 from datetime import datetime
+
+MAX_HISTORY_ENTRIES = 50
 
 
 class FileHandler:
@@ -14,123 +17,71 @@ class FileHandler:
         # fallback when the backend is run by hand.
         self.output_dir = output_dir or os.environ.get('ASCART_DATA_DIR') or 'output'
         self.ensure_output_dir()
-    
+
     def ensure_output_dir(self):
         """Create output directory if it doesn't exist"""
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-    
-    def save_ascii_text(self, ascii_art, filename=None):
-        """Save ASCII art to a text file"""
-        if filename is None:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f'ascii_{timestamp}.txt'
-        
-        filepath = os.path.join(self.output_dir, filename)
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(ascii_art)
-        
-        return filepath
-    
-    def save_ascii_html(self, ascii_art, filename=None):
-        """Save ASCII art as HTML with styling"""
-        if filename is None:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f'ascii_{timestamp}.html'
-        
-        html_template = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>ASCII Art</title>
-    <style>
-        body {{
-            background: #0a0a0f;
-            color: #bf00ff;
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            margin: 0;
-        }}
-        pre {{
-            font-size: 8px;
-            line-height: 1;
-            text-shadow: 0 0 5px rgba(191, 0, 255, 0.5);
-            white-space: pre;
-        }}
-    </style>
-</head>
-<body>
-    <pre>{ascii_art}</pre>
-</body>
-</html>"""
-        
-        filepath = os.path.join(self.output_dir, filename)
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(html_template)
-        
-        return filepath
-    
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    def _history_path(self, history_file):
+        return os.path.join(self.output_dir, history_file)
+
+    def _write_history(self, history, history_file):
+        with open(self._history_path(history_file), 'w', encoding='utf-8') as f:
+            json.dump(history, f, indent=2)
+
+    def get_history(self, history_file='history.json'):
+        """Load the history, giving older entries an id on the way"""
+        history_path = self._history_path(history_file)
+        if not os.path.exists(history_path):
+            return []
+
+        try:
+            with open(history_path, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+        except (OSError, ValueError):
+            return []
+
+        needs_ids = False
+        for entry in history:
+            if 'id' not in entry:
+                entry['id'] = uuid.uuid4().hex
+                needs_ids = True
+        if needs_ids:
+            self._write_history(history, history_file)
+
+        return history
+
     def save_history_entry(self, ascii_art, options, history_file='history.json', is_gif=False, frames=None, delays=None):
         """Save entry to history"""
-        history_path = os.path.join(self.output_dir, history_file)
-        
-        # Load existing history
-        history = []
-        if os.path.exists(history_path):
-            try:
-                with open(history_path, 'r', encoding='utf-8') as f:
-                    history = json.load(f)
-            except:
-                history = []
-        
-        # Add new entry
+        history = self.get_history(history_file)
+
         entry = {
+            'id': uuid.uuid4().hex,
             'timestamp': datetime.now().isoformat(),
-            'ascii': ascii_art,  # Store full ASCII art (or first frame for GIFs)
-            'preview': ascii_art[:500],  # Store preview for gallery display
+            'ascii': ascii_art,  # Full ASCII art (or first frame for GIFs)
+            'preview': ascii_art[:500],  # Preview for gallery display
             'options': options,
             'isGif': is_gif
         }
-        
-        # Add GIF-specific data if applicable
+
         if is_gif and frames and delays:
             entry['frames'] = frames
             entry['delays'] = delays
-        
+
         history.append(entry)
-        
-        # Keep last 50 entries
-        history = history[-50:]
-        
-        # Save history
-        with open(history_path, 'w', encoding='utf-8') as f:
-            json.dump(history, f, indent=2)
-        
-        return history_path
-    
-    def delete_history_entry(self, index, history_file='history.json'):
-        """Delete entry from history by index"""
-        history_path = os.path.join(self.output_dir, history_file)
-        
-        # Load existing history
-        history = []
-        if os.path.exists(history_path):
-            try:
-                with open(history_path, 'r', encoding='utf-8') as f:
-                    history = json.load(f)
-            except:
-                return False
-        
-        # Delete entry if index is valid
-        if 0 <= index < len(history):
-            history.pop(index)
-            
-            # Save updated history
-            with open(history_path, 'w', encoding='utf-8') as f:
-                json.dump(history, f, indent=2)
-            
-            return True
-        
-        return False
+        history = history[-MAX_HISTORY_ENTRIES:]
+
+        self._write_history(history, history_file)
+        return self._history_path(history_file)
+
+    def delete_history_entries(self, ids, history_file='history.json'):
+        """Delete entries by id. Returns how many were removed."""
+        ids = set(ids)
+        history = self.get_history(history_file)
+        kept = [entry for entry in history if entry['id'] not in ids]
+        removed = len(history) - len(kept)
+
+        if removed:
+            self._write_history(kept, history_file)
+
+        return removed

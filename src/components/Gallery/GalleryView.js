@@ -15,7 +15,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
 
     // Listen for history response
     const handleResponse = (event, data) => {
-      if (data.status === "success" && data.history) {
+      if (data.type === "history") {
         setHistory(data.history);
         setIsLoading(false);
       }
@@ -68,18 +68,9 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
   const handleDeleteItems = () => {
     if (selectedItems.length === 0) return;
 
-    // Get indices of selected items (sorted in reverse to delete from end)
-    const indices = selectedItems
-      .map((item) => history.indexOf(item))
-      .filter((index) => index !== -1)
-      .sort((a, b) => b - a);
-
-    // Send delete commands for each item
-    indices.forEach((index) => {
-      ipcRenderer.send("to-python", {
-        command: "delete_history",
-        index: index,
-      });
+    ipcRenderer.send("to-python", {
+      command: "delete_history",
+      ids: selectedItems.map((item) => item.id),
     });
 
     // Update local state
@@ -139,9 +130,9 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
             </div>
           ) : (
             <div className="gallery-grid">
-              {history.map((item, index) => (
+              {history.map((item) => (
                 <div
-                  key={index}
+                  key={item.id}
                   className={`gallery-item ${
                     selectedItems.includes(item) ? "selected" : ""
                   }`}
