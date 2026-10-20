@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
 import WidthPanel from "./components/Generator/WidthPanel";
@@ -22,7 +22,13 @@ const DEFAULT_SETTINGS = {
   dither: false,
   brightness: 0,
   contrast: 100,
+  livePreview: true,
 };
+
+// How long to wait after the last change before re-converting a live preview
+const LIVE_PREVIEW_DELAY_MS = 250;
+
+const isGifPath = (path) => path.toLowerCase().endsWith(".gif");
 
 // Only the keys we know about are restored, so old or odd files can't inject junk
 const pickSettings = (saved) =>
@@ -70,6 +76,7 @@ function App() {
     dither,
     brightness,
     contrast,
+    livePreview,
   } = settings;
   const setter = (key) => (value) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -184,48 +191,74 @@ function App() {
     };
   }, [handleLoadImage, showToast]);
 
-  const generateAsciiArt = (path = imagePath) => {
-    if (!path) {
-      console.warn("⚠️ No image path provided");
-      return;
-    }
-
-    console.log("🚀 Generating ASCII art with options:");
-    const options = {
-      width: width,
-      charset: charset,
-      colorScheme: colorScheme,
-      removeBackground: removeBackground,
-      brightness: brightness,
-      contrast: contrast,
-      invert: invert,
-      dither: dither,
+  // What the backend needs to know, in its own vocabulary
+  const conversionOptions = useMemo(
+    () => ({
+      width,
+      charset,
+      colorScheme,
+      removeBackground,
+      brightness,
+      contrast,
+      invert,
+      dither,
       ratio: ratio !== "--" ? ratio : null,
-      keepOriginal: keepOriginal,
-    };
-    console.log("   Path:", path);
-    console.log("   Options:", options);
+      keepOriginal,
+    }),
+    [
+      width,
+      charset,
+      colorScheme,
+      removeBackground,
+      brightness,
+      contrast,
+      invert,
+      dither,
+      ratio,
+      keepOriginal,
+    ]
+  );
 
-    if (removeBackground && path.toLowerCase().endsWith(".gif")) {
-      showToast("Background removal on a GIF runs per frame and can take a while", "info");
+  // A deliberate conversion shows the spinner and lands in History. A live
+  // preview does neither: the old art stays up until the new one arrives.
+  const startConversion = useCallback(
+    (path, { preview = false } = {}) => {
+      if (!path) return;
+
+      if (!preview && conversionOptions.removeBackground && isGifPath(path)) {
+        showToast(
+          "Background removal on a GIF runs per frame and can take a while",
+          "info"
+        );
+      }
+
+      const requestId = ++requestCounter.current;
+      activeRequest.current = requestId;
+      setProgress(null);
+      setIsLoading(!preview);
+
+      ascart.convert(requestId, path, conversionOptions, !preview);
+    },
+    [conversionOptions, showToast]
+  );
+
+  // Live preview: re-convert shortly after any change. GIFs and background
+  // removal are too slow for that and stay on the CONVERT button.
+  useEffect(() => {
+    if (!settingsLoaded || !livePreview || !imagePath) return undefined;
+    if (isGifPath(imagePath) || conversionOptions.removeBackground) {
+      return undefined;
     }
 
-    const requestId = ++requestCounter.current;
-    activeRequest.current = requestId;
-    setProgress(null);
-    setIsLoading(true);
+    const timer = setTimeout(
+      () => startConversion(imagePath, { preview: true }),
+      LIVE_PREVIEW_DELAY_MS
+    );
+    return () => clearTimeout(timer);
+  }, [settingsLoaded, livePreview, imagePath, conversionOptions, startConversion]);
 
-    // Send command to Python backend
-    ascart.convert(requestId, path, options);
-    console.log("📤 Sent to Python backend");
-  };
-
-  // Manual conversion only - no auto-regeneration
   const handleConvert = () => {
-    if (imagePath) {
-      console.log("🔄 Manual conversion triggered");
-      generateAsciiArt();
-    }
+    startConversion(imagePath);
   };
 
   const handleStopProcessing = () => {
@@ -304,8 +337,17 @@ function App() {
     // Restore options
     // (history stores ratio as null for "--", which pickSettings skips)
     if (options) {
-      setSettings({ ...DEFAULT_SETTINGS, ...pickSettings(options) });
+      setSettings((prev) => ({
+        ...DEFAULT_SETTINGS,
+        ...pickSettings(options),
+        livePreview: prev.livePreview, // not part of a conversion
+      }));
     }
+
+    // The art no longer belongs to the image that is loaded, and live preview
+    // would otherwise replace it with a conversion of that older image.
+    setImagePath(null);
+    setImagePreview(null);
   };
 
   const handleQuit = () => {
@@ -339,6 +381,8 @@ function App() {
             onLoadImage={handleLoadImage}
             removeBackground={removeBackground}
             setRemoveBackground={setter("removeBackground")}
+            livePreview={livePreview}
+            setLivePreview={setter("livePreview")}
             imagePreview={imagePreview}
           />
           <ActionButtons

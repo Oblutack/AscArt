@@ -6,6 +6,8 @@ const InputPanel = ({
   onLoadImage,
   removeBackground,
   setRemoveBackground,
+  livePreview,
+  setLivePreview,
   imagePreview,
 }) => {
   const handleFileInput = (e) => {
@@ -55,6 +57,11 @@ const InputPanel = ({
         label="Remove Background"
         checked={removeBackground}
         onChange={setRemoveBackground}
+      />
+      <Toggle
+        label="Live Preview"
+        checked={livePreview}
+        onChange={setLivePreview}
       />
     </div>
   );

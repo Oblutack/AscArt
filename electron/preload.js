@@ -4,8 +4,14 @@ const { contextBridge, ipcRenderer, webUtils } = require("electron");
 // Nothing else from Node or Electron is visible to the page.
 contextBridge.exposeInMainWorld("ascart", {
   // Python backend
-  convert: (requestId, path, options) =>
-    ipcRenderer.send("to-python", { command: "convert", requestId, path, options }),
+  convert: (requestId, path, options, saveHistory = true) =>
+    ipcRenderer.send("to-python", {
+      command: "convert",
+      requestId,
+      path,
+      options,
+      saveHistory,
+    }),
   stop: () => ipcRenderer.send("stop-python"),
   getHistory: () => ipcRenderer.send("to-python", { command: "get_history" }),
   deleteHistory: (ids) =>
