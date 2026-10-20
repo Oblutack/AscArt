@@ -667,6 +667,84 @@ test.describe("a video", () => {
   });
 });
 
+test.describe("the camera", () => {
+  // Chromium's fake camera (a moving test pattern) stands in for a webcam
+  const launchWithCamera = (userDataDir) =>
+    launch(userDataDir, { ASCART_FAKE_CAMERA: "1" });
+
+  test("turns the webcam into live art and stops when asked", async ({
+    userDataDir,
+  }) => {
+    const { app, page, problems } = await launchWithCamera(userDataDir);
+
+    await page.getByRole("button", { name: "CAMERA", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "STOP CAMERA" }),
+    ).toBeVisible();
+    await expect(page.getByText("Camera is on")).toBeVisible();
+
+    // art appears, and keeps changing because the picture does
+    await expect(art(page).locator("span").first()).toBeVisible();
+    const first = await art(page).innerHTML();
+    await expect.poll(() => art(page).innerHTML()).not.toBe(first);
+
+    // settings apply to the next frame
+    await page.getByLabel("Style:").selectOption("blocks");
+    await expect
+      .poll(async () => (await art(page).textContent()) ?? "")
+      .toMatch(/[█▓▒░]/);
+
+    // nothing goes to history
+    expect(await historyList(page)).toHaveLength(0);
+
+    await page.getByRole("button", { name: "STOP CAMERA" }).click();
+    await expect(
+      page.getByRole("button", { name: "CAMERA", exact: true }),
+    ).toBeVisible();
+    const last = await art(page).innerHTML();
+    await page.waitForTimeout(1000);
+    expect(await art(page).innerHTML()).toBe(last); // frozen on the last picture
+
+    expect(problems).toEqual([]);
+    await app.close();
+  });
+
+  test("the camera is never used for audio", async ({ userDataDir }) => {
+    const { app, page } = await launchWithCamera(userDataDir);
+
+    const result = await page.evaluate(() =>
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(
+        () => "granted",
+        (error) => error.name,
+      ),
+    );
+
+    expect(result).toBe("NotAllowedError");
+    await app.close();
+  });
+
+  test("a widget window cannot use the camera", async ({ userDataDir }) => {
+    const { app, page } = await launchWithCamera(userDataDir);
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const opened = app.waitForEvent("window");
+    await page.getByRole("button", { name: "WIDGET" }).click();
+    const widget = await opened;
+    await widget.waitForSelector("#ascii-content span");
+
+    const result = await widget.evaluate(() =>
+      navigator.mediaDevices.getUserMedia({ video: true }).then(
+        () => "granted",
+        (error) => error.name,
+      ),
+    );
+
+    expect(result).toBe("NotAllowedError");
+    await app.close();
+  });
+});
+
 test.describe("the keyboard", () => {
   test("toggles can be reached and operated without a mouse", async ({
     ascart: { page },
