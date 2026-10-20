@@ -55,6 +55,8 @@ Every command may carry a `requestId`. Python copies it onto every message it se
 }
 ```
 
+Instead of `path`, a command can carry `"imageData"`: one picture (JPEG or PNG) as base64, for camera frames. It is converted in memory, answers with `ascii-result` like any still picture, is never saved to history, and is limited to about 9 MB.
+
 | option | meaning |
 | --- | --- |
 | `width` | Output width in characters. Halftone (`dither`) renders at 3x this width. |

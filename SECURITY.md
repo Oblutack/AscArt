@@ -7,7 +7,9 @@
   `electron/preload.js`.
 - The main process only forwards a fixed list of commands to the Python
   backend, and refuses navigation away from the app's own pages, new windows
-  and `<webview>`s. Every permission request (camera, location, ...) is denied.
+  and `<webview>`s. Every permission request is denied except one: the main
+  window may use the **camera (video only, never audio)** for the CAMERA
+  button. Widgets and everything else get nothing.
 - The page has a strict Content-Security-Policy: scripts only from the app
   itself. (`'unsafe-inline'` styles are needed for the colored `<span>` art.)
 - Packaged builds turn off Electron features the app doesn't use through

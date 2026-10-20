@@ -41,6 +41,7 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 
 - **Colored ASCII Art** - Converts images with full RGB color preservation in HTML format
 - **Image to ASCII Conversion** - Convert JPG, PNG, and other image formats with high fidelity
+- **Webcam** - "CAMERA" turns your webcam into live ASCII art, mirrored, a few frames a second, using the current settings. Pictures are converted on your machine and never stored or sent anywhere; the camera is released as soon as you stop it, press Escape or pick a file
 - **Video** - Short clips (mp4, mov, webm, mkv, avi) are converted frame by frame like a GIF: the first 10 seconds at 10 frames per second. Needs [ffmpeg](https://ffmpeg.org/download.html) installed and on your PATH (or set `ASCART_FFMPEG`)
 - **Animated GIF Support** - Process and playback animated GIFs frame-by-frame with original timing
 - **Manual Conversion Control** - Convert only when you're ready with the dedicated Convert button
