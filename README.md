@@ -186,16 +186,18 @@ This builds the React app, freezes the Python backend into `python/dist/engine` 
 ## How it works
 
 ```mermaid
-flowchart LR
-  subgraph desktop [Desktop app]
+flowchart TB
+  subgraph desktop ["Desktop app"]
+    direction LR
     R["React UI<br/>sandboxed renderer"] -->|"window.ascart<br/>allow-listed IPC"| M["Electron main"]
     M -->|"JSON lines<br/>stdin / stdout"| P["Python engine<br/>Pillow, NumPy, rembg"]
   end
-  subgraph terminal [Terminal app and command line]
+  subgraph terminal ["Terminal app and command line"]
+    direction LR
     T["Bubble Tea app"] --> G["Go engine"]
     C["ascart convert / play"] --> G
   end
-  P -. "same art, checked by tests" .- G
+  desktop -. "same art, checked by tests" .- terminal
 ```
 
 * **The desktop app** is a React UI in a sandboxed Electron window. It has no Node access and talks to the main process only through a small `window.ascart` API from a preload script. The main process runs the Python engine as a subprocess and exchanges JSON lines with it. A conversion can be cancelled cooperatively, so Stop doesn't kill the process.
