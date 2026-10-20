@@ -19,12 +19,20 @@ let pythonProcess;
 const dataDir = path.join(app.getPath("userData"), "output");
 
 // Older dev builds kept history in python/output; bring it along once.
+// ASCART_SKIP_LEGACY_IMPORT=1 turns that off (the end-to-end tests want an
+// empty history).
 function migrateLegacyHistory() {
   const legacy = path.join(__dirname, "../python/output/history.json");
   const target = path.join(dataDir, "history.json");
   try {
     fs.mkdirSync(dataDir, { recursive: true });
-    if (!app.isPackaged && fs.existsSync(legacy) && !fs.existsSync(target)) {
+    const skip = process.env.ASCART_SKIP_LEGACY_IMPORT === "1";
+    if (
+      !skip &&
+      !app.isPackaged &&
+      fs.existsSync(legacy) &&
+      !fs.existsSync(target)
+    ) {
       fs.copyFileSync(legacy, target);
     }
   } catch (err) {
