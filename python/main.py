@@ -1,7 +1,10 @@
 import sys
 import json
 import os
+import queue
+import threading
 import traceback
+from core.cancel import CancelRegistry, Cancelled
 from core.image_processor import ImageProcessor
 from core.gif_processor import GifProcessor
 from core.file_handler import FileHandler
@@ -43,6 +46,7 @@ class Backend:
         self.image_processor = ImageProcessor()
         self.gif_processor = GifProcessor()
         self.file_handler = FileHandler()
+        self.cancelled = CancelRegistry()
 
     def handle_ping(self, data):
         return {"status": "success", "type": "pong", "message": "Pong from Python!"}
@@ -61,7 +65,11 @@ class Backend:
 
         log_info(f"Convert: {os.path.basename(path)}")
 
+        def checkpoint():
+            self.cancelled.check(request_id)
+
         try:
+            checkpoint()  # cancelled while it was still waiting in the queue
             if os.path.splitext(path)[1].lower() == '.gif':
                 def report_progress(current, total):
                     send({
@@ -72,7 +80,8 @@ class Backend:
                         "requestId": request_id,
                     })
 
-                result = self.gif_processor.process_to_grids(path, options, report_progress)
+                result = self.gif_processor.process_to_grids(
+                    path, options, report_progress, checkpoint)
                 grids = result['grids']
                 frames = [grid.to_html() for grid in grids]
 
@@ -109,10 +118,17 @@ class Backend:
                 "isGif": False
             }
 
+        except Cancelled:
+            log_info(f"Conversion {request_id} cancelled")
+            return {"status": "success", "type": "cancelled"}
+
         except Exception as e:
             log_error(f"Conversion failed: {e}")
             log_error(traceback.format_exc())
             return error_response(f"Conversion failed: {e}")
+
+        finally:
+            self.cancelled.discard(request_id)
 
     def handle_get_history(self, data):
         try:
@@ -141,6 +157,26 @@ class Backend:
             return error_response(f"Delete failed: {e}")
 
 
+def read_commands(backend, commands):
+    """
+    Read stdin on its own thread. "cancel" is acted on right away, even while
+    the main thread is busy converting; everything else is queued in order.
+    """
+    for line in sys.stdin:
+        try:
+            data = json.loads(line)
+        except ValueError:
+            data = None  # the main loop reports the bad line
+
+        if isinstance(data, dict) and data.get('command') == 'cancel':
+            backend.cancelled.add(data.get('requestId'))
+            continue
+
+        commands.put(line)
+
+    commands.put(None)  # stdin closed
+
+
 def main():
     log_info("Python backend started")
 
@@ -160,11 +196,14 @@ def main():
         'delete_history': backend.handle_delete_history,
     }
 
+    commands = queue.Queue()
+    threading.Thread(target=read_commands, args=(backend, commands), daemon=True).start()
+
     while True:
         request_id = None
         try:
-            line = sys.stdin.readline()
-            if not line:
+            line = commands.get()
+            if line is None:
                 log_info("EOF received, exiting")
                 break
 

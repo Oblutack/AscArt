@@ -4,6 +4,7 @@ Handles animated GIF conversion to ASCII
 """
 
 from PIL import Image
+from .cancel import Cancelled
 from .image_processor import ImageProcessor
 
 
@@ -13,7 +14,7 @@ class GifProcessor:
         self.delays = []
         self.processor = ImageProcessor()
 
-    def load_gif(self, path):
+    def load_gif(self, path, should_cancel=None):
         """Load GIF frames and delays"""
         with Image.open(path) as gif:
             self.frames = []
@@ -32,6 +33,8 @@ class GifProcessor:
 
             # Extract frames and delays
             for frame_index in range(total_frames):
+                if should_cancel:
+                    should_cancel()
                 gif.seek(frame_index)
 
                 # Get frame delay in milliseconds (default 100ms)
@@ -46,12 +49,17 @@ class GifProcessor:
 
         return len(self.frames)
 
-    def convert_frames_to_grids(self, options, progress=None):
-        """Run every loaded frame through the same pipeline as a still image"""
+    def convert_frames_to_grids(self, options, progress=None, should_cancel=None):
+        """
+        Run every loaded frame through the same pipeline as a still image.
+        should_cancel is called before each frame and may raise Cancelled.
+        """
         grids = []
         total = len(self.frames)
 
         for index, frame in enumerate(self.frames):
+            if should_cancel:
+                should_cancel()
             self.processor.image = frame
             self.processor.original_image = frame.copy()
             grids.append(self.processor.process_image(options))
@@ -61,15 +69,17 @@ class GifProcessor:
 
         return grids
 
-    def process_to_grids(self, path, options, progress=None):
+    def process_to_grids(self, path, options, progress=None, should_cancel=None):
         """Complete GIF pipeline, keeping the Grid of every frame"""
         try:
-            frame_count = self.load_gif(path)
+            frame_count = self.load_gif(path, should_cancel)
             return {
-                'grids': self.convert_frames_to_grids(options, progress),
+                'grids': self.convert_frames_to_grids(options, progress, should_cancel),
                 'delays': self.delays,
                 'frame_count': frame_count,
             }
+        except Cancelled:
+            raise
         except Exception as e:
             raise Exception(f"GIF processing error: {str(e)}")
 
