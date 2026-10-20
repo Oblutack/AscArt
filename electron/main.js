@@ -235,8 +235,10 @@ function createWindow() {
   const devUrl = "http://localhost:3000";
   const prodUrl = pathToFileURL(path.join(__dirname, "../build/index.html")).href;
 
-  // If not packaged (Development), use localhost. If packaged (Production), use the build file.
-  const startUrl = app.isPackaged ? prodUrl : devUrl;
+  // Packaged: the built files. Development: the Vite dev server, unless
+  // ASCART_USE_BUILD=1 asks for the built files (used by the end-to-end tests).
+  const useBuild = app.isPackaged || process.env.ASCART_USE_BUILD === "1";
+  const startUrl = useBuild ? prodUrl : devUrl;
 
   mainWindow.loadURL(startUrl);
 
@@ -364,6 +366,8 @@ function createWidgetWindow(widgetData) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // Widgets live behind other windows; keep their animation at full speed
+      backgroundThrottling: false,
     },
   });
 
