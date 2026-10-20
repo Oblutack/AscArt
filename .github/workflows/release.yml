@@ -60,6 +60,12 @@ jobs:
         # If electron-builder fails, show the end of its output in the run's
         # annotations, where it is easy to find
         run: |
+          # No certificate configured: build unsigned. The variables must be
+          # unset, not empty: an empty CSC_LINK is read as a path to the project.
+          if [ -z "${CSC_LINK}" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
           set +e
           npx electron-builder ${{ matrix.builder }} --publish never 2>&1 | tee builder.log
           status=${PIPESTATUS[0]}
@@ -73,7 +79,6 @@ jobs:
           # leave them out and it is not.
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' }}
 
       - uses: actions/upload-artifact@v4
         with:
