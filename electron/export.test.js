@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { stripTags, buildHtml } = require("./export");
+const { stripTags, toAnsi, buildHtml } = require("./export");
 
 const cell = (char, rgb = "1,2,3") =>
   `<span style="color:rgb(${rgb})">${char}</span>`;
@@ -53,4 +53,34 @@ test("a single-frame gif is exported as a static page", () => {
     delays: [50],
   });
   assert.doesNotMatch(html, /<script>/);
+});
+
+const ESC = String.fromCharCode(27);
+
+test("stripTags brings escaped characters back", () => {
+  assert.equal(stripTags(cell("&lt;&amp;&gt;")), "<&>");
+  // "&amp;lt;" is the text "&lt;", not "<"
+  assert.equal(stripTags("&amp;lt;"), "&lt;");
+});
+
+test("toAnsi turns spans into 24-bit color codes and resets every line", () => {
+  const art = `${cell("@", "255,0,0")}${cell("#", "0,0,255")}\n${cell("%", "1,2,3")}`;
+  assert.equal(
+    toAnsi(art),
+    `${ESC}[38;2;255;0;0m@${ESC}[38;2;0;0;255m#${ESC}[0m\n${ESC}[38;2;1;2;3m%${ESC}[0m`,
+  );
+});
+
+test("toAnsi leaves uncolored art (halftone) alone and doesn't add resets", () => {
+  assert.equal(toAnsi("█ █\n ██"), "█ █\n ██");
+});
+
+test("toAnsi decodes escaped characters and drops no text", () => {
+  const ansi = toAnsi(cell("&lt;&amp;", "9,9,9"));
+  assert.equal(ansi, `${ESC}[38;2;9;9;9m<&${ESC}[0m`);
+});
+
+test("toAnsi keeps blank cells between colored runs", () => {
+  const ansi = toAnsi(`${cell("a", "1,1,1")}   ${cell("b", "2,2,2")}`);
+  assert.equal(ansi, `${ESC}[38;2;1;1;1ma   ${ESC}[38;2;2;2;2mb${ESC}[0m`);
 });

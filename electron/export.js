@@ -1,9 +1,30 @@
-// Turns the colored ASCII markup (one <span> per character) into files.
+// Turns the colored ASCII markup (one <span> per run of equal color) into files.
 
-// The art only contains span tags and the characters from the charsets, none
-// of which are HTML special characters, so removing tags is all it takes.
+// The only HTML special characters the backend escapes in the art
+const unescapeEntities = (text) =>
+  text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+
+/** Plain characters: the tags go, and escaped characters come back. */
 function stripTags(markup) {
-  return markup.replace(/<[^>]*>/g, "");
+  return unescapeEntities(markup.replace(/<[^>]*>/g, ""));
+}
+
+const ESC = String.fromCharCode(27);
+const ANSI_RESET = `${ESC}[0m`;
+
+/**
+ * The same art for a terminal: 24-bit color escape codes instead of spans,
+ * with the color reset at the end of every line so it can't leak.
+ */
+function toAnsi(markup) {
+  const colored = markup.replace(
+    /<span style="color:rgb\((\d+),(\d+),(\d+)\)">([^<]*)<\/span>/g,
+    (match, r, g, b, text) => `${ESC}[38;2;${r};${g};${b}m${text}`,
+  );
+  return unescapeEntities(colored.replace(/<[^>]*>/g, ""))
+    .split("\n")
+    .map((line) => (line.includes(ESC) ? line + ANSI_RESET : line))
+    .join("\n");
 }
 
 // JSON embedded in a <script> must not contain a literal "<", or a stray
@@ -60,4 +81,4 @@ ${body}
 `;
 }
 
-module.exports = { stripTags, buildHtml };
+module.exports = { stripTags, toAnsi, buildHtml };
