@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -231,9 +231,14 @@ ipcMain.on("stop-python", (event, requestId) => {
 function createWindow() {
   migrateLegacyHistory();
 
+  // Tall enough that the left panels fit without scrolling, but never taller
+  // than the screen
+  const { workAreaSize } = screen.getPrimaryDisplay();
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 700,
+    width: Math.min(1280, workAreaSize.width),
+    height: Math.min(900, workAreaSize.height),
+    minWidth: Math.min(960, workAreaSize.width),
+    minHeight: Math.min(640, workAreaSize.height),
     frame: false, // Frameless for custom Figma design
     transparent: true, // Allows rounded corners / transparency
     webPreferences: {
