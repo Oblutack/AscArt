@@ -9,6 +9,7 @@
   --iron-grey: #495057; /* Borders, output panel accent */
   --gunmetal: #343a40; /* Panel backgrounds */
   --shadow-grey: #212529; /* Main background */
+  --text-muted: #a0a8b0; /* secondary labels, 4.5:1 or better on every background */
   --danger: #dc3545;
   --danger-soft: #f1aeb5;
 
@@ -204,7 +205,7 @@ a {
 }
 
 .width-panel .panel-header {
-  color: var(--slate-grey);
+  color: var(--text-muted);
 }
 
 .style-panel {
@@ -212,7 +213,7 @@ a {
 }
 
 .style-panel .panel-header {
-  color: var(--iron-grey);
+  color: var(--text-muted);
 }
 
 .adjustment-panel {
@@ -246,7 +247,7 @@ a {
 }
 
 .output-panel .panel-header {
-  color: var(--iron-grey);
+  color: var(--text-muted);
 }
 
 .output-controls {
@@ -260,7 +261,7 @@ a {
   box-sizing: border-box;
   background: rgba(var(--iron-grey-rgb), 0.2);
   border: 1px solid rgba(var(--iron-grey-rgb), 0.5);
-  color: var(--iron-grey);
+  color: var(--text-muted);
   width: 24px;
   height: 24px;
   border-radius: 4px;
@@ -283,7 +284,6 @@ a {
 }
 
 .zoom-btn:focus {
-  outline: none;
   border-color: var(--slate-grey);
   background: rgba(var(--iron-grey-rgb), 0.3);
   box-shadow: none;
@@ -295,7 +295,6 @@ a {
 }
 
 .zoom-btn:focus-visible {
-  outline: none;
   border-color: var(--slate-grey);
   box-shadow: 0 0 0 2px rgba(var(--iron-grey-rgb), 0.3);
 }
@@ -310,7 +309,7 @@ a {
 .speed-select {
   background: rgba(var(--iron-grey-rgb), 0.2);
   border: 1px solid rgba(var(--iron-grey-rgb), 0.5);
-  color: var(--iron-grey);
+  color: var(--text-muted);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
@@ -326,7 +325,7 @@ a {
 
 .speed-select option {
   background: var(--gunmetal);
-  color: var(--iron-grey);
+  color: var(--text-muted);
 }
 
 /* ==================== INPUT PANEL ==================== */
@@ -367,7 +366,7 @@ a {
   font-size: 48px;
   font-weight: bold;
   text-align: center;
-  color: var(--slate-grey);
+  color: var(--text-muted);
   line-height: 1;
   margin: 10px 0 0 0;
 }
@@ -412,7 +411,7 @@ a {
   padding: 10px;
   border-radius: 4px;
   font-size: 10px;
-  color: var(--iron-grey);
+  color: var(--text-muted);
   word-wrap: break-word;
   line-height: 1.4;
   border: 1px solid rgba(var(--iron-grey-rgb), 0.3);
@@ -633,7 +632,7 @@ a {
 
 .btn-quit {
   border-color: var(--danger);
-  color: var(--danger);
+  color: var(--danger-soft);
 }
 
 .btn-quit:hover {
@@ -642,6 +641,7 @@ a {
 
 /* Toggle */
 .toggle-container {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -650,8 +650,15 @@ a {
   padding: 8px 0;
 }
 
+/* Visually hidden, not display:none: it must stay focusable and readable by
+   screen readers. The custom checkmark next to it is what people see. */
 .toggle-input {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
 }
 
 .toggle-checkmark {
@@ -714,7 +721,6 @@ a {
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  outline: none;
   -webkit-appearance: none;
   appearance: none;
   background: rgba(var(--pale-slate-2-rgb), 0.1);
@@ -750,7 +756,6 @@ a {
   font-family: "Courier New", monospace;
   font-size: 13px;
   cursor: pointer;
-  outline: none;
   transition: all 0.3s ease;
 }
 
@@ -807,7 +812,7 @@ a {
 .gallery-header h2 {
   margin: 0;
   font-size: 20px;
-  color: var(--iron-grey);
+  color: var(--text-muted);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -815,7 +820,7 @@ a {
 .gallery-select-all-btn {
   background: rgba(var(--iron-grey-rgb), 0.2);
   border: 2px solid var(--iron-grey);
-  color: var(--iron-grey);
+  color: var(--text-muted);
   padding: 8px 16px;
   border-radius: 4px;
   font-family: "Courier New", monospace;
@@ -849,7 +854,7 @@ a {
 }
 
 .gallery-close-btn:hover {
-  color: var(--iron-grey);
+  color: var(--text-muted);
   transform: rotate(90deg);
 }
 
@@ -959,7 +964,7 @@ a {
   font-family: "Courier New", monospace;
   font-size: 4px;
   line-height: 1;
-  color: var(--iron-grey);
+  color: var(--text-muted);
   margin: 0;
   white-space: pre;
   overflow: hidden;
@@ -1029,7 +1034,7 @@ a {
 
 .gallery-btn-delete {
   border-color: var(--danger);
-  color: var(--danger);
+  color: var(--danger-soft);
 }
 
 .gallery-btn-delete:hover {
@@ -1111,4 +1116,49 @@ a {
 .toast-dismiss:hover,
 .toast-dismiss:focus-visible {
   opacity: 1;
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+/* Keyboard focus is always visible, on every kind of control */
+:focus-visible {
+  outline: 2px solid var(--bright-snow);
+  outline-offset: 2px;
+}
+
+/* Hidden checkbox inputs still receive focus: show it on the custom checkmark */
+.toggle-input:focus-visible + .toggle-checkmark {
+  outline: 2px solid var(--bright-snow);
+  outline-offset: 2px;
+}
+
+/* No motion for people who ask for none */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Output panel controls */
+.zoom-btn-danger {
+  width: auto;
+  padding: 5px 12px;
+  background: rgba(var(--danger-rgb), 0.2);
+  border-color: rgba(var(--danger-rgb), 0.5);
+  color: var(--danger-soft);
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.zoom-btn-danger:hover {
+  background: rgba(var(--danger-rgb), 0.3);
+  border-color: var(--danger);
+}
+
+.output-divider {
+  margin: 0 8px;
+  color: var(--text-muted);
 }
