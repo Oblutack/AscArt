@@ -1162,3 +1162,35 @@ a {
   margin: 0 8px;
   color: var(--text-muted);
 }
+
+/* Custom character set field */
+.neon-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(var(--shadow-grey-rgb), 0.5);
+  border: 2px solid rgba(var(--pale-slate-2-rgb), 0.4);
+  color: var(--bright-snow);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+}
+
+.neon-input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.field-hint,
+.field-error {
+  margin: 4px 0 8px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.field-hint {
+  color: var(--text-muted);
+}
+
+.field-error {
+  color: var(--danger-soft);
+}

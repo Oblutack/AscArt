@@ -14,6 +14,7 @@ import OutputViewer from "./components/Generator/OutputViewer";
 import ActionButtons from "./components/Generator/ActionButtons";
 import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
+import { customCharsError } from "./lib/customChars";
 import { openFilePicker } from "./lib/dom";
 
 function App() {
@@ -34,8 +35,14 @@ function App() {
   });
   const [showGallery, setShowGallery] = useState(false);
 
+  // A half-typed character set shouldn't be sent to the backend
+  const charsetError =
+    settings.charset === "custom"
+      ? customCharsError(settings.customChars)
+      : null;
+
   useLivePreview({
-    enabled: settingsLoaded && settings.livePreview,
+    enabled: settingsLoaded && settings.livePreview && !charsetError,
     path: imagePath,
     options: conversionOptions,
     convert: start,
@@ -55,7 +62,13 @@ function App() {
   // setter("width") is the callback a panel wants for its width control
   const setter = (key) => (value) => setSetting(key, value);
 
-  const handleConvert = () => start(imagePath, conversionOptions);
+  const handleConvert = () => {
+    if (charsetError) {
+      showToast(charsetError, "error");
+      return;
+    }
+    start(imagePath, conversionOptions);
+  };
 
   const handleSave = async () => {
     if (!art.ascii) return;
@@ -124,6 +137,9 @@ function App() {
             setKeepOriginal={setter("keepOriginal")}
             charset={settings.charset}
             setCharset={setter("charset")}
+            customChars={settings.customChars}
+            setCustomChars={setter("customChars")}
+            customCharsError={charsetError}
             colorScheme={settings.colorScheme}
             setColorScheme={setter("colorScheme")}
           />

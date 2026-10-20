@@ -28,12 +28,12 @@ describe("WidthPanel", () => {
     expect(screen.getByLabelText("Colors:")).toHaveValue("original");
   });
 
-  it("offers exactly the character sets the backend has", () => {
+  it("offers the character sets the backend has, plus a custom one", () => {
     render(<WidthPanel {...props} />);
     const options = [...screen.getByLabelText("Style:").options].map(
       (o) => o.value,
     );
-    expect(options).toEqual(["detailed", "blocks"]);
+    expect(options).toEqual(["detailed", "blocks", "custom"]);
   });
 
   it("passes changes up", async () => {
@@ -210,5 +210,71 @@ describe("InputPanel", () => {
 
     expect(setRemoveBackground).toHaveBeenCalledWith(true);
     expect(setLivePreview).toHaveBeenCalledWith(false);
+  });
+});
+
+describe("WidthPanel custom characters", () => {
+  const props = {
+    width: 120,
+    setWidth: vi.fn(),
+    ratio: "--",
+    setRatio: vi.fn(),
+    keepOriginal: false,
+    setKeepOriginal: vi.fn(),
+    charset: "custom",
+    setCharset: vi.fn(),
+    customChars: "#.",
+    setCustomChars: vi.fn(),
+    customCharsError: null,
+    colorScheme: "original",
+    setColorScheme: vi.fn(),
+  };
+
+  it("has no field for the built-in sets", () => {
+    render(<WidthPanel {...props} charset="blocks" />);
+    expect(screen.queryByLabelText("Chars:")).not.toBeInTheDocument();
+  });
+
+  it("shows a field with the current characters and a hint", () => {
+    render(<WidthPanel {...props} />);
+
+    expect(screen.getByLabelText("Chars:")).toHaveValue("#.");
+    expect(
+      screen.getByText("Darkest first, lightest last"),
+    ).toBeInTheDocument();
+  });
+
+  it("passes what is typed up", async () => {
+    const setCustomChars = vi.fn();
+    render(
+      <WidthPanel {...props} customChars="" setCustomChars={setCustomChars} />,
+    );
+
+    await userEvent.type(screen.getByLabelText("Chars:"), "ab");
+
+    expect(setCustomChars).toHaveBeenLastCalledWith("b");
+    expect(setCustomChars).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the problem, marks the field invalid and announces it", () => {
+    render(
+      <WidthPanel {...props} customCharsError="Enter at least 2 characters" />,
+    );
+
+    expect(screen.getByLabelText("Chars:")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter at least 2 characters",
+    );
+    expect(
+      screen.queryByText("Darkest first, lightest last"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("limits the length", () => {
+    render(<WidthPanel {...props} />);
+    expect(screen.getByLabelText("Chars:")).toHaveAttribute("maxLength", "100");
   });
 });

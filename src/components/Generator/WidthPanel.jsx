@@ -11,6 +11,9 @@ const WidthPanel = ({
   setKeepOriginal,
   charset,
   setCharset,
+  customChars,
+  setCustomChars,
+  customCharsError,
   colorScheme,
   setColorScheme,
 }) => {
@@ -25,6 +28,7 @@ const WidthPanel = ({
   const charsetOptions = [
     { value: "detailed", label: "Detailed" },
     { value: "blocks", label: "Blocks" },
+    { value: "custom", label: "Custom..." },
   ];
 
   const colorSchemeOptions = [
@@ -77,6 +81,34 @@ const WidthPanel = ({
           className="ratio-dropdown"
         />
       </div>
+      {charset === "custom" && (
+        <>
+          <div className="ratio-section">
+            <label className="ratio-label" htmlFor="custom-chars">
+              Chars:
+            </label>
+            <input
+              id="custom-chars"
+              className="neon-input"
+              type="text"
+              value={customChars}
+              maxLength={100}
+              spellCheck={false}
+              autoComplete="off"
+              aria-invalid={customCharsError ? "true" : undefined}
+              aria-describedby="custom-chars-help"
+              onChange={(e) => setCustomChars(e.target.value)}
+            />
+          </div>
+          <p
+            id="custom-chars-help"
+            className={customCharsError ? "field-error" : "field-hint"}
+            role={customCharsError ? "alert" : undefined}
+          >
+            {customCharsError ?? "Darkest first, lightest last"}
+          </p>
+        </>
+      )}
       <div className="ratio-section">
         <label className="ratio-label" htmlFor="colors-select">
           Colors:

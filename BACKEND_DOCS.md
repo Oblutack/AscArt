@@ -42,6 +42,7 @@ Every command may carry a `requestId`. Python copies it onto every message it se
   "options": {
     "width": 120,
     "charset": "detailed",
+    "customChars": "@%#*+=-:. ",
     "colorScheme": "original",
     "removeBackground": false,
     "brightness": 0,
@@ -57,7 +58,8 @@ Every command may carry a `requestId`. Python copies it onto every message it se
 | option | meaning |
 | --- | --- |
 | `width` | Output width in characters. Halftone (`dither`) renders at 3x this width. |
-| `charset` | `detailed` (`@%#*+=-:. `) or `blocks` (`█▓▒░ `). `standard` and `simple` are accepted as old names. |
+| `charset` | `detailed` (`@%#*+=-:. `), `blocks` (`█▓▒░ `) or `custom`. `standard` and `simple` are accepted as old names. |
+| `customChars` | With `charset: "custom"`: the characters from darkest to lightest. 2 to 100 single-width, printable characters (no CJK, emoji, combining marks or control characters), otherwise the conversion fails and the error names the offending one. |
 | `colorScheme` | `original`, `grayscale`, `sepia`, `blue`, `green`, `red`, `purple`, `cyan` |
 | `removeBackground` | Cut out the subject with rembg; removed cells become spaces. |
 | `brightness` / `contrast` | -100..100 and 0..200 (100 = unchanged). |

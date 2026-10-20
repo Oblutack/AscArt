@@ -5,6 +5,8 @@
 export interface ConversionOptions {
   width: number;
   charset: string;
+  /** The ramp, dark to light, when charset is "custom" */
+  customChars?: string;
   colorScheme: string;
   removeBackground: boolean;
   brightness: number;

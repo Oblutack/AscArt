@@ -59,7 +59,7 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 
 ### Output Options
 
-- **Multiple Character Sets** - Detailed and blocks character sets for different styles
+- **Character Sets** - Detailed and blocks, or write your own ramp from darkest to lightest
 - **Color Schemes** - 8 palettes: Original, Grayscale, Sepia, Blue, Green, Red, Purple, Cyan
 - **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles; GIFs export as a self-contained animated page
 - **Plain Text Export** - Save as monochrome .txt files

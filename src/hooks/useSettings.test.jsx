@@ -161,3 +161,39 @@ describe("conversionOptions", () => {
     expect(result.current.conversionOptions).toBe(before);
   });
 });
+
+describe("customChars", () => {
+  it("is only sent when the custom set is chosen", () => {
+    const { result } = renderHook(() => useSettings());
+
+    expect(result.current.conversionOptions).not.toHaveProperty("customChars");
+
+    act(() => result.current.setSetting("charset", "custom"));
+    act(() => result.current.setSetting("customChars", "#."));
+
+    expect(result.current.conversionOptions).toMatchObject({
+      charset: "custom",
+      customChars: "#.",
+    });
+  });
+
+  it("editing it doesn't change the options while another set is in use", () => {
+    const { result } = renderHook(() => useSettings());
+    const before = result.current.conversionOptions;
+
+    act(() => result.current.setSetting("customChars", "xyz"));
+
+    expect(result.current.conversionOptions).toEqual(before);
+  });
+
+  it("is saved with the other settings", async () => {
+    const { result } = renderHook(() => useSettings());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    act(() => result.current.setSetting("customChars", "ab"));
+
+    expect(fake.api.saveSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ customChars: "ab" }),
+    );
+  });
+});

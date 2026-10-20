@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   ratio: "--",
   keepOriginal: false,
   charset: "detailed",
+  customChars: "@%#*+=-:. ",
   colorScheme: "original",
   invert: false,
   dither: false,
@@ -77,6 +78,11 @@ export function useSettings() {
     () => ({
       width: settings.width,
       charset: settings.charset,
+      // Only sent for the custom set, so editing it doesn't re-convert
+      // pictures that use another one
+      ...(settings.charset === "custom" && {
+        customChars: settings.customChars,
+      }),
       colorScheme: settings.colorScheme,
       removeBackground: settings.removeBackground,
       brightness: settings.brightness,
@@ -89,6 +95,7 @@ export function useSettings() {
     [
       settings.width,
       settings.charset,
+      settings.customChars,
       settings.colorScheme,
       settings.removeBackground,
       settings.brightness,

@@ -167,6 +167,25 @@ test.describe("a picture", () => {
     expect(await art(page).textContent()).not.toMatch(/@/);
   });
 
+  test("a custom character set is used for the art", async ({
+    ascart: { page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    await page.getByLabel("Style:").selectOption("custom");
+    await page.getByLabel("Chars:").fill("AB");
+
+    await expect
+      .poll(async () =>
+        ((await art(page).textContent()) ?? "").replace(/\s/g, ""),
+      )
+      .toMatch(/^[AB]+$/);
+    // a ramp that can't work is explained instead of sent
+    await page.getByLabel("Chars:").fill("A");
+    await expect(page.getByRole("alert")).toContainText("at least 2");
+  });
+
   test("dither switches to a black and white halftone", async ({
     ascart: { page },
   }) => {

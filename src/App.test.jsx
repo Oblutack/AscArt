@@ -413,3 +413,62 @@ describe("keyboard shortcuts", () => {
     );
   });
 });
+
+describe("custom characters", () => {
+  const chooseCustom = async () => {
+    await userEvent.selectOptions(screen.getByLabelText("Style:"), "custom");
+    const field = screen.getByLabelText("Chars:");
+    await userEvent.clear(field);
+    return field;
+  };
+
+  it("sends the typed ramp to the backend", async () => {
+    render(<App />);
+    await chooseImage();
+    await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
+    fake.api.convert.mockClear();
+
+    const field = await chooseCustom();
+    await userEvent.type(field, "AB");
+
+    await waitFor(() =>
+      expect(lastConvert().options).toMatchObject({
+        charset: "custom",
+        customChars: "AB",
+      }),
+    );
+  });
+
+  it("doesn't send a half-typed ramp, and says what is wrong", async () => {
+    render(<App />);
+    await chooseImage();
+    await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
+    await userEvent.click(screen.getByLabelText("Live Preview")); // off
+    fake.api.convert.mockClear();
+    await userEvent.click(screen.getByLabelText("Live Preview")); // on again
+
+    const field = await chooseCustom();
+    await userEvent.type(field, "A");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("at least 2");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(
+      fake.api.convert.mock.calls.some(
+        ([, , options]) => options.customChars === "A",
+      ),
+    ).toBe(false);
+  });
+
+  it("CONVERT with an invalid ramp shows the problem instead of converting", async () => {
+    render(<App />);
+    await chooseImage();
+    await userEvent.click(screen.getByLabelText("Live Preview"));
+    await chooseCustom();
+    fake.api.convert.mockClear();
+
+    await userEvent.click(convertButton());
+
+    expect(fake.api.convert).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent("at least 2");
+  });
+});
