@@ -3,6 +3,13 @@ import React, { useEffect, useState } from "react";
 // Provided by electron/preload.js
 const ascart = window.ascart;
 
+// Entries saved before thumbnails existed only have the full art; showing its
+// first rows is enough for a tile (whole rows, so no <span> gets cut in half)
+const LEGACY_PREVIEW_ROWS = 24;
+const previewOf = (item) =>
+  item.thumb ??
+  item.ascii.split("\n").slice(0, LEGACY_PREVIEW_ROWS).join("\n");
+
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,7 +139,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                   onClick={(e) => handleItemClick(item, e)}
                 >
                   <div className="gallery-item-preview">
-                    <pre dangerouslySetInnerHTML={{ __html: item.ascii }} />
+                    <pre dangerouslySetInnerHTML={{ __html: previewOf(item) }} />
                   </div>
                   <div className="gallery-item-info">
                     <span className="gallery-item-date">
