@@ -16,6 +16,7 @@ import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
 import { customCharsError } from "./lib/customChars";
 import { openFilePicker } from "./lib/dom";
+import { saveArt } from "./lib/saveArt";
 
 function App() {
   const { toast, showToast, dismissToast } = useToast();
@@ -70,14 +71,21 @@ function App() {
     start(imagePath, conversionOptions);
   };
 
+  // What gets saved, copied or shown in a widget. `ascii` is the first frame
+  // for a GIF (used by the single-picture formats).
+  const artPayload = () => ({
+    ascii: art.ascii,
+    isGif: art.isGif,
+    frames: art.frames,
+    delays: art.delays,
+  });
+
   const handleSave = async () => {
     if (!art.ascii) return;
 
-    const result = await ascart.saveAscii({
-      ascii: art.ascii, // first frame for GIFs (used for plain text)
-      isGif: art.isGif,
-      frames: art.frames,
-      delays: art.delays,
+    const result = await saveArt(artPayload(), {
+      onProgress: (done, total) =>
+        showToast(`Drawing frame ${done}/${total}...`, "info"),
     });
 
     if (result.error) {
@@ -87,14 +95,20 @@ function App() {
     }
   };
 
+  const handleCopy = async () => {
+    if (!art.ascii) return;
+
+    const result = await ascart.copyText(artPayload());
+    if ("error" in result) {
+      showToast(`Copy failed: ${result.error}`, "error");
+    } else {
+      showToast("Copied the text to the clipboard", "info");
+    }
+  };
+
   const handleWidget = () => {
     if (!art.ascii) return;
-    ascart.openWidget({
-      isGif: art.isGif,
-      ascii: art.ascii,
-      frames: art.frames,
-      delays: art.delays,
-    });
+    ascart.openWidget(artPayload());
   };
 
   const handleLoadFromGallery = (ascii, options, isGif, frames, delays) => {
@@ -121,6 +135,7 @@ function App() {
           <ActionButtons
             onConvert={handleConvert}
             onSave={handleSave}
+            onCopy={handleCopy}
             onWidget={handleWidget}
             onHistory={() => setShowGallery(true)}
             onQuit={() => ascart.quit()}

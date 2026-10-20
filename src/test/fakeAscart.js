@@ -19,7 +19,10 @@ export function installFakeAscart(overrides = {}) {
       listeners.add(callback);
       return () => listeners.delete(callback);
     }),
-    saveAscii: vi.fn().mockResolvedValue({ filePath: "C:/out/art.html" }),
+    chooseSavePath: vi.fn().mockResolvedValue({ filePath: "C:/out/art.html" }),
+    saveAscii: vi.fn((art, filePath) => Promise.resolve({ filePath })),
+    saveBinary: vi.fn((filePath) => Promise.resolve({ filePath })),
+    copyText: vi.fn().mockResolvedValue({ copied: true }),
     loadSettings: vi.fn().mockResolvedValue(null),
     saveSettings: vi.fn(),
     getPathForFile: vi.fn((file) => `C:/images/${file.name}`),

@@ -213,24 +213,24 @@ describe("with art on screen", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /SAVE/ }));
 
-    expect(fake.api.saveAscii).toHaveBeenCalledWith({
-      ascii: ART,
-      isGif: false,
-      frames: [],
-      delays: [],
-    });
+    expect(fake.api.chooseSavePath).toHaveBeenCalledWith({ isGif: false });
+    expect(fake.api.saveAscii).toHaveBeenCalledWith(
+      { ascii: ART, isGif: false, frames: [], delays: [] },
+      "C:/out/art.html",
+    );
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Saved to C:/out/art.html",
     );
   });
 
   it("says nothing when the save dialog is cancelled", async () => {
-    fake.api.saveAscii.mockResolvedValue({ canceled: true });
+    fake.api.chooseSavePath.mockResolvedValue({ canceled: true });
     await showArt();
 
     await userEvent.click(screen.getByRole("button", { name: /SAVE/ }));
 
-    await waitFor(() => expect(fake.api.saveAscii).toHaveBeenCalled());
+    await waitFor(() => expect(fake.api.chooseSavePath).toHaveBeenCalled());
+    expect(fake.api.saveAscii).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -244,6 +244,37 @@ describe("with art on screen", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Save failed: disk full",
     );
+  });
+
+  it("copies the text to the clipboard", async () => {
+    await showArt();
+
+    await userEvent.click(screen.getByRole("button", { name: /COPY/ }));
+
+    expect(fake.api.copyText).toHaveBeenCalledWith({
+      ascii: ART,
+      isGif: false,
+      frames: [],
+      delays: [],
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent("Copied");
+  });
+
+  it("reports a failed copy", async () => {
+    fake.api.copyText.mockResolvedValue({ error: "no clipboard" });
+    await showArt();
+
+    await userEvent.click(screen.getByRole("button", { name: /COPY/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Copy failed: no clipboard",
+    );
+  });
+
+  it("has nothing to copy or save before there is art", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /COPY/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /SAVE/ })).toBeDisabled();
   });
 
   it("opens it as a widget", async () => {
@@ -341,6 +372,7 @@ describe("keyboard shortcuts", () => {
     await showArt();
     await userEvent.keyboard("{Control>}s{/Control}");
     await waitFor(() => expect(fake.api.saveAscii).toHaveBeenCalled());
+    expect(fake.api.chooseSavePath).toHaveBeenCalledTimes(1);
   });
 
   it("Ctrl+Enter converts and saves to history", async () => {
