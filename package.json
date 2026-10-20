@@ -12,7 +12,7 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "test": "node --test electron/export.test.js",
-    "build:engine": "cd python && pyinstaller engine.spec --clean --noconfirm",
+    "build:engine": "node scripts/build-engine.js",
     "build": "npm run react-build && npm run build:engine && npm run dist"
   },
   "author": "Oblutack",
