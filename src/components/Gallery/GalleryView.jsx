@@ -3,9 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { ascart } from "../../ascart";
 
 const GalleryView = ({ onClose, onLoadAscii }) => {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(
+    /** @type {import("../../types").HistoryEntrySummary[]} */ ([]),
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState(
+    /** @type {import("../../types").HistoryEntrySummary[]} */ ([]),
+  );
 
   const [isOpening, setIsOpening] = useState(false);
 

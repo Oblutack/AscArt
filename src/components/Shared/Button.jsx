@@ -1,3 +1,14 @@
+/**
+ * @param {{
+ *   children?: import("react").ReactNode,
+ *   onClick?: () => void,
+ *   variant?: string,
+ *   icon?: import("react").ReactNode,
+ *   fullWidth?: boolean,
+ *   disabled?: boolean,
+ *   className?: string,
+ * }} props
+ */
 const Button = ({
   children,
   onClick,

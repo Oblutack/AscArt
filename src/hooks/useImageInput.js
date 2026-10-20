@@ -7,13 +7,17 @@ import { ascart } from "../ascart";
  * drop outside the preview box would make the window navigate to the file.
  */
 export function useImageInput({ showToast }) {
-  const [imagePath, setImagePath] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePath, setImagePath] = useState(
+    /** @type {string | null} */ (null),
+  );
+  const [imagePreview, setImagePreview] = useState(
+    /** @type {string | null} */ (null),
+  );
 
   const loadImage = useCallback((file) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
+    reader.onload = () => {
+      setImagePreview(/** @type {string} */ (reader.result));
       setImagePath(ascart.getPathForFile(file));
     };
     reader.readAsDataURL(file);

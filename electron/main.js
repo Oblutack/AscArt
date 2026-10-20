@@ -163,7 +163,10 @@ function startPython() {
         sendToRenderer(message);
       } catch (parseError) {
         console.warn("Failed to parse line:", line.substring(0, 100));
-        console.warn("Parse error:", parseError.message);
+        console.warn(
+          "Parse error:",
+          parseError instanceof Error ? parseError.message : parseError,
+        );
       }
     });
   });
@@ -322,7 +325,7 @@ ipcMain.handle("save-ascii", async (event, art) => {
     return { filePath };
   } catch (error) {
     console.error("Failed to save file:", error);
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : String(error) };
   }
 });
 

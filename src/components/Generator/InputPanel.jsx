@@ -48,7 +48,7 @@ const InputPanel = ({
       <Button
         variant="load"
         fullWidth
-        onClick={() => document.getElementById("file-input").click()}
+        onClick={() => document.getElementById("file-input")?.click()}
       >
         LOAD
       </Button>

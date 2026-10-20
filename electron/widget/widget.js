@@ -1,6 +1,8 @@
 (() => {
   const api = window.widgetApi;
-  const $ = (id) => document.getElementById(id);
+  // These elements are all in widget.html
+  const $ = (/** @type {string} */ id) =>
+    /** @type {HTMLElement} */ (document.getElementById(id));
 
   const container = $("widget-container");
   const content = $("ascii-content");
@@ -13,11 +15,14 @@
   const MIN_FONT = 2;
   const MAX_FONT = 20;
 
+  /** @type {string[]} */
   let frames = [];
+  /** @type {number[]} */
   let delays = [];
   let current = 0;
   let isPlaying = false;
-  let timer = null;
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
   let fontSize = 6;
   let controlsVisible = true;
 
@@ -93,10 +98,11 @@
   };
 
   document.addEventListener("click", (e) => {
-    const button = e.target.closest("[data-action]");
-    if (button && actions[button.dataset.action]) {
-      actions[button.dataset.action]();
-    }
+    const button = /** @type {HTMLElement | null} */ (
+      /** @type {Element} */ (e.target).closest("[data-action]")
+    );
+    const action = button && actions[button.dataset.action ?? ""];
+    if (action) action();
   });
 
   // ---------- Dragging the window ----------
@@ -157,7 +163,8 @@
   });
 
   document.addEventListener("mousedown", (e) => {
-    if (!menu.contains(e.target) && !display.contains(e.target)) {
+    const target = /** @type {Node} */ (e.target);
+    if (!menu.contains(target) && !display.contains(target)) {
       menu.classList.remove("visible");
     }
   });

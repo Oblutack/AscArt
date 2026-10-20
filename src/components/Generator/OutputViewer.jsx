@@ -13,7 +13,9 @@ const OutputViewer = ({
   const [isPlaying, setIsPlaying] = useState(isGif && gifFrames.length > 0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-  const timerRef = useRef(null);
+  const timerRef = useRef(
+    /** @type {ReturnType<typeof setTimeout> | null} */ (null),
+  );
 
   // A newly loaded GIF starts playing from its first frame. Adjusting state
   // during render (rather than in an effect) avoids a render with stale state.

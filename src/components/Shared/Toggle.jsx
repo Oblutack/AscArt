@@ -1,3 +1,11 @@
+/**
+ * @param {{
+ *   label: string,
+ *   checked: boolean,
+ *   onChange: (checked: boolean) => void,
+ *   icon?: import("react").ReactNode,
+ * }} props
+ */
 const Toggle = ({ label, checked, onChange, icon }) => {
   return (
     <label className="toggle-container">

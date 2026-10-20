@@ -23,7 +23,10 @@ const PAGE_STYLE = `
     white-space: pre;
   }`;
 
-// Standalone page. Animated GIFs get all frames plus a tiny player.
+/**
+ * Standalone page. Animated GIFs get all frames plus a tiny player.
+ * @param {{ ascii: string, isGif?: boolean, frames?: string[], delays?: number[] }} art
+ */
 function buildHtml({ ascii, isGif, frames = [], delays = [] }) {
   const animated = isGif && frames.length > 1;
 

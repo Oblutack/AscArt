@@ -1,0 +1,28 @@
+{
+  // Type checking only (npm run typecheck). The code stays plain JavaScript;
+  // types come from JSDoc and src/types.d.ts.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src", "electron", "scripts", "*.mjs"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "python",
+    "**/*.test.js",
+    "**/*.test.jsx",
+    "src/test"
+  ]
+}

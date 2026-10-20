@@ -19,10 +19,12 @@ const EMPTY_ART = {
 export function useConversion({ showToast }) {
   const [art, setArt] = useState(EMPTY_ART);
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(null);
+  const [progress, setProgress] = useState(
+    /** @type {{ current: number, total: number } | null} */ (null),
+  );
 
   // The conversion we are waiting for, if any
-  const activeRequest = useRef(null);
+  const activeRequest = useRef(/** @type {number | null} */ (null));
   const requestCounter = useRef(0);
 
   useEffect(() => {
@@ -101,7 +103,14 @@ export function useConversion({ showToast }) {
 
   // Show art that didn't come from a conversion (an entry from History)
   const showArt = useCallback(
-    (ascii, { isGif = false, frames, delays } = {}) => {
+    (
+      /** @type {string} */ ascii,
+      /** @type {{ isGif?: boolean, frames?: string[], delays?: number[] }} */ {
+        isGif = false,
+        frames,
+        delays,
+      } = {},
+    ) => {
       if (isGif && frames && delays) {
         setArt({ ascii: frames[0] || ascii, isGif: true, frames, delays });
       } else {
