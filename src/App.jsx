@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
 import WidthPanel from "./components/Generator/WidthPanel";

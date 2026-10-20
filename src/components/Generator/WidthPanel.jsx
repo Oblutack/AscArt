@@ -1,4 +1,3 @@
-import React from "react";
 import Slider from "../Shared/Slider";
 import Dropdown from "../Shared/Dropdown";
 import Toggle from "../Shared/Toggle";
@@ -55,8 +54,11 @@ const WidthPanel = ({
         color="magenta"
       />
       <div className="ratio-section">
-        <label className="ratio-label">Ratio:</label>
+        <label className="ratio-label" htmlFor="ratio-select">
+          Ratio:
+        </label>
         <Dropdown
+          id="ratio-select"
           value={ratio}
           onChange={setRatio}
           options={ratioOptions}
@@ -64,8 +66,11 @@ const WidthPanel = ({
         />
       </div>
       <div className="ratio-section">
-        <label className="ratio-label">Style:</label>
+        <label className="ratio-label" htmlFor="style-select">
+          Style:
+        </label>
         <Dropdown
+          id="style-select"
           value={charset}
           onChange={setCharset}
           options={charsetOptions}
@@ -73,8 +78,11 @@ const WidthPanel = ({
         />
       </div>
       <div className="ratio-section">
-        <label className="ratio-label">Colors:</label>
+        <label className="ratio-label" htmlFor="colors-select">
+          Colors:
+        </label>
         <Dropdown
+          id="colors-select"
           value={colorScheme}
           onChange={setColorScheme}
           options={colorSchemeOptions}

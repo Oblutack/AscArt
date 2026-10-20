@@ -1056,7 +1056,9 @@ a {
   font-family: "Courier New", Consolas, monospace;
   font-size: 12px;
   line-height: 1.4;
-  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   z-index: 10000;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
@@ -1093,4 +1095,20 @@ a {
   background: rgba(var(--danger-rgb), 0.25);
   border-color: var(--danger);
   color: var(--danger-soft);
+}
+
+.toast-dismiss {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.toast-dismiss:hover,
+.toast-dismiss:focus-visible {
+  opacity: 1;
 }

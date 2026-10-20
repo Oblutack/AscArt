@@ -1,5 +1,3 @@
-import React from "react";
-
 const ascart = window.ascart;
 
 const MainLayout = ({ children }) => {
@@ -8,7 +6,7 @@ const MainLayout = ({ children }) => {
       <header className="app-header draggable">
         <h1 className="app-title">
           <span className="title-main">AscArt</span>
-          <span className="title-subtitle">// Image & GIF Converter</span>
+          <span className="title-subtitle">{"// Image & GIF Converter"}</span>
         </h1>
         <div className="drag-hint no-drag">
           <svg

@@ -1,8 +1,7 @@
-import React from "react";
-
-const Dropdown = ({ value, onChange, options, className = "" }) => {
+const Dropdown = ({ id, value, onChange, options, className = "" }) => {
   return (
     <select
+      id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`neon-dropdown ${className}`}

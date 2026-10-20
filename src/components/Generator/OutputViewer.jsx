@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const OutputViewer = ({
   asciiArt,
@@ -15,13 +15,14 @@ const OutputViewer = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const timerRef = useRef(null);
 
-  // Auto-play GIF when loaded
-  useEffect(() => {
-    if (isGif && gifFrames.length > 0) {
-      setCurrentFrame(0);
-      setIsPlaying(true);
-    }
-  }, [isGif, gifFrames]);
+  // A newly loaded GIF starts playing from its first frame. Adjusting state
+  // during render (rather than in an effect) avoids a render with stale state.
+  const [shownFrames, setShownFrames] = useState(gifFrames);
+  if (gifFrames !== shownFrames) {
+    setShownFrames(gifFrames);
+    setCurrentFrame(0);
+    setIsPlaying(isGif && gifFrames.length > 0);
+  }
 
   // Animation playback loop
   useEffect(() => {

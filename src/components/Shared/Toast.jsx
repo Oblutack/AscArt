@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 // Errors stay up a bit longer than plain notices
 const DURATION_MS = { info: 4000, error: 8000 };
@@ -16,10 +16,16 @@ const Toast = ({ toast, onDismiss }) => {
     <div
       className={`toast toast-${toast.kind}`}
       role={toast.kind === "error" ? "alert" : "status"}
-      onClick={onDismiss}
-      title="Click to dismiss"
     >
-      {toast.message}
+      <span className="toast-message">{toast.message}</span>
+      <button
+        type="button"
+        className="toast-dismiss"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+      >
+        ×
+      </button>
     </div>
   );
 };

@@ -1,5 +1,3 @@
-import React from "react";
-
 const Toggle = ({ label, checked, onChange, icon }) => {
   return (
     <label className="toggle-container">

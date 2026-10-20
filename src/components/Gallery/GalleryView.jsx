@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Provided by electron/preload.js
 const ascart = window.ascart;
@@ -12,7 +12,9 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
 
   // The latest callbacks, so the subscription below can stay put
   const callbacks = useRef({ onClose, onLoadAscii });
-  callbacks.current = { onClose, onLoadAscii };
+  useEffect(() => {
+    callbacks.current = { onClose, onLoadAscii };
+  });
 
   useEffect(() => {
     // Listen for the backend, then ask for the history list
@@ -54,6 +56,17 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
       // Single select
       setSelectedItems([item]);
     }
+  };
+
+  // Keyboard: Space or Enter adds/removes the tile, like Ctrl+click
+  const handleItemKeyDown = (item, event) => {
+    if (event.key !== " " && event.key !== "Enter") return;
+    event.preventDefault();
+    setSelectedItems((current) =>
+      current.includes(item)
+        ? current.filter((i) => i !== item)
+        : [...current, item],
+    );
   };
 
   const handleSelectAll = () => {
@@ -139,7 +152,12 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                   className={`gallery-item ${
                     selectedItems.includes(item) ? "selected" : ""
                   }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedItems.includes(item)}
+                  aria-label={`${formatDate(item.timestamp)}, ${item.options.width} characters wide`}
                   onClick={(e) => handleItemClick(item, e)}
+                  onKeyDown={(e) => handleItemKeyDown(item, e)}
                 >
                   <div className="gallery-item-preview">
                     <pre dangerouslySetInnerHTML={{ __html: item.thumb || "" }} />
