@@ -81,6 +81,21 @@ let quitting = false;
 // Processes we killed on purpose (Stop button), so their exit isn't a crash
 const killedOnPurpose = new WeakSet();
 
+// The bundled engine on Windows is a PyInstaller one-file exe: a small
+// launcher that starts the real process as a child. Killing just the
+// launcher leaves the child running (and still converting), so end the whole
+// tree there.
+function killProcessTree(proc) {
+  if (process.platform === "win32" && proc.pid) {
+    spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+  } else {
+    proc.kill();
+  }
+}
+
 function startPython() {
   const { command, args, cwd } = pythonLaunchInfo();
   debug(`Starting Python: ${command} ${args.join(" ")} (cwd ${cwd})`);
@@ -155,7 +170,7 @@ ipcMain.on("stop-python", () => {
   const old = pythonProcess;
   if (old) {
     killedOnPurpose.add(old);
-    old.kill();
+    killProcessTree(old);
   }
   startPython();
   sendToRenderer({ status: "success", type: "stopped" });
@@ -210,7 +225,7 @@ app.on("before-quit", () => {
 
 app.on("window-all-closed", () => {
   quitting = true;
-  if (pythonProcess) pythonProcess.kill();
+  if (pythonProcess) killProcessTree(pythonProcess);
   app.quit();
 });
 
