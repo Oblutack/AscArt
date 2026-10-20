@@ -49,3 +49,22 @@ def test_gif_convert_streams_progress(data_dir, tmp_path, capsys):
     lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     assert [m['current'] for m in lines] == [1, 2, 3]
     assert all(m['type'] == 'progress' and m['requestId'] == 7 for m in lines)
+
+
+def test_history_entries_get_a_small_thumbnail(data_dir, make_image):
+    backend = backend_main.Backend()
+    backend.handle_convert({'path': make_image(size=(400, 200)), 'options': {'width': 200}})
+
+    entry = backend.handle_get_history({})['history'][0]
+    assert entry['thumb']
+    assert len(entry['thumb'].split('\n')) <= backend_main.THUMB_ROWS
+    assert len(entry['ascii'].split('\n')) > len(entry['thumb'].split('\n'))
+
+
+def test_live_previews_stay_out_of_history(data_dir, make_image):
+    backend = backend_main.Backend()
+    result = backend.handle_convert(
+        {'path': make_image(), 'options': {'width': 10}, 'saveHistory': False})
+
+    assert result['type'] == 'ascii-result'
+    assert backend.handle_get_history({})['history'] == []

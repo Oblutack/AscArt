@@ -7,6 +7,8 @@ from PIL import Image, ImageEnhance, ImageOps
 import numpy as np
 import os
 
+from .art import Grid
+
 # Lazy import for rembg (only when background removal is needed)
 _rembg_remove = None
 _rembg_session = None
@@ -201,8 +203,8 @@ class ImageProcessor:
         step = cls.COLOR_STEP
         return np.minimum(255, (rgb + step // 2) // step * step)
 
-    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
-        """Convert image to ASCII art using character gradients"""
+    def build_grid(self, charset='detailed', colored=True, color_scheme='original'):
+        """Turn the working image into a Grid of characters (and colours)"""
         if self.image is None:
             raise ValueError("No image loaded")
 
@@ -224,7 +226,7 @@ class ImageProcessor:
             glyphs = np.where(alpha_array < 10, ' ', glyphs)
 
         if not colored:
-            return '\n'.join(''.join(row) for row in glyphs.tolist())
+            return Grid(glyphs)
 
         rgb = self._apply_color_scheme(np.array(self.image), color_scheme)
         rgb = self._quantize(rgb)
@@ -236,30 +238,10 @@ class ImageProcessor:
             np.where(glyphs != ' ', columns, 0), axis=1)
         rgb = np.take_along_axis(rgb, last_visible[..., None], axis=1)
 
-        # One <span> per run of equal colour instead of one per character
-        lines = []
-        for y in range(height):
-            row_rgb = rgb[y]
-            text = ''.join(glyphs[y].tolist())
+        return Grid(glyphs, rgb.astype(np.uint8))
 
-            breaks = np.flatnonzero((row_rgb[1:] != row_rgb[:-1]).any(axis=1)) + 1
-            starts = [0] + breaks.tolist()
-            ends = breaks.tolist() + [width]
-
-            parts = []
-            for start, end in zip(starts, ends):
-                segment = text[start:end]
-                if segment.isspace():
-                    parts.append(segment)
-                else:
-                    r, g, b = row_rgb[start].tolist()
-                    parts.append(f'<span style="color:rgb({r},{g},{b})">{segment}</span>')
-            lines.append(''.join(parts))
-
-        return '\n'.join(lines)
-
-    def convert_to_halftone(self):
-        """Convert image to pure black & white halftone (dithering only)"""
+    def halftone_grid(self):
+        """Pure black & white halftone (dithering only) as a Grid"""
         if self.image is None:
             raise ValueError("No image loaded")
 
@@ -276,7 +258,16 @@ class ImageProcessor:
         if alpha_array is not None:
             glyphs = np.where(alpha_array < 10, ' ', glyphs)
 
-        return '\n'.join(''.join(row) for row in glyphs.tolist())
+        return Grid(glyphs)
+
+    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
+        """ASCII art as an HTML string (colored) or plain text"""
+        grid = self.build_grid(charset, colored, color_scheme)
+        return grid.to_html() if colored else grid.to_text()
+
+    def convert_to_halftone(self):
+        """Halftone as plain text"""
+        return self.halftone_grid().to_text()
 
     def reset(self):
         """Reset to original image"""
@@ -285,55 +276,52 @@ class ImageProcessor:
             if self.image.mode != 'RGB':
                 self.image = self.image.convert('RGB')
             self.alpha_mask = None
-        
-    def process_and_convert(self, path, options):
-        """Complete pipeline: load, process, and convert to ASCII"""
+
+    def process_image(self, options):
+        """
+        Everything between "an image is loaded" and "here is the art":
+        background removal, adjustments, resizing and conversion.
+        """
+        self.alpha_mask = None
+
+        if options.get('removeBackground', False):
+            self.remove_background()
+
+        brightness = options.get('brightness', 0)
+        if brightness != 0:
+            self.adjust_brightness(brightness)
+
+        contrast = options.get('contrast', 100)
+        if contrast != 100:
+            self.adjust_contrast(contrast)
+
+        if options.get('invert', False):
+            self.invert_colors()
+
+        width = options.get('width', 120)
+        ratio = options.get('ratio')
+        keep_original = options.get('keepOriginal', False)
+
+        if options.get('dither', False):
+            # Halftone cells are single dots, so render at 3x the width
+            self.resize_image(width * 3, ratio, keep_original)
+            return self.halftone_grid()
+
+        self.resize_image(width, ratio, keep_original)
+        return self.build_grid(
+            options.get('charset', 'detailed'),
+            colored=True,
+            color_scheme=options.get('colorScheme', 'original'),
+        )
+
+    def process_to_grid(self, path, options):
+        """Complete pipeline for a file: load, process, return the Grid"""
         try:
-            # Load image
             self.load_image(path)
-            
-            # Remove background if requested
-            if options.get('removeBackground', False):
-                self.remove_background()
-            
-            # Apply adjustments
-            brightness = options.get('brightness', 0)
-            if brightness != 0:
-                self.adjust_brightness(brightness)
-            
-            contrast = options.get('contrast', 100)
-            if contrast != 100:
-                self.adjust_contrast(contrast)
-            
-            if options.get('invert', False):
-                self.invert_colors()
-            
-            # Choose output mode: halftone dithering OR ASCII art
-            use_dithering = options.get('dither', False)
-            
-            if use_dithering:
-                # For dithering: use higher resolution (3x width) for better quality
-                width = options.get('width', 120)
-                dither_width = width * 3  # Triple the resolution for better dithering
-                ratio = options.get('ratio')
-                keep_original = options.get('keepOriginal', False)
-                self.resize_image(dither_width, ratio, keep_original)
-                
-                # Generate pure black & white halftone (dithering)
-                result = self.convert_to_halftone()
-            else:
-                # For ASCII: use normal width
-                width = options.get('width', 120)
-                ratio = options.get('ratio')
-                keep_original = options.get('keepOriginal', False)
-                self.resize_image(width, ratio, keep_original)
-                
-                # Generate colored ASCII art (character gradients)
-                charset = options.get('charset', 'detailed')
-                color_scheme = options.get('colorScheme', 'original')
-                result = self.convert_to_ascii(charset, colored=True, color_scheme=color_scheme)
-            
-            return result
-            
+            return self.process_image(options)
         except Exception as e:
             raise Exception(f"Processing error: {str(e)}")
+
+    def process_and_convert(self, path, options):
+        """Complete pipeline for a file, as an HTML string"""
+        return self.process_to_grid(path, options).to_html()

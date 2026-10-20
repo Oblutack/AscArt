@@ -51,7 +51,7 @@ class FileHandler:
 
         return history
 
-    def save_history_entry(self, ascii_art, options, history_file='history.json', is_gif=False, frames=None, delays=None):
+    def save_history_entry(self, ascii_art, options, history_file='history.json', is_gif=False, frames=None, delays=None, thumb=None):
         """Save entry to history"""
         history = self.get_history(history_file)
 
@@ -59,7 +59,7 @@ class FileHandler:
             'id': uuid.uuid4().hex,
             'timestamp': datetime.now().isoformat(),
             'ascii': ascii_art,  # Full ASCII art (or first frame for GIFs)
-            'preview': ascii_art[:500],  # Preview for gallery display
+            'thumb': thumb,  # Small version for the gallery grid
             'options': options,
             'isGif': is_gif
         }

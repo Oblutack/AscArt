@@ -25,6 +25,15 @@ def send(message):
     sys.stdout.flush()
 
 
+# The gallery shows thumbnails at most this many characters across / down
+THUMB_COLS = 48
+THUMB_ROWS = 24
+
+
+def make_thumb(grid):
+    return grid.downscale(THUMB_COLS, THUMB_ROWS).to_html()
+
+
 def error_response(message):
     return {"status": "error", "error": message}
 
@@ -42,6 +51,8 @@ class Backend:
         path = data.get('path')
         options = data.get('options', {})
         request_id = data.get('requestId')
+        # Live previews are throwaway; only deliberate conversions go to history
+        save_history = data.get('saveHistory', True)
 
         if not path:
             return error_response("No file path provided")
@@ -61,31 +72,35 @@ class Backend:
                         "requestId": request_id,
                     })
 
-                result = self.gif_processor.process_and_convert(path, options, report_progress)
+                result = self.gif_processor.process_to_grids(path, options, report_progress)
+                grids = result['grids']
+                frames = [grid.to_html() for grid in grids]
 
-                if result['frames']:
+                if frames and save_history:
                     self.file_handler.save_history_entry(
-                        result['frames'][0],  # First frame as preview
+                        frames[0],  # First frame stands in for the whole GIF
                         options,
                         is_gif=True,
-                        frames=result['frames'],
-                        delays=result['delays']
+                        frames=frames,
+                        delays=result['delays'],
+                        thumb=make_thumb(grids[0]),
                     )
 
                 log_info(f"GIF processed, {result['frame_count']} frames")
                 return {
                     "status": "success",
                     "type": "gif-result",
-                    "frames": result['frames'],
+                    "frames": frames,
                     "delays": result['delays'],
                     "frameCount": result['frame_count']
                 }
 
-            ascii_art = self.image_processor.process_and_convert(path, options)
-            log_info(f"ASCII art generated, length: {len(ascii_art) if ascii_art else 0}")
+            grid = self.image_processor.process_to_grid(path, options)
+            ascii_art = grid.to_html()
+            log_info(f"ASCII art generated, length: {len(ascii_art)}")
 
-            if ascii_art:
-                self.file_handler.save_history_entry(ascii_art, options)
+            if ascii_art and save_history:
+                self.file_handler.save_history_entry(ascii_art, options, thumb=make_thumb(grid))
 
             return {
                 "status": "success",
