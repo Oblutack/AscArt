@@ -1,0 +1,240 @@
+[
+  {
+    "case": "flat_red_plain",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_sepia",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "sepia"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_grayscale",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "grayscale"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_blue",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "blue"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_green",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "green"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_red",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "red"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_purple",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "purple"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_cyan",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "colorScheme": "cyan"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_blocks",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "charset": "blocks"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_custom",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "charset": "custom",
+      "customChars": ".oO#"
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_escaped",
+    "fixture": "flat_red",
+    "options": {
+      "width": 12,
+      "charset": "custom",
+      "customChars": "<&>"
+    },
+    "cols": 12,
+    "rows": 6
+  },
+  {
+    "case": "flat_red_bright",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "brightness": 40
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_dim",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "brightness": -40
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_contrast",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "contrast": 160
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_invert",
+    "fixture": "flat_red",
+    "options": {
+      "width": 20,
+      "invert": true
+    },
+    "cols": 20,
+    "rows": 11
+  },
+  {
+    "case": "flat_red_ratio",
+    "fixture": "flat_red",
+    "options": {
+      "width": 24,
+      "ratio": "16:9"
+    },
+    "cols": 24,
+    "rows": 7
+  },
+  {
+    "case": "flat_gray_plain",
+    "fixture": "flat_gray",
+    "options": {
+      "width": 30
+    },
+    "cols": 30,
+    "rows": 11
+  },
+  {
+    "case": "flat_gray_dark_ramp",
+    "fixture": "flat_gray",
+    "options": {
+      "width": 30,
+      "charset": "custom",
+      "customChars": "ABC"
+    },
+    "cols": 30,
+    "rows": 11
+  },
+  {
+    "case": "flat_dark_plain",
+    "fixture": "flat_dark",
+    "options": {
+      "width": 16
+    },
+    "cols": 16,
+    "rows": 4
+  },
+  {
+    "case": "flat_dark_dither",
+    "fixture": "flat_dark",
+    "options": {
+      "width": 8,
+      "dither": true
+    },
+    "cols": 24,
+    "rows": 6
+  },
+  {
+    "case": "flat_gray_keep",
+    "fixture": "flat_gray",
+    "options": {
+      "keepOriginal": true
+    },
+    "cols": 96,
+    "rows": 35
+  },
+  {
+    "case": "gradient_plain",
+    "fixture": "gradient",
+    "options": {
+      "width": 40
+    },
+    "cols": 40,
+    "rows": 11
+  },
+  {
+    "case": "gradient_sepia_blocks",
+    "fixture": "gradient",
+    "options": {
+      "width": 40,
+      "charset": "blocks",
+      "colorScheme": "sepia"
+    },
+    "cols": 40,
+    "rows": 11
+  },
+  {
+    "case": "stripes_plain",
+    "fixture": "stripes",
+    "options": {
+      "width": 40
+    },
+    "cols": 40,
+    "rows": 11
+  }
+]
