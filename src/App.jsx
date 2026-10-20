@@ -35,7 +35,7 @@ const pickSettings = (saved) =>
   Object.fromEntries(
     Object.keys(DEFAULT_SETTINGS)
       .filter((key) => saved && saved[key] !== undefined && saved[key] !== null)
-      .map((key) => [key, saved[key]])
+      .map((key) => [key, saved[key]]),
   );
 
 function App() {
@@ -54,7 +54,7 @@ function App() {
 
   const showToast = useCallback(
     (message, kind = "info") => setToast({ id: Date.now(), message, kind }),
-    []
+    [],
   );
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -119,7 +119,8 @@ function App() {
 
       // Answers to a conversion we have since stopped or replaced
       const isStale =
-        data.requestId !== undefined && data.requestId !== activeRequest.current;
+        data.requestId !== undefined &&
+        data.requestId !== activeRequest.current;
 
       if (data.type === "progress") {
         if (!isStale) setProgress({ current: data.current, total: data.total });
@@ -216,7 +217,7 @@ function App() {
       dither,
       ratio,
       keepOriginal,
-    ]
+    ],
   );
 
   // A deliberate conversion shows the spinner and lands in History. A live
@@ -228,7 +229,7 @@ function App() {
       if (!preview && conversionOptions.removeBackground && isGifPath(path)) {
         showToast(
           "Background removal on a GIF runs per frame and can take a while",
-          "info"
+          "info",
         );
       }
 
@@ -239,7 +240,7 @@ function App() {
 
       ascart.convert(requestId, path, conversionOptions, !preview);
     },
-    [conversionOptions, showToast]
+    [conversionOptions, showToast],
   );
 
   // Live preview: re-convert shortly after any change. GIFs and background
@@ -252,10 +253,16 @@ function App() {
 
     const timer = setTimeout(
       () => startConversion(imagePath, { preview: true }),
-      LIVE_PREVIEW_DELAY_MS
+      LIVE_PREVIEW_DELAY_MS,
     );
     return () => clearTimeout(timer);
-  }, [settingsLoaded, livePreview, imagePath, conversionOptions, startConversion]);
+  }, [
+    settingsLoaded,
+    livePreview,
+    imagePath,
+    conversionOptions,
+    startConversion,
+  ]);
 
   const handleConvert = () => {
     startConversion(imagePath);

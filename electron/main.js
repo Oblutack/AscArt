@@ -62,7 +62,7 @@ function pythonLaunchInfo() {
       command: path.join(
         process.resourcesPath,
         "python",
-        process.platform === "win32" ? "engine.exe" : "engine"
+        process.platform === "win32" ? "engine.exe" : "engine",
       ),
       args: [],
       cwd: process.resourcesPath,
@@ -134,7 +134,8 @@ function startPython() {
     } else {
       sendToRenderer({
         status: "error",
-        error: "The Python backend keeps crashing. Restart the app to try again.",
+        error:
+          "The Python backend keeps crashing. Restart the app to try again.",
       });
     }
   });
@@ -200,7 +201,7 @@ ipcMain.on("stop-python", (event, requestId) => {
   if (requestId === undefined || requestId === null) return;
 
   pythonProcess.stdin.write(
-    JSON.stringify({ command: "cancel", requestId }) + "\n"
+    JSON.stringify({ command: "cancel", requestId }) + "\n",
   );
 
   clearTimeout(cancelTimers.get(requestId));
@@ -208,9 +209,11 @@ ipcMain.on("stop-python", (event, requestId) => {
     requestId,
     setTimeout(() => {
       cancelTimers.delete(requestId);
-      console.warn(`Backend ignored the cancel for request ${requestId}; restarting it`);
+      console.warn(
+        `Backend ignored the cancel for request ${requestId}; restarting it`,
+      );
       restartBackend();
-    }, CANCEL_GRACE_MS)
+    }, CANCEL_GRACE_MS),
   );
 });
 
@@ -233,7 +236,9 @@ function createWindow() {
 
   // DEV vs PROD Loading
   const devUrl = "http://localhost:3000";
-  const prodUrl = pathToFileURL(path.join(__dirname, "../build/index.html")).href;
+  const prodUrl = pathToFileURL(
+    path.join(__dirname, "../build/index.html"),
+  ).href;
 
   // Packaged: the built files. Development: the Vite dev server, unless
   // ASCART_USE_BUILD=1 asks for the built files (used by the end-to-end tests).
@@ -415,6 +420,9 @@ ipcMain.on("move-widget-window", (event, { deltaX, deltaY }) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
   if (sender && Number.isFinite(deltaX) && Number.isFinite(deltaY)) {
     const [currentX, currentY] = sender.getPosition();
-    sender.setPosition(currentX + Math.round(deltaX), currentY + Math.round(deltaY));
+    sender.setPosition(
+      currentX + Math.round(deltaX),
+      currentY + Math.round(deltaY),
+    );
   }
 });

@@ -28,9 +28,12 @@ const OutputViewer = ({
   useEffect(() => {
     if (isPlaying && isGif && gifFrames.length > 1) {
       const delay = (gifDelays[currentFrame] || 100) / playbackSpeed;
-      timerRef.current = setTimeout(() => {
-        setCurrentFrame((prev) => (prev + 1) % gifFrames.length);
-      }, Math.max(10, delay));
+      timerRef.current = setTimeout(
+        () => {
+          setCurrentFrame((prev) => (prev + 1) % gifFrames.length);
+        },
+        Math.max(10, delay),
+      );
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);

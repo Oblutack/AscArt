@@ -27,7 +27,7 @@ console.log(`Building the engine with ${python}`);
 const result = spawnSync(
   python,
   ["-m", "PyInstaller", "engine.spec", "--clean", "--noconfirm"],
-  { cwd: pythonDir, stdio: "inherit" }
+  { cwd: pythonDir, stdio: "inherit" },
 );
 
 if (result.error) {

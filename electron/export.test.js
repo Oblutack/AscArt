@@ -46,6 +46,11 @@ test("a frame containing </script> cannot end the player script early", () => {
 });
 
 test("a single-frame gif is exported as a static page", () => {
-  const html = buildHtml({ ascii: cell("a"), isGif: true, frames: [cell("a")], delays: [50] });
+  const html = buildHtml({
+    ascii: cell("a"),
+    isGif: true,
+    frames: [cell("a")],
+    delays: [50],
+  });
   assert.doesNotMatch(html, /<script>/);
 });

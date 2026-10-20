@@ -30,7 +30,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
           entry.options,
           entry.isGif,
           entry.frames,
-          entry.delays
+          entry.delays,
         );
         callbacks.current.onClose();
       } else if (data.status === "error") {
@@ -160,7 +160,9 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                   onKeyDown={(e) => handleItemKeyDown(item, e)}
                 >
                   <div className="gallery-item-preview">
-                    <pre dangerouslySetInnerHTML={{ __html: item.thumb || "" }} />
+                    <pre
+                      dangerouslySetInnerHTML={{ __html: item.thumb || "" }}
+                    />
                   </div>
                   <div className="gallery-item-info">
                     <span className="gallery-item-date">

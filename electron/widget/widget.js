@@ -33,10 +33,13 @@
     clearTimeout(timer);
     if (!isPlaying || frames.length < 2) return;
 
-    timer = setTimeout(() => {
-      showFrame((current + 1) % frames.length);
-      scheduleNext();
-    }, Math.max(20, delays[current] || 100));
+    timer = setTimeout(
+      () => {
+        showFrame((current + 1) % frames.length);
+        scheduleNext();
+      },
+      Math.max(20, delays[current] || 100),
+    );
   }
 
   function setPlaying(playing) {
@@ -162,7 +165,10 @@
   // ---------- Start ----------
 
   api.onData((data) => {
-    const isGif = Boolean(data.isGif) && Array.isArray(data.frames) && data.frames.length > 0;
+    const isGif =
+      Boolean(data.isGif) &&
+      Array.isArray(data.frames) &&
+      data.frames.length > 0;
     setFontSize(fontSize);
 
     if (isGif) {

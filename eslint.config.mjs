@@ -7,7 +7,13 @@ import prettier from "eslint-config-prettier";
 
 export default [
   {
-    ignores: ["build/**", "dist/**", "node_modules/**", "python/**", "assets/**"],
+    ignores: [
+      "build/**",
+      "dist/**",
+      "node_modules/**",
+      "python/**",
+      "assets/**",
+    ],
   },
 
   js.configs.recommended,
