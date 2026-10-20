@@ -26,6 +26,7 @@ def test_convert_image_and_history_round_trip(data_dir, make_image):
 
     history = backend.handle_get_history({})
     assert history['type'] == 'history' and len(history['history']) == 1
+    assert 'ascii' not in history['history'][0]  # the list carries only thumbnails
 
     entry_id = history['history'][0]['id']
     deleted = backend.handle_delete_history({'ids': [entry_id]})
@@ -55,10 +56,12 @@ def test_history_entries_get_a_small_thumbnail(data_dir, make_image):
     backend = backend_main.Backend()
     backend.handle_convert({'path': make_image(size=(400, 200)), 'options': {'width': 200}})
 
-    entry = backend.handle_get_history({})['history'][0]
-    assert entry['thumb']
-    assert len(entry['thumb'].split('\n')) <= backend_main.THUMB_ROWS
-    assert len(entry['ascii'].split('\n')) > len(entry['thumb'].split('\n'))
+    listed = backend.handle_get_history({})['history'][0]
+    assert listed['thumb']
+    assert len(listed['thumb'].split('\n')) <= backend_main.THUMB_ROWS
+
+    entry = backend.handle_get_history_entry({'id': listed['id']})['entry']
+    assert len(entry['ascii'].split('\n')) > len(listed['thumb'].split('\n'))
 
 
 def test_live_previews_stay_out_of_history(data_dir, make_image):
@@ -68,3 +71,22 @@ def test_live_previews_stay_out_of_history(data_dir, make_image):
 
     assert result['type'] == 'ascii-result'
     assert backend.handle_get_history({})['history'] == []
+
+
+def test_get_history_entry_returns_the_full_art(data_dir, make_image):
+    backend = backend_main.Backend()
+    shown = backend.handle_convert({'path': make_image(), 'options': {'width': 10}})['ascii']
+
+    entry_id = backend.handle_get_history({})['history'][0]['id']
+    response = backend.handle_get_history_entry({'id': entry_id})
+
+    assert response['type'] == 'history-entry'
+    assert response['entry']['ascii'] == shown
+    assert response['entry']['options'] == {'width': 10}
+
+
+def test_get_history_entry_errors(data_dir):
+    backend = backend_main.Backend()
+    assert backend.handle_get_history_entry({})['status'] == 'error'
+    assert backend.handle_get_history_entry({'id': '0' * 32})['status'] == 'error'
+    assert backend.handle_get_history_entry({'id': '../../etc/passwd'})['status'] == 'error'

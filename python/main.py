@@ -139,6 +139,20 @@ class Backend:
             log_error(f"History load failed: {e}")
             return error_response(f"History load failed: {e}")
 
+    def handle_get_history_entry(self, data):
+        entry_id = data.get('id')
+        if not entry_id:
+            return error_response("No history id provided")
+
+        try:
+            entry = self.file_handler.get_history_entry(entry_id)
+        except ValueError as e:
+            return error_response(str(e))
+
+        if entry is None:
+            return error_response("That history entry no longer exists")
+        return {"status": "success", "type": "history-entry", "entry": entry}
+
     def handle_delete_history(self, data):
         ids = data.get('ids')
         if not ids:
@@ -193,6 +207,7 @@ def main():
         'ping': backend.handle_ping,
         'convert': backend.handle_convert,
         'get_history': backend.handle_get_history,
+        'get_history_entry': backend.handle_get_history_entry,
         'delete_history': backend.handle_delete_history,
     }
 
