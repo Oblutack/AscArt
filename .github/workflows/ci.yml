@@ -20,6 +20,8 @@ jobs:
           cache: pip
           cache-dependency-path: python/requirements-dev.txt
       - run: pip install -r python/requirements-dev.txt
+      # The video tests need a real ffmpeg
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: python -m ruff check
         working-directory: python
       - run: python -m pytest
@@ -40,6 +42,8 @@ jobs:
           cache: pip
           cache-dependency-path: python/requirements-dev.txt
       - run: pip install -r python/requirements-dev.txt
+      # The video tests need a real ffmpeg
+      - run: choco install ffmpeg -y --no-progress
       - run: npm ci
       - run: npm run test:e2e
 

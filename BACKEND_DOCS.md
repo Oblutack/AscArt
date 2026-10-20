@@ -68,7 +68,7 @@ Every command may carry a `requestId`. Python copies it onto every message it se
 | `ratio` | `"16:9"`, `"4:3"`, `"1:1"`, `"9:16"` or `null` for the image's own ratio. |
 | `keepOriginal` | Use the native size, capped at 400 characters wide. Ignores `ratio`. |
 
-A `.gif` path is converted frame by frame. While it runs, Python sends progress messages:
+A `.gif` path, or a video (`.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv`, `.avi`), is converted frame by frame. A video is cut into frames by ffmpeg (10 per second, the first 10 seconds, at most 640px wide) and then handled exactly like a GIF, so it answers with `gif-result`. ffmpeg must be installed and on the PATH (or named in `ASCART_FFMPEG`); if it is not, the error says so. While it runs, Python sends progress messages:
 
 ```json
 { "status": "success", "type": "progress", "current": 4, "total": 24, "requestId": 3 }
