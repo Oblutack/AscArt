@@ -70,6 +70,25 @@ Load a picture (or drop one anywhere in the window) and the art appears straight
 
 <p align="center"><sub>Animations play with their own timing. Zoom, change the speed, pause, or step frame by frame.</sub></p>
 
+<br>
+
+### Widgets
+
+<div align="center">
+<img src="docs/media/desktop-widgets.gif" alt="Pressing WIDGET turns a picture, then an animation, into borderless windows that sit on the desktop; the app is then minimized and the two widgets are dragged around" width="860">
+</div>
+
+Press **WIDGET** and the art in the viewer, a still picture or a running animation, becomes its own borderless window on your desktop. Make as many as you like: each one is independent, so you can keep a few going while you carry on converting.
+
+* **Drag** a widget by its art to put it anywhere.
+* **Hide Controls** leaves nothing but the art floating on the desktop (below). Click the art, or right-click it, to bring the controls back.
+* **Pause**, **Prev** and **Next** step through an animation; **Smaller** and **Larger** change the size of the art.
+* **Close Widget** puts it away. Minimizing the app leaves the widgets where they are; quitting the app closes them.
+
+<div align="center">
+<img src="docs/media/desktop-widgets.jpg" alt="Two widgets floating on a desktop, one a playing animation and one a sunset, with no window around either" width="620">
+</div>
+
 <table>
 <tr>
 <td width="50%" align="center"><img src="docs/media/desktop-gallery.png" alt="The history gallery with six thumbnails of the same picture in different colors" ><br><sub><b>History gallery</b>: every conversion, with its settings</sub></td>
@@ -355,6 +374,7 @@ Install [ffmpeg](https://ffmpeg.org/download.html) and make sure `ffmpeg` runs i
 * Desktop builds are unsigned until a certificate is added, and Intel Macs have no desktop build yet (the terminal binary has one).
 * Background removal is desktop-only.
 * Widgets can't be minimized to the taskbar: they are desktop overlays by design.
+* A widget window is 400 pixels wide, so art wider than about 100 columns is cropped at the edges until you press **Smaller**.
 * Very large GIFs (500+ frames) take a while to load in widgets.
 * Next: batch conversion, widget opacity and saved widget layouts.
 
