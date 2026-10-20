@@ -11,6 +11,7 @@ export function installFakeAscart(overrides = {}) {
 
   const api = {
     convert: vi.fn(),
+    convertFrame: vi.fn(),
     stop: vi.fn(),
     getHistory: vi.fn(),
     getHistoryEntry: vi.fn(),

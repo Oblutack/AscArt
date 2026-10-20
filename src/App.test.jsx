@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { installFakeAscart } from "./test/fakeAscart";
+import { installFakeCamera } from "./test/fakeCamera";
 
 const ART = '<span style="color:rgb(10,20,30)">@@@</span>';
 
@@ -502,5 +503,127 @@ describe("custom characters", () => {
 
     expect(fake.api.convert).not.toHaveBeenCalled();
     expect(screen.getAllByRole("alert")[0]).toHaveTextContent("at least 2");
+  });
+});
+
+describe("camera", () => {
+  let camera;
+
+  beforeEach(() => {
+    camera = installFakeCamera();
+  });
+
+  const cameraButton = () => screen.getByRole("button", { name: "CAMERA" });
+  const frameCount = () => fake.api.convertFrame.mock.calls.length;
+
+  it("turns the webcam into live art", async () => {
+    render(<App />);
+
+    await userEvent.click(cameraButton());
+
+    expect(
+      await screen.findByRole("button", { name: "STOP CAMERA" }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
+    const [id, imageData, options] = fake.api.convertFrame.mock.calls[0];
+    expect(imageData).toBe("QUJD");
+    expect(options).toMatchObject({ width: 120, charset: "detailed" });
+
+    await fake.emit({ type: "ascii-result", ascii: ART, requestId: id });
+    expect(output().innerHTML).toBe(ART);
+    expect(fake.api.convert).not.toHaveBeenCalled(); // not through the file path
+  });
+
+  it("uses the settings as they change", async () => {
+    render(<App />);
+    await userEvent.click(cameraButton());
+    await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
+
+    await userEvent.selectOptions(screen.getByLabelText("Style:"), "blocks");
+    // answer the frame that was in flight so the next one can go out
+    await fake.emit({
+      type: "ascii-result",
+      ascii: ART,
+      requestId: fake.api.convertFrame.mock.calls.at(-1)[0],
+    });
+
+    await waitFor(() =>
+      expect(fake.api.convertFrame.mock.calls.at(-1)[2].charset).toBe("blocks"),
+    );
+  });
+
+  it("STOP CAMERA releases the camera and stops sending", async () => {
+    render(<App />);
+    await userEvent.click(cameraButton());
+    await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
+
+    await userEvent.click(screen.getByRole("button", { name: "STOP CAMERA" }));
+
+    expect(camera.track.stop).toHaveBeenCalled();
+    const sent = frameCount();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(frameCount()).toBe(sent);
+    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+  });
+
+  it("Escape turns the camera off", async () => {
+    render(<App />);
+    await userEvent.click(cameraButton());
+    await screen.findByRole("button", { name: "STOP CAMERA" });
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(camera.track.stop).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+  });
+
+  it("picking a picture takes over from the camera", async () => {
+    render(<App />);
+    await userEvent.click(cameraButton());
+    await screen.findByRole("button", { name: "STOP CAMERA" });
+
+    await chooseImage();
+
+    expect(camera.track.stop).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+  });
+
+  it("live preview of a loaded picture waits while the camera is on", async () => {
+    render(<App />);
+    await chooseImage();
+    await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
+    fake.api.convert.mockClear();
+
+    await userEvent.click(cameraButton());
+    await userEvent.selectOptions(screen.getByLabelText("Style:"), "blocks");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(fake.api.convert).not.toHaveBeenCalled();
+  });
+
+  it("explains when the camera is refused", async () => {
+    camera.getUserMedia.mockRejectedValue(
+      Object.assign(new Error("no"), { name: "NotAllowedError" }),
+    );
+    render(<App />);
+
+    await userEvent.click(cameraButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Camera access was refused",
+    );
+    expect(screen.getByRole("button", { name: "CAMERA" })).toBeEnabled();
+  });
+
+  it("doesn't send a half-typed character set", async () => {
+    render(<App />);
+    await userEvent.selectOptions(screen.getByLabelText("Style:"), "custom");
+    await userEvent.clear(screen.getByLabelText("Chars:"));
+
+    await userEvent.click(cameraButton());
+    await screen.findByRole("button", { name: "STOP CAMERA" });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(fake.api.convertFrame).not.toHaveBeenCalled();
   });
 });
