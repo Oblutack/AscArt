@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageOps
 
 from .art import Grid
+from .charsets import CHARSET_ALIASES, CHARSETS, resolve_charset
 
 # Lazy import for rembg (only when background removal is needed)
 _rembg_remove = None
@@ -31,17 +32,9 @@ def _get_rembg():
 
 
 class ImageProcessor:
-    # Character sets for different detail levels (from dark to light)
-    CHARSETS = {
-        'detailed': '@%#*+=-:. ',
-        'blocks': '█▓▒░ ',
-    }
-
-    # Old names that may still be stored in saved settings / history
-    CHARSET_ALIASES = {
-        'standard': 'detailed',
-        'simple': 'blocks',
-    }
+    # Kept here too, so callers and tests can say ImageProcessor.CHARSETS
+    CHARSETS = CHARSETS
+    CHARSET_ALIASES = CHARSET_ALIASES
 
     # Widest output "Keep Original" will produce, in characters
     MAX_KEEP_ORIGINAL_WIDTH = 400
@@ -206,14 +199,13 @@ class ImageProcessor:
         step = cls.COLOR_STEP
         return np.minimum(255, (rgb + step // 2) // step * step)
 
-    def build_grid(self, charset='detailed', colored=True, color_scheme='original'):
+    def build_grid(self, charset='detailed', colored=True, color_scheme='original', custom_chars=None):
         """Turn the working image into a Grid of characters (and colours)"""
         if self.image is None:
             raise ValueError("No image loaded")
 
-        # Get character set (from dark to light: @ to space)
-        charset = self.CHARSET_ALIASES.get(charset, charset)
-        chars = np.array(list(self.CHARSETS.get(charset, self.CHARSETS['detailed'])))
+        # The ramp, from dark to light (@ to space)
+        chars = np.array(resolve_charset(charset, custom_chars))
 
         gray_pixels = np.array(self.image.convert('L'))
         height, width = gray_pixels.shape
@@ -263,9 +255,9 @@ class ImageProcessor:
 
         return Grid(glyphs)
 
-    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original'):
+    def convert_to_ascii(self, charset='detailed', colored=True, color_scheme='original', custom_chars=None):
         """ASCII art as an HTML string (colored) or plain text"""
-        grid = self.build_grid(charset, colored, color_scheme)
+        grid = self.build_grid(charset, colored, color_scheme, custom_chars)
         return grid.to_html() if colored else grid.to_text()
 
     def convert_to_halftone(self):
@@ -315,6 +307,7 @@ class ImageProcessor:
             options.get('charset', 'detailed'),
             colored=True,
             color_scheme=options.get('colorScheme', 'original'),
+            custom_chars=options.get('customChars'),
         )
 
     def process_to_grid(self, path, options):
