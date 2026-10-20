@@ -1,7 +1,7 @@
 {
   "name": "asc-art",
   "version": "1.1.0",
-  "description": "Cyberpunk Desktop ASCII Generator",
+  "description": "Desktop app that turns images and GIFs into colored ASCII art",
   "main": "electron/main.js",
   "homepage": "./",
   "scripts": {
@@ -72,6 +72,14 @@
       ],
       "category": "Graphics",
       "icon": "assets/icon.png"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
     }
   },
   "devDependencies": {
