@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"strings"
 	"testing"
 )
@@ -198,5 +199,94 @@ func TestProfileFromEnv(t *testing.T) {
 	// is up to the library, so only check that it is on)
 	if got := ProfileFromEnv([]string{"TERM=dumb", "CLICOLOR_FORCE=1"}); got == NoColor {
 		t.Error("forcing color should override TERM=dumb")
+	}
+}
+
+func TestParseFormatAndFormatForFile(t *testing.T) {
+	for name, want := range map[string]Format{"ansi": FormatANSI, "ANS": FormatANSI, "text": FormatText, "txt": FormatText, "plain": FormatText, "html": FormatHTML} {
+		if got, err := ParseFormat(name); err != nil || got != want {
+			t.Errorf("ParseFormat(%q) = %v, %v", name, got, err)
+		}
+	}
+	if _, err := ParseFormat("pdf"); err == nil || !strings.Contains(err.Error(), "ansi, text or html") {
+		t.Errorf("got %v", err)
+	}
+
+	for path, want := range map[string]Format{"a.html": FormatHTML, "A.HTM": FormatHTML, "a.txt": FormatText, "dir.x/a.ans": FormatANSI, "a.ansi": FormatANSI} {
+		if got, ok := FormatForFile(path); !ok || got != want {
+			t.Errorf("FormatForFile(%q) = %v, %v", path, got, ok)
+		}
+	}
+	for _, path := range []string{"a", "a.png", "", "html"} {
+		if _, ok := FormatForFile(path); ok {
+			t.Errorf("FormatForFile(%q) should not recognise it", path)
+		}
+	}
+}
+
+func TestExport(t *testing.T) {
+	g := twoRows()
+	if got := g.Export(FormatText, TrueColor); got != g.ToText() {
+		t.Error("text")
+	}
+	if got := g.Export(FormatANSI, ANSI16); got != g.ToANSI(ANSI16) {
+		t.Error("ansi")
+	}
+	page := g.Export(FormatHTML, NoColor)
+	for _, want := range []string{"<!DOCTYPE html>", "<pre>", g.ToHTML(), "</html>"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the page lacks %q", want)
+		}
+	}
+}
+
+func TestHalfBlocksFitTheBoxAndKeepProportions(t *testing.T) {
+	tests := []struct {
+		name             string
+		w, h             int
+		maxCols, maxRows int
+		wantCols         int
+		wantRows         int
+	}{
+		{"fits already", 10, 10, 40, 40, 10, 5},
+		{"too wide (25 pixel rows is 13 cells)", 200, 100, 50, 40, 50, 13},
+		{"too tall", 100, 200, 40, 10, 10, 10},
+		{"odd heights round up to whole cells", 20, 5, 40, 40, 20, 3},
+	}
+	for _, test := range tests {
+		art, cols, rows := HalfBlocks(solid(test.w, test.h, opaque(10, 20, 30)), test.maxCols, test.maxRows)
+		if cols != test.wantCols || rows != test.wantRows {
+			t.Errorf("%s: %dx%d, want %dx%d", test.name, cols, rows, test.wantCols, test.wantRows)
+		}
+		if cols > test.maxCols || rows > test.maxRows {
+			t.Errorf("%s: %dx%d is outside %dx%d", test.name, cols, rows, test.maxCols, test.maxRows)
+		}
+		lines := strings.Split(art, "\n")
+		if len(lines) != rows || strings.Count(lines[0], "▀") != cols {
+			t.Errorf("%s: art has %d lines, %d cells in the first", test.name, len(lines), strings.Count(lines[0], "▀"))
+		}
+	}
+}
+
+func TestHalfBlocksPutTheTopPixelInTheTextColorAndTheBottomInTheBackground(t *testing.T) {
+	img := solid(1, 2, opaque(0, 0, 0))
+	img.SetNRGBA(0, 0, opaque(255, 0, 0))
+	img.SetNRGBA(0, 1, opaque(0, 0, 255))
+
+	art, cols, rows := HalfBlocks(img, 10, 10)
+	want := esc + "[38;2;255;0;0;48;2;0;0;255m▀" + esc + "[0m"
+	if art != want || cols != 1 || rows != 1 {
+		t.Errorf("got %q (%dx%d), want %q", art, cols, rows, want)
+	}
+}
+
+func TestHalfBlocksOfNothing(t *testing.T) {
+	for _, args := range [][2]int{{0, 5}, {5, 0}, {-1, 5}} {
+		if art, c, r := HalfBlocks(solid(4, 4, opaque(1, 1, 1)), args[0], args[1]); art != "" || c != 0 || r != 0 {
+			t.Errorf("box %v: %q %d %d", args, art, c, r)
+		}
+	}
+	if art, _, _ := HalfBlocks(image.NewNRGBA(image.Rect(0, 0, 0, 0)), 5, 5); art != "" {
+		t.Error("an empty picture draws nothing")
 	}
 }

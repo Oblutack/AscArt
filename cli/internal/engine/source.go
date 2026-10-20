@@ -12,6 +12,7 @@ import (
 	_ "image/jpeg" // registers the decoder for image.Decode
 	"image/png"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -83,7 +84,7 @@ func LoadSource(ctx context.Context, path string) (*Source, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("can't open %s: %w", path, err)
+		return nil, fmt.Errorf("can't open %s: %w", path, unwrapPathError(err))
 	}
 	defer file.Close()
 
@@ -99,7 +100,7 @@ func LoadSource(ctx context.Context, path string) (*Source, error) {
 func loadGIF(path string) ([]Frame, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("can't open %s: %w", path, err)
+		return nil, fmt.Errorf("can't open %s: %w", path, unwrapPathError(err))
 	}
 	defer file.Close()
 
@@ -224,4 +225,14 @@ func loadVideo(ctx context.Context, path string) ([]Frame, error) {
 		return nil, errors.New("that video has no frames to convert")
 	}
 	return frames, nil
+}
+
+// unwrapPathError drops the file name os puts in its errors, since the
+// messages above already say which file it was.
+func unwrapPathError(err error) error {
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) {
+		return pathErr.Err
+	}
+	return err
 }
