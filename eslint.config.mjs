@@ -13,6 +13,8 @@ export default [
       "node_modules/**",
       "python/**",
       "assets/**",
+      "test-results/**",
+      "playwright-report/**",
     ],
   },
 
@@ -62,8 +64,16 @@ export default [
 
   // Config files and tests
   {
-    files: ["*.config.mjs", "vite.config.mjs", "e2e/**/*.js"],
+    files: ["*.config.mjs", "vite.config.mjs"],
     languageOptions: { sourceType: "module", globals: globals.node },
+  },
+  {
+    // Playwright tests are CommonJS; page.evaluate callbacks run in the page
+    files: ["e2e/**/*.js", "playwright.config.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node, ...globals.browser },
+    },
   },
   {
     files: ["src/**/*.test.{js,jsx}", "src/test/**"],

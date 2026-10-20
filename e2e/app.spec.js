@@ -1,0 +1,436 @@
+// End-to-end tests: the real Electron app, the real Python backend, the built UI.
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { test: base, expect, _electron: electron } = require("@playwright/test");
+
+const ROOT = path.join(__dirname, "..");
+const PHOTO = path.join(__dirname, "fixtures", "photo.png");
+const ANIM = path.join(__dirname, "fixtures", "anim.gif");
+const SLOW = path.join(__dirname, "fixtures", "slow.gif");
+
+/** Starts the app with its own data folder; pass userDataDir to reuse one. */
+async function launch(userDataDir) {
+  const app = await electron.launch({
+    args: [ROOT, `--user-data-dir=${userDataDir}`],
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      ASCART_USE_BUILD: "1",
+      ASCART_SKIP_LEGACY_IMPORT: "1",
+    },
+  });
+  const page = await app.firstWindow();
+
+  // Anything the page logs as an error (a CSP violation included) fails the test
+  const problems = [];
+  page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(`console: ${message.text()}`);
+  });
+
+  await page.waitForSelector(".generator-grid");
+  return { app, page, problems };
+}
+
+const test = base.extend({
+  // Playwright insists on the destructuring pattern for "no dependencies"
+  // eslint-disable-next-line no-empty-pattern
+  userDataDir: async ({}, use) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ascart-e2e-"));
+    await use(dir);
+    // Windows keeps some Chromium files locked for a moment after the app exits
+    try {
+      fs.rmSync(dir, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 300,
+      });
+    } catch {
+      /* a leftover temp folder is not a test failure */
+    }
+  },
+
+  ascart: async ({ userDataDir }, use) => {
+    const session = await launch(userDataDir);
+    await use(session);
+    expect(session.problems, "errors logged by the page").toEqual([]);
+    await session.app.close();
+  },
+});
+
+const art = (page) => page.locator(".ascii-display");
+
+// The checkbox itself is visually hidden behind a custom checkmark, so click
+// the label (which is what a person does)
+const toggle = (page, label) =>
+  page.locator("label.toggle-container", { hasText: label }).click();
+const convert = (page) =>
+  page.getByRole("button", { name: "CONVERT", exact: true });
+
+/** The history list as the backend reports it */
+const historyList = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const stop = window.ascart.onResponse((message) => {
+          if (message.type === "history") {
+            stop();
+            resolve(message.history);
+          }
+        });
+        window.ascart.getHistory();
+      }),
+  );
+
+/** Collects everything the backend says, so tests can look at the sequence */
+const recordMessages = (page) =>
+  page.evaluate(() => {
+    window.__messages = [];
+    window.ascart.onResponse((message) => window.__messages.push(message));
+  });
+const messages = (page) => page.evaluate(() => window.__messages);
+
+/** Makes the next Save As dialog "choose" this file */
+const chooseSaveTarget = (app, filePath) =>
+  app.evaluate(({ dialog }, target) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: target });
+  }, filePath);
+
+test("starts without Node access in the page", async ({ ascart: { page } }) => {
+  const exposed = await page.evaluate(() => ({
+    require: typeof window.require,
+    process: typeof window.process,
+    api: Object.keys(window.ascart).sort(),
+  }));
+
+  expect(exposed.require).toBe("undefined");
+  expect(exposed.process).toBe("undefined");
+  expect(exposed.api).toContain("convert");
+  expect(exposed.api).not.toContain("ipcRenderer");
+});
+
+test.describe("a picture", () => {
+  test("is previewed on load, and CONVERT saves it to history", async ({
+    ascart: { page },
+  }) => {
+    expect(await historyList(page)).toHaveLength(0);
+
+    await page.locator("#file-input").setInputFiles(PHOTO);
+
+    // Live preview: art appears by itself, without a spinner or a history entry
+    await expect(art(page).locator("span").first()).toBeVisible();
+    expect(await historyList(page)).toHaveLength(0);
+
+    await convert(page).click();
+    await expect.poll(async () => (await historyList(page)).length).toBe(1);
+
+    const [entry] = await historyList(page);
+    expect(entry.thumb).toContain("<span");
+    expect(entry.ascii).toBeUndefined(); // the list only carries thumbnails
+  });
+
+  test("converts again when a setting changes", async ({
+    ascart: { page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+    const colorful = await art(page).innerHTML();
+
+    await page.getByLabel("Colors:").selectOption("grayscale");
+
+    await expect.poll(() => art(page).innerHTML()).not.toBe(colorful);
+    // grayscale means r = g = b in every color
+    const colors = await art(page)
+      .locator("span")
+      .evaluateAll((spans) =>
+        spans.slice(0, 50).map((span) => span.style.color),
+      );
+    for (const color of colors) {
+      const [r, g, b] = color.match(/\d+/g).map(Number);
+      expect(r === g && g === b).toBe(true);
+    }
+  });
+
+  test("the Blocks style uses block characters", async ({
+    ascart: { page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    await page.getByLabel("Style:").selectOption("blocks");
+
+    await expect
+      .poll(async () => await art(page).textContent())
+      .toMatch(/[█▓▒░]/);
+    expect(await art(page).textContent()).not.toMatch(/@/);
+  });
+
+  test("dither switches to a black and white halftone", async ({
+    ascart: { page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    await toggle(page, "DITHER");
+
+    await expect
+      .poll(async () => (await art(page).textContent()) ?? "")
+      .toMatch(/█/);
+    expect(await art(page).locator("span").count()).toBe(0); // no colors in halftone
+  });
+
+  test("with live preview off nothing converts until CONVERT", async ({
+    ascart: { page },
+  }) => {
+    await toggle(page, "Live Preview");
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(page.getByAltText("Preview")).toBeVisible();
+
+    await page.waitForTimeout(800);
+    await expect(page.getByText("No output yet")).toBeVisible();
+
+    await convert(page).click();
+    await expect(art(page).locator("span").first()).toBeVisible();
+  });
+});
+
+test.describe("saving", () => {
+  test("as HTML keeps the colors, as text strips them", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const html = path.join(userDataDir, "art.html");
+    await chooseSaveTarget(app, html);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect(page.getByRole("status")).toContainText(`Saved to ${html}`);
+    const savedHtml = fs.readFileSync(html, "utf8");
+    expect(savedHtml).toContain("<!DOCTYPE html>");
+    expect(savedHtml).toContain('<span style="color:rgb(');
+
+    const text = path.join(userDataDir, "art.txt");
+    await chooseSaveTarget(app, text);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect.poll(() => fs.existsSync(text)).toBe(true);
+    const savedText = fs.readFileSync(text, "utf8");
+    expect(savedText).not.toContain("<");
+    expect(savedText.split("\n").length).toBeGreaterThan(5);
+  });
+
+  test("a cancelled dialog changes nothing", async ({
+    ascart: { app, page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    await app.evaluate(({ dialog }) => {
+      dialog.showSaveDialog = async () => ({ canceled: true });
+    });
+    await page.getByRole("button", { name: "SAVE" }).click();
+
+    await page.waitForTimeout(500);
+    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+
+  test("a GIF saved as HTML plays on its own", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(ANIM);
+    await convert(page).click();
+    await expect(page.getByTitle("Pause")).toBeVisible();
+
+    const html = path.join(userDataDir, "anim.html");
+    await chooseSaveTarget(app, html);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect.poll(() => fs.existsSync(html)).toBe(true);
+
+    const saved = fs.readFileSync(html, "utf8");
+    expect(saved).toContain("const frames = [");
+    expect(saved).toContain("setTimeout");
+  });
+});
+
+test.describe("a GIF", () => {
+  test("waits for CONVERT, then plays", async ({ ascart: { page } }) => {
+    await page.locator("#file-input").setInputFiles(ANIM);
+    await page.waitForTimeout(800);
+    await expect(page.getByText("No output yet")).toBeVisible(); // too slow for live preview
+
+    await convert(page).click();
+
+    await expect(page.getByTitle("Pause")).toBeVisible();
+    const first = await art(page).innerHTML();
+    await expect.poll(() => art(page).innerHTML()).not.toBe(first); // it moves
+  });
+
+  test("Stop cancels the conversion and the backend stays usable", async ({
+    ascart: { page },
+  }) => {
+    await recordMessages(page);
+    await page.locator("#file-input").setInputFiles(SLOW);
+    await convert(page).click();
+    await expect(page.getByText(/Converting frame \d+\/100/)).toBeVisible();
+
+    await page.getByTitle("Stop Processing").click();
+
+    await expect(page.getByText("Conversion stopped")).toBeVisible();
+    await expect(page.getByText(/Converting frame/)).toHaveCount(0);
+
+    // the backend itself reports that it cancelled, and never delivers the result
+    await expect
+      .poll(async () =>
+        (await messages(page)).some((m) => m.type === "cancelled"),
+      )
+      .toBe(true);
+    await page.waitForTimeout(1500);
+    const seen = await messages(page);
+    expect(seen.some((m) => m.type === "gif-result")).toBe(false);
+    const frames = seen
+      .filter((m) => m.type === "progress")
+      .map((m) => m.current);
+    expect(Math.max(...frames)).toBeLessThan(100);
+
+    // and it is still there: a normal conversion works right away
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+  });
+});
+
+test.describe("history", () => {
+  test("open an entry with the keyboard to restore its art and settings", async ({
+    ascart: { page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await page.getByLabel("Style:").selectOption("blocks");
+    await page.getByLabel("Colors:").selectOption("sepia");
+    await expect
+      .poll(async () => (await art(page).textContent()) ?? "")
+      .toMatch(/[█▓▒░]/);
+    await convert(page).click();
+    await expect.poll(async () => (await historyList(page)).length).toBe(1);
+    const converted = await art(page).innerHTML();
+
+    // change everything, then bring the old result back from history
+    await page.getByLabel("Style:").selectOption("detailed");
+    await page.getByLabel("Colors:").selectOption("original");
+    await page.getByRole("button", { name: "HISTORY" }).click();
+    const tile = page.getByRole("button", { name: /characters wide/ });
+    await tile.focus();
+    await page.keyboard.press("Space");
+    await expect(tile).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Load Selected" }).click();
+
+    await expect(page.getByText("History / Gallery")).toHaveCount(0);
+    await expect(page.getByLabel("Style:")).toHaveValue("blocks");
+    await expect(page.getByLabel("Colors:")).toHaveValue("sepia");
+    expect(await art(page).innerHTML()).toBe(converted);
+  });
+
+  test("deleting removes the entry for good", async ({ ascart: { page } }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await convert(page).click();
+    await expect.poll(async () => (await historyList(page)).length).toBe(1);
+
+    await page.getByRole("button", { name: "HISTORY" }).click();
+    await page.getByRole("button", { name: /characters wide/ }).click();
+    await page.getByRole("button", { name: /Delete \(1\)/ }).click();
+
+    await expect(page.getByText("No history yet")).toBeVisible();
+    expect(await historyList(page)).toHaveLength(0);
+  });
+});
+
+test.describe("widgets", () => {
+  test("a picture opens in its own window with working controls", async ({
+    ascart: { app, page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const opened = app.waitForEvent("window");
+    await page.getByRole("button", { name: "WIDGET" }).click();
+    const widget = await opened;
+    await widget.waitForSelector("#ascii-content span");
+
+    expect(await widget.evaluate(() => typeof window.require)).toBe(
+      "undefined",
+    );
+    await widget.locator('[data-action="larger"]').click();
+    await expect(widget.locator("#size-info")).toHaveText("7px");
+
+    await widget.getByRole("button", { name: "Close Widget" }).click();
+    await expect.poll(() => app.windows().length).toBe(1);
+  });
+
+  test("a GIF widget animates and can be paused", async ({
+    ascart: { app, page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(ANIM);
+    await convert(page).click();
+    await expect(page.getByTitle("Pause")).toBeVisible();
+
+    const opened = app.waitForEvent("window");
+    await page.getByRole("button", { name: "WIDGET" }).click();
+    const widget = await opened;
+    await widget.waitForSelector("#ascii-content span");
+
+    const frameLabel = widget.locator("#frame-info");
+    const first = await frameLabel.textContent();
+    await expect.poll(() => frameLabel.textContent()).not.toBe(first);
+
+    await widget.locator("#btn-play").click(); // pause
+    const paused = await frameLabel.textContent();
+    await widget.waitForTimeout(500);
+    expect(await frameLabel.textContent()).toBe(paused);
+  });
+});
+
+test.describe("the window", () => {
+  test("a dropped file that is not an image is refused", async ({
+    ascart: { page },
+  }) => {
+    await page.evaluate(() => {
+      const data = new DataTransfer();
+      data.items.add(new File(["hello"], "notes.txt", { type: "text/plain" }));
+      window.dispatchEvent(
+        new DragEvent("drop", { dataTransfer: data, cancelable: true }),
+      );
+    });
+
+    await expect(page.getByRole("alert")).toContainText("not an image");
+  });
+
+  test("keeps its settings between runs", async ({ userDataDir }) => {
+    const first = await launch(userDataDir);
+    await first.page.getByLabel("Colors:").selectOption("cyan");
+    await toggle(first.page, "Live Preview");
+    await toggle(first.page, "INVERT");
+    await first.page.waitForTimeout(500); // saving is asynchronous
+    expect(first.problems).toEqual([]);
+    await first.app.close();
+
+    const second = await launch(userDataDir);
+    await expect(second.page.getByLabel("Colors:")).toHaveValue("cyan");
+    await expect(second.page.getByLabel("Live Preview")).not.toBeChecked();
+    await expect(second.page.getByLabel("INVERT")).toBeChecked();
+    expect(second.problems).toEqual([]);
+    await second.app.close();
+  });
+
+  test("quit leaves nothing running", async ({ userDataDir }) => {
+    const { app, page } = await launch(userDataDir);
+    const closed = new Promise((resolve) =>
+      app.process().once("exit", resolve),
+    );
+
+    await page.evaluate(() => window.ascart.quit());
+
+    await closed;
+  });
+});

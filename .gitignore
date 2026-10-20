@@ -45,3 +45,7 @@ OldCode/
 
 # Test reports
 .vitest/
+
+# Playwright output
+test-results/
+playwright-report/

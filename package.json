@@ -17,6 +17,7 @@
     "test": "npm run test:electron && npm run test:ui",
     "test:electron": "node --test electron/export.test.js",
     "test:ui": "vitest run",
+    "test:e2e": "npm run react-build && playwright test",
     "build:engine": "node scripts/build-engine.js",
     "build": "npm run react-build && npm run build:engine && npm run dist"
   },
@@ -75,6 +76,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
