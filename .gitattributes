@@ -1,0 +1,9 @@
+# The golden files are compared byte for byte by the Go tests: never convert
+# their line endings, whatever core.autocrlf says on the machine
+cli/testdata/golden/* -text
+cli/testdata/*.png binary
+
+# gofmt wants LF; check Go files out that way on every OS
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf

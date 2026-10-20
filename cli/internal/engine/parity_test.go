@@ -127,7 +127,9 @@ func readGolden(t *testing.T, name, extension string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return string(data)
+	// belt and braces next to .gitattributes: tolerate a checkout that
+	// converted line endings
+	return strings.ReplaceAll(string(data), "\r\n", "\n")
 }
 
 // Halftone cases can't match bit for bit: Pillow and this engine both dither
