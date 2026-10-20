@@ -7,11 +7,23 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # Only minor and patch updates are grouped: one major that can't install
+      # (below) used to hold the whole group back
       dev-tooling:
         dependency-type: development
-    # Electron majors move fast; look at those by hand
+        update-types: ["minor", "patch"]
     ignore:
+      # Electron majors move fast; look at those by hand
       - dependency-name: electron
+        update-types: ["version-update:semver-major"]
+      # eslint-plugin-jsx-a11y only supports ESLint up to 9, so ESLint 10
+      # can't be installed next to it yet
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      # Keep the Node types on the Node that CI and Electron run
+      - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: pip
@@ -22,6 +34,9 @@ updates:
     # (see engine.spec and the packaging notes in the README)
     ignore:
       - dependency-name: numpy
+        update-types: ["version-update:semver-major"]
+      # rembg brings this in, and OpenCV 5 can't be installed with NumPy 1.26
+      - dependency-name: opencv-python-headless
         update-types: ["version-update:semver-major"]
       - dependency-name: onnxruntime
       - dependency-name: rembg
