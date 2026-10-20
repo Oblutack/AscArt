@@ -1,0 +1,33 @@
+# Weekly pull requests for outdated dependencies. Dev tooling is grouped so it
+# doesn't turn into a dozen separate PRs.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-tooling:
+        dependency-type: development
+    # Electron majors move fast; look at those by hand
+    ignore:
+      - dependency-name: electron
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: pip
+    directory: /python
+    schedule:
+      interval: weekly
+    # numpy, Pillow and the PyInstaller stack are pinned together on purpose
+    # (see engine.spec and the packaging notes in the README)
+    ignore:
+      - dependency-name: numpy
+        update-types: ["version-update:semver-major"]
+      - dependency-name: onnxruntime
+      - dependency-name: rembg
+      - dependency-name: pyinstaller
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
