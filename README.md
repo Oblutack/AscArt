@@ -1,321 +1,276 @@
 <div align="center">
 
-# AscArt
+<img src="docs/media/banner.jpg" alt="AscArt: turn any picture into colored ASCII art" width="100%">
 
-**A Modern Desktop Application for Converting Images and GIFs to ASCII Art**
+<br>
 
-Transform your images into stunning colored ASCII art with real-time preview, advanced image processing, animated GIF support, and desktop widgets.
+[![CI](https://github.com/Oblutack/AscArt/actions/workflows/ci.yml/badge.svg)](https://github.com/Oblutack/AscArt/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-8a8fa3)
+![Electron](https://img.shields.io/badge/Electron-44-47848f?logo=electron&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.26+-00add8?logo=go&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776ab?logo=python&logoColor=white)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
-[![Node](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
-[![Electron](https://img.shields.io/badge/electron-latest-cyan.svg)](https://www.electronjs.org/)
-
----
-
-### Demo
-
-**Image Conversion with Color Schemes**
-
-![conversion](https://github.com/user-attachments/assets/8f243c0b-1704-4c9d-87ef-f2069371e814)
-
-**GIF Animation Support**
-
-![conversion2](https://github.com/user-attachments/assets/a1261756-572d-4d92-af92-72484cda6bfd)
-
-**Desktop Widget**
-
-![widget](https://github.com/user-attachments/assets/2a99a32e-7bff-4f5a-9a72-97e06801cd9c)
-
----
+**[The desktop app](#the-desktop-app)** &nbsp;·&nbsp; **[The terminal app](#the-terminal-app)** &nbsp;·&nbsp; **[The command line](#the-command-line)** &nbsp;·&nbsp; **[Install](#install)** &nbsp;·&nbsp; **[How it works](#how-it-works)**
 
 </div>
 
-## Overview
+<br>
 
-AscArt is a powerful desktop application that converts images and animated GIFs into colored ASCII art with pixel-perfect precision. Built with a modern tech stack combining Electron, React, and Python, it offers real-time processing, customizable character sets, comprehensive image adjustments, and desktop widget functionality for displaying your ASCII art on your desktop.
+AscArt turns pictures, animated GIFs, short videos and your webcam into colored ASCII art. Use it as a desktop app with live preview, as an interactive app inside your terminal, or as a command you can script. Everything runs on your own machine.
 
-## Features
+<div align="center">
+<img src="docs/media/desktop-hero.jpg" alt="The AscArt desktop app showing a photo of the Earth as colored block art" width="760">
+</div>
 
-### Core Functionality
+<br>
 
-- **Colored ASCII Art** - Converts images with full RGB color preservation in HTML format
-- **Image to ASCII Conversion** - Convert JPG, PNG, and other image formats with high fidelity
-- **Webcam** - "CAMERA" turns your webcam into live ASCII art, mirrored, a few frames a second, using the current settings. Pictures are converted on your machine and never stored or sent anywhere; the camera is released as soon as you stop it, press Escape or pick a file
-- **Video** - Short clips (mp4, mov, webm, mkv, avi) are converted frame by frame like a GIF: the first 10 seconds at 10 frames per second. Needs [ffmpeg](https://ffmpeg.org/download.html) installed and on your PATH (or set `ASCART_FFMPEG`)
-- **Animated GIF Support** - Process and playback animated GIFs frame-by-frame with original timing
-- **Manual Conversion Control** - Convert only when you're ready with the dedicated Convert button
-- **Color Schemes** - Choose from 8 color palettes including original, grayscale, sepia, and tinted variations
-- **Desktop Widgets** - Display ASCII art and animated GIFs as floating desktop widgets
-- **History Gallery** - Access previously converted art with full settings restoration and multi-select management
-- **Settings Persistence** - All preferences automatically saved and restored between sessions
+## Three ways to use it
 
-### Image Processing
+|  | **Desktop app** | **Terminal app** | **Command line** |
+| --- | --- | --- | --- |
+| **Start it with** | the installer, or `npm start` | `ascart` | `ascart convert photo.jpg` |
+| **Best for** | trying settings with a live preview, saving, widgets | the same thing without leaving your terminal | scripts, pipes, batch jobs |
+| **Built with** | Electron, React, Python | Go, Bubble Tea | Go |
+| **Needs** | nothing when installed (Python 3.12 to run from source) | nothing: one file of about 4 MB | nothing: the same file |
 
-- **Background Removal** - Automatically remove backgrounds using advanced AI segmentation (transparent pixels render as spaces)
-- **Brightness & Contrast** - Fine-tune image parameters with intuitive sliders (-100 to +100 brightness, 0 to 200% contrast)
-- **Color Inversion** - Invert colors for different artistic effects
-- **Halftone Dithering** - Switch the output to a black-and-white Floyd-Steinberg halftone drawn with block characters
-- **Aspect Ratio Control** - Maintain original ratios or choose from preset dimensions
-- **Width Adjustment** - Customize output width from 20 to 300 characters (or keep the native size, capped at 400)
+The terminal app and the command line are one program, `ascart`.
 
-### Output Options
+<br>
 
-- **Character Sets** - Detailed and blocks, or write your own ramp from darkest to lightest
-- **Color Schemes** - 8 palettes: Original, Grayscale, Sepia, Blue, Green, Red, Purple, Cyan
-- **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles; GIFs export as a self-contained animated page
-- **Plain Text, ANSI and Images** - Save as plain `.txt`, as `.ans` with 24-bit terminal colors (paste or `cat` it in a terminal), as a `.png` picture, or as an animated `.gif`
-- **Copy** - One click copies the plain characters to the clipboard
-- **Font Zoom Controls** - Adjust display size from 4px to 12px for optimal viewing
-- **Playback Controls** - For GIFs: play/pause, stop, speed adjustment (0.5x to 2x)
-- **Stop Processing** - Cancel a long-running conversion; the Python backend is restarted so nothing stale comes back
+## The desktop app
 
-### Widget Features
+<div align="center">
+<img src="docs/media/desktop-convert.gif" alt="Loading a picture in the desktop app and changing its style, colors, brightness and width while the art updates" width="860">
+</div>
 
-- **Multiple Widgets** - Create and manage multiple desktop widgets simultaneously
-- **Draggable Windows** - Move widgets freely across your desktop
-- **Desktop-Level Positioning** - Widgets stay below other applications without covering your work
-- **Playback Controls** - Full GIF animation controls (play/pause, previous/next frame)
-- **Resizable Text** - Adjust font size from 2px to 20px with on-screen controls
-- **Context Menu** - Right-click for quick access to controls and removal
-- **Persistent State** - Widgets maintain settings and position until closed
+Load a picture (or drop one anywhere in the window) and the art appears straight away. Move a slider and it follows, with no button to press. The 8 color schemes, the character sets, brightness, contrast, invert and halftone are all live.
 
-## Technology Stack
+**Convert**
 
-### Frontend
+* **Pictures** in any common format, **animated GIFs** with their original timing, **short videos** (mp4, mov, webm, mkv, avi; needs [ffmpeg](https://ffmpeg.org/download.html)) and your **webcam**, live. Camera pictures are converted on your machine and never stored or sent anywhere.
+* **Background removal** with AI segmentation: transparent pixels become spaces.
+* **Character sets**: detailed, blocks, or your own ramp from darkest to lightest.
+* **Halftone**: black and white Floyd–Steinberg dithering drawn with block characters.
 
-- **React.js + Vite** - Component-based UI, built with Vite
-- **Electron** - Cross-platform desktop application framework
-- **CSS Grid & Flexbox** - Responsive, professional layout system
+**Save and share**
 
-### Backend
+* Save as **HTML** (full color; GIFs become a self-contained animated page), **plain text**, **`.ans`** (24-bit terminal colors: `cat` it in a terminal), **PNG** or an animated **GIF**.
+* **Copy** puts the plain characters on the clipboard.
+* A **history gallery** keeps your last 50 conversions with their settings, so you can reopen and tweak them.
+* **Desktop widgets**: pin the art or an animation to your desktop as a floating, draggable window.
 
-- **Python 3.12** - High-performance image processing engine
-- **Pillow (PIL)** - Image loading, LANCZOS resizing and Floyd-Steinberg dithering
-- **NumPy** - Vectorised character mapping and color schemes
-- **RemBG** - AI-powered background removal (lazy-loaded)
+**Keyboard**: `Ctrl+O` open, `Ctrl+Enter` convert, `Ctrl+S` save, `Ctrl+H` history, `Esc` stop a running conversion.
 
-### Architecture
+<br>
 
-- **IPC Communication** - JSON-based stdin/stdout bridge between Electron and Python; the UI only sees a small `window.ascart` API exposed by a preload script (context isolation, sandbox and a Content-Security-Policy are on)
-- **Asynchronous Processing** - Non-blocking UI with background Python subprocess and cancellable operations
-- **State Management** - React hooks with manual conversion control for optimal performance
-- **Settings Persistence** - JSON-based user preferences stored in Electron's userData directory
-- **Modular Design** - Separated concerns with dedicated processor classes
-- **Widget System** - Multiple BrowserWindow instances, each loading `electron/widget/widget.html`
-- **Color Transformation** - RGB manipulation with 8 different color scheme algorithms
-- **Compact Output** - Neighbouring characters with the same (rounded) color share one `<span>`, which keeps results and history small
+<div align="center">
+<img src="docs/media/desktop-animation.gif" alt="An animated GIF converted to ASCII art and playing, with zoom and speed controls" width="760">
+</div>
 
-## Prerequisites
+<p align="center"><sub>Animations play with their own timing. Zoom, change the speed, pause, or step frame by frame.</sub></p>
 
-Before installation, ensure you have the following installed:
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/media/desktop-gallery.png" alt="The history gallery with six thumbnails of the same picture in different colors" ><br><sub><b>History gallery</b>: every conversion, with its settings</sub></td>
+<td width="50%" align="center"><img src="docs/media/desktop-widget.png" alt="A desktop widget playing an animation, with its playback controls" width="300"><br><sub><b>Desktop widget</b>: art on your desktop, animations included</sub></td>
+</tr>
+</table>
 
-- **Python 3.12 or higher** - [Download Python](https://www.python.org/downloads/)
-- **Node.js 18+ and npm** - [Download Node.js](https://nodejs.org/)
-- **Git** - For cloning the repository
+<br>
 
-## Installation
+## The terminal app
 
-### 1. Clone the Repository
+Run `ascart` with no arguments. Settings are on the left, the art on the right, and the art follows as you change them.
+
+<div align="center">
+<img src="docs/media/tui-settings.gif" alt="The terminal app: switching the character set, cycling through all eight color schemes, typing a width, halftone, and the original picture" width="860">
+</div>
+
+<p align="center"><sub>Character set, all eight color schemes, a typed width, halftone and the original picture.</sub></p>
+
+It plays GIFs and videos too, with pause and frame stepping:
+
+<div align="center">
+<img src="docs/media/tui-play.gif" alt="The terminal app playing an animation, pausing, stepping through frames, then showing help and the save prompt" width="860">
+</div>
+
+| Key | |
+| --- | --- |
+| `↑` `↓` | pick a setting |
+| `←` `→` or `space` | change it (hold `shift` for bigger steps) |
+| `enter` | type a value, or edit your own character set |
+| `o` · `s` · `c` | open a file · save as `.ans`, `.txt` or `.html` · copy as text |
+| `v` | switch between the art and the original picture |
+| `p` · `,` `.` | play or pause · previous or next frame |
+| `tab` | move to the preview, which scrolls with the arrows, `pgup` `pgdn` and the mouse wheel |
+| `esc` · `r` · `?` · `q` | stop a conversion · reset · help · quit |
+
+<br>
+
+## The command line
+
+<div align="center">
+<img src="docs/media/cli-convert.gif" alt="Three ascart convert commands and their output: a sunset in blocks, the Earth in a custom character set in cyan, and a halftone" width="860">
+</div>
+
+```bash
+ascart convert photo.jpg --width 80                      # print the art
+ascart convert photo.jpg --scheme sepia --dither -o a.txt # save it; the extension picks the format
+ascart convert logo.png --chars " .oO@" --format html -o logo.html
+ascart convert loop.gif --frame 5                        # one frame of an animation
+ascart play loop.gif --loops 3                           # play it in place
+```
+
+The number of colors follows your terminal (`COLORTERM`, `TERM`, `NO_COLOR`); in a pipe there are none unless you ask with `--colors`. Mistakes exit with code 2 and a one-line message, failures with 1, so it behaves in scripts. All flags are in [cli/README.md](cli/README.md).
+
+<div align="center">
+<img src="docs/media/cli-play.gif" alt="ascart play showing an animated plasma in blocks, looping twice" width="760">
+</div>
+
+> **Tip for dark terminals.** The built-in sets run from dark to light the way ink on paper does, so bright areas get thin characters. For light on dark, write your own ramp from darkest to lightest: `--chars " .:-=+*#%@"`. For halftone, add `--invert`.
+
+<br>
+
+## Install
+
+### Terminal app and command line
+
+With [Go](https://go.dev/dl/) 1.26 or newer:
+
+```bash
+go install github.com/Oblutack/AscArt/cli/cmd/ascart@latest
+```
+
+Or download an archive for your system from the [releases page](https://github.com/Oblutack/AscArt/releases) (Windows, macOS and Linux; Intel and ARM) and put `ascart` on your `PATH`. Videos need [ffmpeg](https://ffmpeg.org) on your `PATH`, or set `ASCART_FFMPEG`.
+
+### Desktop app
+
+Prebuilt packages are attached to releases. The latest published release, v1.0.0, only has Windows and is older than everything on this page, so for now **build it from source**. It takes a couple of minutes:
 
 ```bash
 git clone https://github.com/Oblutack/AscArt.git
 cd AscArt
-```
-
-### 2. Install Node Dependencies
-
-```bash
 npm install
-```
 
-### 3. Setup Python Environment
-
-```bash
 cd python
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
-
+venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
+cd ..
+
+npm start                      # the app, with hot reload
 ```
 
-## Running the Application
+You need Python 3.12+, Node.js 18+ and Git. In development the app starts the Python backend from `ASCART_PYTHON`, then `python/venv`, then `python` on your `PATH`.
 
-### Development Mode
+<details>
+<summary><b>Build an installer</b></summary>
 
-In development the app starts the Python backend with the first of these it finds: the `ASCART_PYTHON` environment variable, `python/venv`, or `python` / `python3` on your PATH.
+<br>
 
-```bash
-npm start
-```
-
-This will:
-
-1. Start the Vite development server (port 3000, with hot reload)
-2. Launch the Electron window
-3. Initialize the Python subprocess for image processing
-
-### Production Build
-
-Build from the `python/venv` described above, not from a global Python: the engine bundles whatever versions are installed, and mismatched onnxruntime/scipy/opencv packages can leave background removal broken in the packaged app.
+Build from the `python/venv` above, not a global Python: the engine bundles whatever versions are installed, and mismatched onnxruntime, scipy or opencv packages can leave background removal broken in the packaged app.
 
 ```bash
 npm run build
 ```
 
-This builds the React app, bundles the Python backend into `python/dist/engine` (`engine.exe` on Windows) with PyInstaller (`python/engine.spec`), and packages everything with electron-builder for the platform you run it on. The result is in the `dist` folder: an installer and a 7z on Windows, a dmg and zip on macOS, an AppImage on Linux. The steps are also available separately as `npm run react-build`, `npm run build:engine` and `npm run dist`.
+This builds the React app, freezes the Python backend into `python/dist/engine` with PyInstaller, and packages everything with electron-builder for the system you run it on (an installer and 7z on Windows, a dmg and zip on macOS, an AppImage on Linux). The steps are also available on their own as `npm run react-build`, `npm run build:engine` and `npm run dist`.
 
-### Releases
+**Releases.** Push a tag such as `v1.2.0` and the Release workflow builds the Windows, macOS (Apple Silicon) and Linux packages and the six `ascart` binaries on GitHub's runners, checks that each bundled engine answers a ping, and attaches everything to a release. You can also start it by hand from the Actions tab to build without releasing. Builds are unsigned unless you add `CSC_LINK` and `CSC_KEY_PASSWORD` as repository secrets, so Windows SmartScreen and macOS Gatekeeper will warn on first run.
 
-Push a tag such as `v1.2.0` and the **Release** workflow builds Windows, macOS (Apple Silicon) and Linux packages on GitHub's runners, checks that each bundled engine answers a ping, and attaches everything to a GitHub release. You can also start it by hand from the Actions tab to build without releasing. Builds are unsigned unless you add `CSC_LINK` and `CSC_KEY_PASSWORD` as repository secrets.
+</details>
 
-The app icon is generated by `python assets/make_icon.py`.
+<br>
 
-### The terminal app
+## How it works
 
-`cli/` holds `ascart`, a command line and an interactive terminal app (Bubble Tea) that make the same art without Python or Electron: `ascart convert cat.jpg`, `ascart play loop.gif`, or just `ascart`. The Release workflow attaches binaries for Windows, macOS and Linux to every release. See [cli/README.md](cli/README.md).
-
-### Tests and checks
-
-```bash
-npm run lint        # ESLint (React, hooks, accessibility) and Prettier
-npm run typecheck   # TypeScript checking of the JavaScript (JSDoc + src/types.d.ts)
-npm test            # Electron export helpers + the UI tests (Vitest, Testing Library)
-npm run test:e2e    # builds the UI, then Playwright drives the real app
-
-pip install -r python/requirements-dev.txt
-cd python
-python -m pytest    # image / GIF processing, cancelling, history, backend commands
-python -m ruff check
+```mermaid
+flowchart LR
+  subgraph desktop [Desktop app]
+    R["React UI<br/>sandboxed renderer"] -->|"window.ascart<br/>allow-listed IPC"| M["Electron main"]
+    M -->|"JSON lines<br/>stdin / stdout"| P["Python engine<br/>Pillow, NumPy, rembg"]
+  end
+  subgraph terminal [Terminal app and command line]
+    T["Bubble Tea app"] --> G["Go engine"]
+    C["ascart convert / play"] --> G
+  end
+  P -. "same art, checked by tests" .- G
 ```
 
-The end-to-end tests launch Electron with the real Python backend, so they need Python with Pillow and NumPy on your PATH (or `ASCART_PYTHON`). They stub the native Save As dialog, so saved files are checked too.
+* **The desktop app** is a React UI in a sandboxed Electron window. It has no Node access and talks to the main process only through a small `window.ascart` API from a preload script. The main process runs the Python engine as a subprocess and exchanges JSON lines with it. A conversion can be cancelled cooperatively, so Stop doesn't kill the process.
+* **The terminal app** has its own engine in Go, so it needs nothing else installed. `internal/engine` converts pictures, GIFs and video frames; `internal/cli` and `internal/tui` are thin layers on top. The interactive app is a Bubble Tea model that takes its loader, converter and file writer as injected functions, which is what lets the tests drive it without a terminal.
+* **Two engines, one result.** `cli/testdata/make_golden.py` runs the Python engine on small pictures and the Go tests compare against what it wrote: identical for flat pictures across every scheme, set and adjustment; 99.5–100% of characters on smooth gradients and 92.5% on hard stripe edges (Python resizes with Lanczos, Go averages the area); the same size and amount of black for halftone. Background removal exists only in the desktop app because Go has no equivalent of rembg.
+* **Compact output.** Neighbouring characters with the same rounded color share one `<span>`, which keeps results and history small.
+
+Full message reference: [BACKEND_DOCS.md](BACKEND_DOCS.md).
+
+<br>
+
+## Quality
+
+| | Tests | What they cover |
+| --- | --- | --- |
+| **UI** | 272 (Vitest, Testing Library) | components, hooks, shortcuts, error states |
+| **Electron helpers** | 11 (`node --test`) | text, HTML and ANSI export |
+| **End to end** | 35 (Playwright) | the real Electron app with the real Python backend: converting, GIFs, video, webcam with a fake camera, saving, history, cancelling, the security lockdown |
+| **Python** | 142 (pytest) | conversion, GIFs, video, cancelling, history, backend commands |
+| **Go** | about 140 | engine, parity with Python, command line, the Bubble Tea app, one real program run |
+
+GitHub Actions runs all of it on every push and pull request: ESLint, Prettier, ruff and the type check (TypeScript over the JavaScript, via JSDoc), plus the Go suite on Linux (with the race detector), macOS and Windows. Releases were verified on real runners for all three systems.
+
+**Security.** Context isolation, the sandbox and a strict Content-Security-Policy are on; navigation, new windows and webviews are blocked; permissions are denied except video for the camera; IPC commands are allow-listed; and Electron fuses switch off `RunAsNode`, the inspector flags and loading from outside the asar. Details and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ```bash
-cd cli
-go vet ./... && go test ./...   # the terminal app and its engine
+npm run lint && npm run typecheck && npm test    # UI and Electron helpers
+npm run test:e2e                                 # builds the UI, then drives the real app
+cd python && python -m pytest && python -m ruff check
+cd cli && go vet ./... && go test ./...
 ```
 
-GitHub Actions runs all of this on every push and pull request.
+<br>
 
-## Usage
-
-### Basic Workflow
-
-1. **Load Image** - Click "LOAD" or drop an image/GIF anywhere in the window
-2. **Adjust Settings** - Use the panels on the left to customize your output:
-   - Width: Character width of the output (20-300 characters)
-   - Style: Choose character set (detailed or blocks)
-   - Colors: Select from 8 color schemes (original, grayscale, sepia, etc.)
-   - Ratio: Maintain aspect ratio or choose preset dimensions
-   - Adjustments: Brightness, contrast, color inversion
-   - Options: Background removal, keep original size (up to 400 characters wide)
-3. **Click Convert** - Press the "CONVERT" button to generate ASCII art with your settings
-4. **View Output** - Colored ASCII art appears in the right panel with zoom controls
-5. **Save or Export** - "SAVE" opens a Save As dialog; the file type picks the format: HTML (colors, animated for GIFs), TXT (plain text), ANS (terminal colors), PNG (a picture) or GIF (an animation, for GIFs). Text and PNG use the first frame of a GIF. "COPY" puts the plain text on the clipboard
-6. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
-
-**Note:** Settings are automatically saved and restored when you reopen the app
-
-### GIF Animation
-
-- Load a GIF file to see it converted with frame-by-frame colored ASCII animation
-- Transparent backgrounds are preserved (render as spaces in ASCII)
-- Use playback controls: play/pause, stop, previous/next frame
-- Adjust playback speed from 0.5x to 2x
-- Original frame timing and delays are preserved
-
-### Desktop Widgets
-
-- Click "Widget" button to spawn a desktop widget window
-- Create multiple widgets simultaneously
-- Drag widgets by clicking on the ASCII display area
-- Right-click for context menu (show controls or remove widget)
-- Use control panel for:
-  - Hide/show controls
-  - GIF playback controls (for animated content)
-  - Font size adjustment (2px-20px)
-  - Close widget
-- Widgets stay at desktop level (behind other application windows)
-- Widgets are frameless and transparent for clean appearance
-
-### History Gallery
-
-- Click "History" to view all previously converted images and GIFs
-- Thumbnails show preview of ASCII art with 500-character preview
-- Multi-select support: Ctrl+Click to select multiple items
-- "Select All" button for batch operations
-- Delete selected items with the delete button (X icon on selected items)
-- Load any item to restore both the ASCII art and all original settings
-- GIFs load with full animation data and frame information
-
-## Project Structure
+## Project structure
 
 ```
 AscArt/
-├── electron/
-│   ├── main.js              # Main process: windows, Python subprocess, Save As, IPC
-│   ├── preload.js           # The window.ascart API exposed to the React app
-│   ├── export.js            # Plain-text / standalone-HTML export helpers (+ export.test.js)
-│   └── widget/              # Desktop widget page, styles, script and preload
-├── python/
-│   ├── main.py              # Python entry point, command handlers, stdin reader thread
-│   ├── engine.spec          # PyInstaller recipe for the bundled backend
-│   ├── requirements.txt     # Python dependencies
-│   ├── requirements-dev.txt # Just enough to run the tests and ruff
-│   ├── core/
-│   │   ├── art.py               # The Grid of cells: renders to HTML, ANSI or text
-│   │   ├── image_processor.py   # Image to ASCII / halftone conversion
-│   │   ├── gif_processor.py     # GIF frame processing
-│   │   ├── cancel.py            # Cooperative cancellation of a running conversion
-│   │   └── file_handler.py      # History storage (index + one file per entry)
-│   ├── tests/               # pytest suite
-│   └── benchmarks/          # Conversion timings
-├── src/
-│   ├── main.jsx, App.jsx    # Entry point and the app, composed from hooks
-│   ├── ascart.js            # Access to window.ascart (fakeable in tests)
-│   ├── types.d.ts           # Types for the backend messages and the ascart API
-│   ├── hooks/               # useSettings, useConversion, useLivePreview, ...
-│   ├── components/
-│   │   ├── Generator/       # Input, output, and control panels
-│   │   ├── Gallery/         # History gallery modal
-│   │   └── Shared/          # Reusable UI components (buttons, toast, ...)
-│   ├── layouts/
-│   │   └── MainLayout.jsx   # Application layout wrapper
-│   ├── styles/
-│   │   └── main.css         # Global styling and theming
-│   └── test/                # Test setup and a fake window.ascart
-├── cli/                     # ascart for the terminal: Go engine, command line, Bubble Tea app
-├── e2e/                     # Playwright end-to-end tests and fixtures
-├── assets/                  # App icon (and the script that draws it)
-├── scripts/                 # build-engine.js
-├── index.html               # HTML entry point (the CSP is filled in by vite.config.mjs)
-├── vite.config.mjs          # Build, dev server and Vitest settings
-└── BACKEND_DOCS.md          # Electron <-> Python message reference
+├── electron/        Main process, preload API, export helpers, the widget window
+├── src/             The React UI: components, hooks, styles, tests
+├── python/          The Python engine: conversion, GIF and video, history, tests, PyInstaller recipe
+├── cli/             ascart for the terminal
+│   ├── cmd/ascart/      main
+│   ├── internal/engine/ conversion, rendering, GIF and video loading
+│   ├── internal/cli/    convert, play, flags
+│   ├── internal/tui/    the Bubble Tea app
+│   └── testdata/        test pictures and what the Python engine makes of them
+├── e2e/             Playwright end-to-end tests and fixtures
+├── docs/media/      The pictures and recordings on this page, and how they were made
+├── assets/          App icon and the script that draws it
+├── scripts/         build-engine.js
+└── BACKEND_DOCS.md  Electron <-> Python message reference
 ```
+
+<br>
 
 ## Configuration
 
-### Where your data lives
+<details>
+<summary><b>Where your data lives</b></summary>
 
-History is stored in Electron's per-user data folder (on Windows `%APPDATA%\asc-art\output\history\`), next to `settings.json`: a small `index.json` with a thumbnail of every entry, plus one file per entry that is read when you open it. A history from an older version (`history.json`) is converted automatically on first start and kept as `history.json.migrated`. Set `ASCART_DATA_DIR` to put the history somewhere else when running the backend by hand. The entry limit (50) is `MAX_HISTORY_ENTRIES` in `python/core/file_handler.py`.
+<br>
 
-### Electron Settings
+History is stored in Electron's per-user data folder (on Windows `%APPDATA%\asc-art\output\history\`), next to `settings.json`: a small `index.json` with a thumbnail of every entry, plus one file per entry that is read when you open it. A history from an older version (`history.json`) is converted on first start and kept as `history.json.migrated`. Set `ASCART_DATA_DIR` to put it somewhere else when running the backend by hand. The entry limit (50) is `MAX_HISTORY_ENTRIES` in `python/core/file_handler.py`.
 
-Edit `electron/main.js` to customize:
+Other environment variables: `ASCART_PYTHON` (which Python to use in development), `ASCART_FFMPEG` (which ffmpeg to use), and for tests `ASCART_USE_BUILD`, `ASCART_SKIP_LEGACY_IMPORT` and `ASCART_FAKE_CAMERA`.
 
-- Window dimensions (default: 1200x700)
-- Window behavior (frameless, transparent)
-- DevTools availability
+</details>
 
-### Character Sets
+<details>
+<summary><b>Adding a character set</b></summary>
 
-Modify `python/core/image_processor.py` to add custom character sets:
+<br>
+
+In the apps you can write your own set from darkest to lightest (2 to 100 single-width characters). To add a named one, edit `CHARSETS` in `python/core/charsets.py`, the Go equivalent in `cli/internal/engine/charsets.go`, and the Style dropdown in `src/components/Generator/WidthPanel.jsx`:
 
 ```python
 CHARSETS = {
@@ -324,33 +279,29 @@ CHARSETS = {
 }
 ```
 
-Characters run from dark to light. Add the new name to the Style dropdown in `src/components/Generator/WidthPanel.js` as well. (`standard` and `simple` still work as aliases for `detailed` and `blocks`, so older history entries load.)
+`standard` and `simple` still work as aliases for `detailed` and `blocks`, so older history entries load.
 
-### Color Palette
+</details>
 
-The application uses a modern grayscale aesthetic. Modify `src/styles/main.css` to customize:
+<details>
+<summary><b>Colors and theme</b></summary>
 
-```css
-/* Main color variables */
---bright-snow: #f8f9fa; /* Primary text */
---platinum: #e9ecef; /* Reserved for highlights */
---alabaster: #dee2e6; /* Secondary text */
---pale-slate: #ced4da; /* Action panel accent */
---pale-slate-2: #adb5bd; /* Primary UI accent */
---slate-grey: #6c757d; /* Width panel accent */
---iron-grey: #495057; /* Style/Output panel accent */
---gunmetal: #343a40; /* Panel backgrounds */
---shadow-grey: #212529; /* Main background */
---danger: #dc3545; /* Errors, destructive actions */
-```
+<br>
 
-They live in the `:root` block at the top of `main.css`; the `-rgb` twins (for example `--pale-slate-2-rgb`) exist so translucent colors can use `rgba(var(--pale-slate-2-rgb), 0.3)`.
+The desktop app's colors are CSS variables in the `:root` block at the top of `src/styles/main.css`. The `-rgb` twins (for example `--pale-slate-2-rgb`) exist so translucent colors can use `rgba(var(--pale-slate-2-rgb), 0.3)`.
+
+</details>
+
+<br>
 
 ## Troubleshooting
 
-### Python Path Issues
+<details>
+<summary><b>The app can't find Python</b></summary>
 
-If the app can't find Python, point it at one with an environment variable before starting:
+<br>
+
+Point it at one before starting:
 
 ```bash
 # Windows (PowerShell)
@@ -362,67 +313,57 @@ ASCART_PYTHON=/path/to/python npm start
 
 Otherwise create the `python/venv` described above, or make sure `python` is on your PATH.
 
-### Port Already in Use
+</details>
 
-If port 3000 is occupied:
+<details>
+<summary><b>Port 3000 is already in use</b></summary>
+
+<br>
 
 ```bash
-# Find and kill the process (Windows)
+# Windows
 netstat -ano | findstr :3000
 taskkill /PID <process_id> /F
 ```
 
-### Background Removal Not Working
+</details>
 
-RemBG downloads ML models on first use. Ensure:
+<details>
+<summary><b>Background removal does nothing</b></summary>
 
-- Stable internet connection
-- Sufficient disk space (~200MB)
-- Python has write permissions in the package directory
+<br>
 
-## Performance Optimization
+rembg downloads its model (about 200 MB) the first time you use it. You need an internet connection, free disk space and write access to the Python package directory.
 
-- **Large Images**: Images are resized to the chosen width; "Keep Original" is capped at 400 characters wide
-- **GIF Frame Count**: High frame count GIFs take longer to process; progress is shown per frame
-- **Background Removal**: Disable for faster processing when not needed (adds AI segmentation overhead)
-- **Width Setting**: Lower width values process faster (fewer pixels to process)
-- **Widget Optimization**: Widgets receive their frames once over IPC instead of through a generated temp file
-- **Color Processing**: Colors and character mapping are computed on whole arrays, so color schemes cost almost nothing
+</details>
 
-## License
+<details>
+<summary><b>"needs ffmpeg" when opening a video</b></summary>
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+<br>
 
-## Known Limitations
+Install [ffmpeg](https://ffmpeg.org/download.html) and make sure `ffmpeg` runs in a terminal, or set `ASCART_FFMPEG` to its full path.
 
-- Widget windows cannot be minimized to taskbar (by design - desktop overlay mode)
-- Very large GIFs (500+ frames) may take time to load in widgets
-- Background removal requires internet connection on first use (model download)
-- Maximum recommended width: 300 characters for optimal performance
+</details>
 
-## Future Enhancements
+<br>
 
-- Custom color palette selection
-- Video file support (.mp4, .avi)
-- Batch conversion mode
-- Export as animated GIF
-- Additional character set presets
-- Widget opacity controls
-- Saved widget configurations
+## Limitations and what's next
 
-## Acknowledgments
+* Desktop builds are unsigned until a certificate is added, and Intel Macs have no desktop build yet (the terminal binary has one).
+* Background removal is desktop-only.
+* Widgets can't be minimized to the taskbar: they are desktop overlays by design.
+* Very large GIFs (500+ frames) take a while to load in widgets.
+* Next: batch conversion, widget opacity and saved widget layouts.
 
-- Character set mapping algorithm inspired by classic ASCII art converters
-- RemBG for AI-powered background removal
-- Pillow and NumPy for efficient image processing
-- Electron and React communities for excellent documentation
+<br>
 
----
+## Contributing
 
-<div align="center">
+Issues and pull requests are welcome. Run the checks in [Quality](#quality) before you push; CI runs the same ones. The pictures and recordings in this README were made from the real programs, see [docs/media](docs/media/README.md) if you want to redo them.
 
-**Built with Python, React, and Electron**
+<br>
 
-[GitHub Repository](https://github.com/Oblutack/AscArt) | [Report Issues](https://github.com/Oblutack/AscArt/issues)
+## License and credits
 
-</div>
+[MIT](LICENSE). Thanks to [rembg](https://github.com/danielgatis/rembg) for background removal, [Pillow](https://python-pillow.org/) and [NumPy](https://numpy.org/) for the Python engine, [Bubble Tea](https://github.com/charmbracelet/bubbletea) and the other Charm libraries for the terminal app, and the Electron and React communities. The Earth photo in the examples is from NASA's Apollo 17 mission and is in the public domain.
