@@ -100,10 +100,22 @@ Every successful conversion is also written to the history.
 ```
 
 ```json
-{ "status": "success", "type": "history", "history": [ { "id": "…", "timestamp": "…", "ascii": "…", "preview": "…", "options": {}, "isGif": false } ] }
+{ "status": "success", "type": "history", "history": [ { "id": "…", "timestamp": "…", "options": {}, "isGif": false, "thumb": "<span …>…</span>" } ] }
 ```
 
-GIF entries also carry `frames` and `delays`. Entries written by older versions get an `id` the first time the history is read.
+The list holds only what the gallery shows: no art, just a small `thumb` (HTML) per entry.
+
+### `get_history_entry`
+
+```json
+{ "command": "get_history_entry", "id": "…" }
+```
+
+```json
+{ "status": "success", "type": "history-entry", "entry": { "id": "…", "timestamp": "…", "options": {}, "isGif": true, "ascii": "…", "frames": ["…"], "delays": [80] } }
+```
+
+An unknown id answers with an error.
 
 ### `delete_history`
 
@@ -123,6 +135,14 @@ Any command can fail with:
 { "status": "error", "error": "Conversion failed: …", "requestId": 3 }
 ```
 
+### `cancel`
+
+```json
+{ "command": "cancel", "requestId": 3 }
+```
+
+No reply of its own. A reader thread takes this straight off stdin while a conversion is running; the conversion notices between GIF frames and answers its original request with `{ "status": "success", "type": "cancelled", "requestId": 3 }`. A request cancelled while still queued is skipped. If the conversion already finished, the cancel has no effect.
+
 ## Messages Electron adds
 
 | message | when |
@@ -130,16 +150,16 @@ Any command can fail with:
 | `{ "status": "success", "type": "stopped" }` | After `ascart.stop()`. |
 | `{ "status": "error", "error": "…" }` (no `requestId`) | Python could not start, crashed, or is not running. |
 
-**Stop** kills the Python process and starts a fresh one, because Python only reads its next command after finishing the current one. After an unexpected exit Electron restarts Python up to three times in a row.
+**Stop** sends `cancel` for the request that is running, so the loaded models stay in memory. Only if Python gives no final answer for that request within 5 seconds does Electron kill the process (the whole tree, since the Windows engine is a launcher plus a child) and start a fresh one. After an unexpected exit Electron restarts Python up to three times in a row.
 
 ## Data
 
 | what | where |
 | --- | --- |
-| history | `<userData>/output/history.json` (last 50 entries) |
+| history | `<userData>/output/history/index.json` (id, time, options, thumbnail) and `<id>.json` per entry with the art; last 50 entries |
 | settings | `<userData>/settings.json` |
 
-`<userData>` is Electron's per-user folder (`%APPDATA%\asc-art` on Windows). When running the backend by hand, set `ASCART_DATA_DIR`, otherwise it uses `./output`.
+`<userData>` is Electron's per-user folder (`%APPDATA%\asc-art` on Windows). When running the backend by hand, set `ASCART_DATA_DIR`, otherwise it uses `./output`. A single-file `history.json` from an older version is converted when the backend starts and kept as `history.json.migrated`.
 
 ## Trying the backend by hand
 
