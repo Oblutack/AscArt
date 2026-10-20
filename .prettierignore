@@ -2,6 +2,8 @@ build/
 dist/
 node_modules/
 python/
+# Go, and golden files that must stay byte for byte
+cli/
 assets/
 package-lock.json
 *.md

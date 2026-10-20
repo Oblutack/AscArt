@@ -49,3 +49,6 @@ OldCode/
 # Playwright output
 test-results/
 playwright-report/
+
+# the Go tests compare against these
+!cli/testdata/golden/*.txt

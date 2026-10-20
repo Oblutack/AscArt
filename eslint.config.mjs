@@ -12,6 +12,7 @@ export default [
       "dist/**",
       "node_modules/**",
       "python/**",
+      "cli/**",
       "assets/**",
       "test-results/**",
       "playwright-report/**",
