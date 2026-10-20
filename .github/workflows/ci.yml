@@ -2,8 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
+
+# A branch with an open PR triggers both events; only keep the latest run
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   python:
