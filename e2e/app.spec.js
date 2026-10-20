@@ -391,6 +391,58 @@ test.describe("widgets", () => {
   });
 });
 
+test.describe("the keyboard", () => {
+  test("toggles can be reached and operated without a mouse", async ({
+    ascart: { page },
+  }) => {
+    const invert = page
+      .locator("label.toggle-container", { hasText: "INVERT" })
+      .locator("input");
+
+    await invert.focus();
+    await expect(invert).toBeFocused();
+    await page.keyboard.press("Space");
+
+    await expect(invert).toBeChecked();
+    // and focus is visible: the custom checkmark next to it gets an outline
+    const outline = await invert.evaluate(
+      (input) => getComputedStyle(input.nextElementSibling).outlineStyle,
+    );
+    expect(outline).toBe("solid");
+  });
+
+  test("Ctrl+S saves, Ctrl+H opens the history and Escape closes it", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const target = path.join(userDataDir, "shortcut.html");
+    await chooseSaveTarget(app, target);
+    await page.keyboard.press("Control+s");
+    await expect.poll(() => fs.existsSync(target)).toBe(true);
+
+    await page.keyboard.press("Control+h");
+    await expect(
+      page.getByRole("dialog", { name: "History / Gallery" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("Escape stops a running conversion", async ({ ascart: { page } }) => {
+    await page.locator("#file-input").setInputFiles(SLOW);
+    await expect(page.getByAltText("Preview")).toBeVisible(); // the file is read
+    await page.keyboard.press("Control+Enter");
+    await expect(page.getByText(/Converting frame \d+\/100/)).toBeVisible();
+
+    await page.keyboard.press("Escape");
+
+    await expect(page.getByText("Conversion stopped")).toBeVisible();
+  });
+});
+
 test.describe("the window", () => {
   test("a dropped file that is not an image is refused", async ({
     ascart: { page },
