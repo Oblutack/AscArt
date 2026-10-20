@@ -10,7 +10,7 @@ const OutputViewer = ({
   onStopProcessing,
 }) => {
   const [fontSize, setFontSize] = useState(8);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(isGif && gifFrames.length > 0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const timerRef = useRef(null);

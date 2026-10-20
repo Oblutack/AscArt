@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-// Provided by electron/preload.js
-const ascart = window.ascart;
+import { ascart } from "../../ascart";
 
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState([]);

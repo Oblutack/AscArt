@@ -1,4 +1,4 @@
-const ascart = window.ascart;
+import { ascart } from "../ascart";
 
 const MainLayout = ({ children }) => {
   return (
