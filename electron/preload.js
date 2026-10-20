@@ -12,6 +12,14 @@ contextBridge.exposeInMainWorld("ascart", {
       options,
       saveHistory,
     }),
+  // One picture as data (a camera frame) instead of a file
+  convertFrame: (requestId, imageData, options) =>
+    ipcRenderer.send("to-python", {
+      command: "convert",
+      requestId,
+      imageData,
+      options,
+    }),
   stop: (requestId) => ipcRenderer.send("stop-python", requestId),
   getHistory: () => ipcRenderer.send("to-python", { command: "get_history" }),
   getHistoryEntry: (id) =>

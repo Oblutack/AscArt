@@ -103,6 +103,12 @@ export interface AscartApi {
     options: ConversionOptions,
     saveHistory?: boolean,
   ): void;
+  /** One picture (base64, JPEG or PNG) instead of a file, e.g. a camera frame */
+  convertFrame(
+    requestId: number,
+    imageData: string,
+    options: ConversionOptions,
+  ): void;
   stop(requestId?: number | null): void;
   getHistory(): void;
   getHistoryEntry(id: string): void;

@@ -254,18 +254,53 @@ app.on("web-contents-created", (event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: "deny" }));
 });
 
-// Nothing in AscArt needs camera, microphone, location, notifications and so
-// on, so every permission request is refused.
-function denyAllPermissions() {
-  session.defaultSession.setPermissionRequestHandler(
-    (webContents, permission, callback) => callback(false),
+// The only permission AscArt uses is the camera (video, never audio), and
+// only for the main window, for the CAMERA button. Everything else is refused:
+// microphone, location, notifications, and any request from a widget.
+function isCameraRequest(webContents, permission, mediaTypes) {
+  return (
+    permission === "media" &&
+    mainWindow !== null &&
+    !mainWindow.isDestroyed() &&
+    webContents === mainWindow.webContents &&
+    mediaTypes.length > 0 &&
+    mediaTypes.every((type) => type === "video")
   );
-  session.defaultSession.setPermissionCheckHandler(() => false);
+}
+
+function limitPermissions() {
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback, details) =>
+      callback(
+        isCameraRequest(
+          webContents,
+          permission,
+          "mediaTypes" in details && details.mediaTypes
+            ? details.mediaTypes
+            : [],
+        ),
+      ),
+  );
+  session.defaultSession.setPermissionCheckHandler(
+    (webContents, permission, origin, details) =>
+      isCameraRequest(
+        webContents,
+        permission,
+        details.mediaType ? [details.mediaType] : [],
+      ),
+  );
+}
+
+// For the end-to-end tests: Chromium's built-in fake camera (a moving test
+// pattern). Not "use-fake-ui-for-media-stream": that approves every request
+// before the permission handlers above get to decide.
+if (process.env.ASCART_FAKE_CAMERA === "1") {
+  app.commandLine.appendSwitch("use-fake-device-for-media-stream");
 }
 
 function createWindow() {
   migrateLegacyHistory();
-  denyAllPermissions();
+  limitPermissions();
 
   // Tall enough that the left panels fit without scrolling, but never taller
   // than the screen
