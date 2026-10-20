@@ -157,7 +157,7 @@ const OutputViewer = ({
             </svg>
             <p className="placeholder-title">No output yet</p>
             <p className="placeholder-subtitle">
-              Load an image or GIF to generate ASCII art
+              Load an image, GIF or video to generate ASCII art
             </p>
           </div>
         )}

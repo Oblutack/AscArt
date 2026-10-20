@@ -82,6 +82,7 @@ describe("when it stays quiet", () => {
     ["it is switched off", { enabled: false }],
     ["no image is loaded", { path: null }],
     ["the image is a GIF", { path: "C:/anim.GIF" }],
+    ["the file is a video", { path: "C:/clip.MP4" }],
     [
       "background removal is on",
       { options: { ...OPTIONS, removeBackground: true } },

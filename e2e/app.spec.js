@@ -1,5 +1,6 @@
 // End-to-end tests: the real Electron app, the real Python backend, the built UI.
 const fs = require("fs");
+const { spawnSync } = require("child_process");
 const os = require("os");
 const path = require("path");
 const { test: base, expect, _electron: electron } = require("@playwright/test");
@@ -8,9 +9,14 @@ const ROOT = path.join(__dirname, "..");
 const PHOTO = path.join(__dirname, "fixtures", "photo.png");
 const ANIM = path.join(__dirname, "fixtures", "anim.gif");
 const SLOW = path.join(__dirname, "fixtures", "slow.gif");
+const CLIP = path.join(__dirname, "fixtures", "clip.mp4");
+
+// Videos need ffmpeg on the machine
+const hasFfmpeg =
+  spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
 
 /** Starts the app with its own data folder; pass userDataDir to reuse one. */
-async function launch(userDataDir) {
+async function launch(userDataDir, extraEnv = {}) {
   const app = await electron.launch({
     args: [ROOT, `--user-data-dir=${userDataDir}`],
     cwd: ROOT,
@@ -18,6 +24,7 @@ async function launch(userDataDir) {
       ...process.env,
       ASCART_USE_BUILD: "1",
       ASCART_SKIP_LEGACY_IMPORT: "1",
+      ...extraEnv,
     },
   });
   const page = await app.firstWindow();
@@ -592,6 +599,71 @@ test.describe("lockdown", () => {
         }),
     );
     expect(result).toBe("denied");
+  });
+});
+
+test.describe("a video", () => {
+  test("is converted frame by frame and plays", async ({
+    ascart: { page },
+  }) => {
+    test.skip(!hasFfmpeg, "ffmpeg is not installed");
+
+    await page.locator("#file-input").setInputFiles(CLIP);
+    // no picture to show: the name stands in, and nothing converts by itself
+    await expect(page.getByText("clip.mp4")).toBeVisible();
+    await expect(page.getByAltText("Preview")).toHaveCount(0);
+    await page.waitForTimeout(800);
+    await expect(page.getByText("No output yet")).toBeVisible();
+
+    await convert(page).click();
+
+    await expect(page.getByTitle("Pause")).toBeVisible();
+    // 1 second at 10 frames per second (the counter keeps moving, so only the
+    // total is checked)
+    await expect(page.getByText(/^\d+\/10$/)).toBeVisible();
+    const first = await art(page).innerHTML();
+    await expect.poll(() => art(page).innerHTML()).not.toBe(first); // it moves
+  });
+
+  test("shows up in history as an animation", async ({ ascart: { page } }) => {
+    test.skip(!hasFfmpeg, "ffmpeg is not installed");
+
+    await page.locator("#file-input").setInputFiles(CLIP);
+    await convert(page).click();
+    await expect(page.getByTitle("Pause")).toBeVisible();
+
+    await expect.poll(async () => (await historyList(page)).length).toBe(1);
+    expect((await historyList(page))[0].isGif).toBe(true);
+  });
+
+  test("a dropped video is accepted", async ({ ascart: { page } }) => {
+    await page.evaluate(() => {
+      const data = new DataTransfer();
+      data.items.add(new File(["x"], "dropped.mkv", { type: "" }));
+      window.dispatchEvent(
+        new DragEvent("drop", { dataTransfer: data, cancelable: true }),
+      );
+    });
+
+    // it is accepted (no "not an image" notice); a synthetic file has no path,
+    // so nothing more can be checked here
+    await page.waitForTimeout(500);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+
+  test("without a working ffmpeg, the error says so", async ({
+    userDataDir,
+  }) => {
+    const missing = path.join(userDataDir, "no-such-ffmpeg");
+    const { app, page } = await launch(userDataDir, { ASCART_FFMPEG: missing });
+
+    await page.locator("#file-input").setInputFiles(CLIP);
+    await convert(page).click();
+
+    await expect(page.getByRole("alert")).toContainText(
+      "Could not start ffmpeg",
+    );
+    await app.close();
   });
 });
 

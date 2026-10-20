@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { isGifPath } from "../lib/paths";
+import { isAnimatedPath } from "../lib/paths";
 
 // How long to wait after the last change before converting again
 export const LIVE_PREVIEW_DELAY_MS = 250;
@@ -11,7 +11,7 @@ export const LIVE_PREVIEW_DELAY_MS = 250;
 export function useLivePreview({ enabled, path, options, convert }) {
   useEffect(() => {
     if (!enabled || !path) return undefined;
-    if (isGifPath(path) || options.removeBackground) return undefined;
+    if (isAnimatedPath(path) || options.removeBackground) return undefined;
 
     const timer = setTimeout(
       () => convert(path, options, { preview: true }),

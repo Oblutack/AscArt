@@ -186,11 +186,11 @@ describe("InputPanel", () => {
     expect(onLoadImage).toHaveBeenCalledWith(file);
   });
 
-  it("only accepts images and GIFs in the file picker", () => {
+  it("accepts images, GIFs and videos in the file picker", () => {
     const { container } = render(<InputPanel {...props} />);
     expect(container.querySelector("#file-input")).toHaveAttribute(
       "accept",
-      "image/*,.gif",
+      "image/*,.gif,video/*,.mkv,.avi",
     );
   });
 
@@ -276,5 +276,36 @@ describe("WidthPanel custom characters", () => {
   it("limits the length", () => {
     render(<WidthPanel {...props} />);
     expect(screen.getByLabelText("Chars:")).toHaveAttribute("maxLength", "100");
+  });
+});
+
+describe("InputPanel with a video", () => {
+  const props = {
+    onLoadImage: vi.fn(),
+    removeBackground: false,
+    setRemoveBackground: vi.fn(),
+    livePreview: true,
+    setLivePreview: vi.fn(),
+    imagePreview: null,
+  };
+
+  it("shows its name instead of a picture", () => {
+    render(<InputPanel {...props} isVideo imageName="holiday.mp4" />);
+
+    expect(screen.getByText("holiday.mp4")).toBeInTheDocument();
+    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+  });
+
+  it("shows a picture for images, not a name", () => {
+    render(
+      <InputPanel
+        {...props}
+        imagePreview="data:image/png;base64,AAAA"
+        imageName="cat.png"
+      />,
+    );
+
+    expect(screen.getByAltText("Preview")).toBeInTheDocument();
+    expect(screen.queryByText("cat.png")).not.toBeInTheDocument();
   });
 });

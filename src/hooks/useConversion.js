@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ascart } from "../ascart";
-import { isGifPath } from "../lib/paths";
+import { isAnimatedPath } from "../lib/paths";
 
 const NO_FRAMES = [];
 const EMPTY_ART = {
@@ -76,9 +76,9 @@ export function useConversion({ showToast }) {
     (path, options, { preview = false } = {}) => {
       if (!path) return;
 
-      if (!preview && options.removeBackground && isGifPath(path)) {
+      if (!preview && options.removeBackground && isAnimatedPath(path)) {
         showToast(
-          "Background removal on a GIF runs per frame and can take a while",
+          "Background removal on a GIF or video runs per frame and can take a while",
           "info",
         );
       }

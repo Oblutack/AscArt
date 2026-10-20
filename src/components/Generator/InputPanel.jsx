@@ -9,6 +9,8 @@ const InputPanel = ({
   livePreview,
   setLivePreview,
   imagePreview,
+  imageName,
+  isVideo,
 }) => {
   const handleFileInput = (e) => {
     const file = e.target.files[0];
@@ -21,7 +23,22 @@ const InputPanel = ({
     <div className="panel input-panel">
       <div className="panel-header">INPUT</div>
       <div className="image-preview-box">
-        {imagePreview ? (
+        {isVideo ? (
+          <div className="preview-placeholder preview-video">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+              <polygon points="10 9 16 12 10 15 10 9" />
+            </svg>
+            <span className="preview-caption">{imageName}</span>
+          </div>
+        ) : imagePreview ? (
           <img src={imagePreview} alt="Preview" className="preview-image" />
         ) : (
           <div className="preview-placeholder">
@@ -42,7 +59,7 @@ const InputPanel = ({
       <input
         type="file"
         id="file-input"
-        accept="image/*,.gif"
+        accept="image/*,.gif,video/*,.mkv,.avi"
         onChange={handleFileInput}
         style={{ display: "none" }}
       />

@@ -1194,3 +1194,18 @@ a {
 .field-error {
   color: var(--danger-soft);
 }
+
+/* A loaded video has no preview, just its name */
+.preview-video {
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.preview-caption {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--text-muted);
+}

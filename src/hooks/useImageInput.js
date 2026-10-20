@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ascart } from "../ascart";
+import { isImageFile, isVideoFile } from "../lib/paths";
 
 /**
  * The image the user picked (a preview to show, a path for the backend) and
@@ -13,10 +14,26 @@ export function useImageInput({ showToast }) {
   const [imagePreview, setImagePreview] = useState(
     /** @type {string | null} */ (null),
   );
+  const [imageName, setImageName] = useState(
+    /** @type {string | null} */ (null),
+  );
+  const [isVideo, setIsVideo] = useState(false);
 
-  const loadImage = useCallback((file) => {
+  const loadImage = useCallback((/** @type {File} */ file) => {
+    setImageName(file.name);
+
+    if (isVideoFile(file)) {
+      // A video can't be shown in an <img>, and reading it all just to
+      // preview it would be wasteful: the backend reads it from its path
+      setIsVideo(true);
+      setImagePreview(null);
+      setImagePath(ascart.getPathForFile(file));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
+      setIsVideo(false);
       setImagePreview(/** @type {string} */ (reader.result));
       setImagePath(ascart.getPathForFile(file));
     };
@@ -26,6 +43,8 @@ export function useImageInput({ showToast }) {
   const clearImage = useCallback(() => {
     setImagePath(null);
     setImagePreview(null);
+    setImageName(null);
+    setIsVideo(false);
   }, []);
 
   useEffect(() => {
@@ -35,11 +54,13 @@ export function useImageInput({ showToast }) {
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
 
-      const image = files.find((file) => file.type.startsWith("image/"));
-      if (image) {
-        loadImage(image);
+      const usable = files.find(
+        (file) => isImageFile(file) || isVideoFile(file),
+      );
+      if (usable) {
+        loadImage(usable);
       } else {
-        showToast("That file is not an image", "error");
+        showToast("That file is not an image, GIF or video", "error");
       }
     };
 
@@ -51,5 +72,12 @@ export function useImageInput({ showToast }) {
     };
   }, [loadImage, showToast]);
 
-  return { imagePath, imagePreview, loadImage, clearImage };
+  return {
+    imagePath,
+    imagePreview,
+    imageName,
+    isVideo,
+    loadImage,
+    clearImage,
+  };
 }

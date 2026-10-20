@@ -28,9 +28,8 @@ function App() {
     restoreOptions,
     conversionOptions,
   } = useSettings();
-  const { imagePath, imagePreview, loadImage, clearImage } = useImageInput({
-    showToast,
-  });
+  const { imagePath, imagePreview, imageName, isVideo, loadImage, clearImage } =
+    useImageInput({ showToast });
   const { art, isLoading, progress, start, stop, showArt } = useConversion({
     showToast,
   });
@@ -131,6 +130,8 @@ function App() {
             livePreview={settings.livePreview}
             setLivePreview={setter("livePreview")}
             imagePreview={imagePreview}
+            imageName={imageName}
+            isVideo={isVideo}
           />
           <ActionButtons
             onConvert={handleConvert}

@@ -76,7 +76,7 @@ describe("dropping files on the window", () => {
     drop([new File(["t"], "notes.txt", { type: "text/plain" })]);
 
     expect(showToast).toHaveBeenCalledWith(
-      "That file is not an image",
+      "That file is not an image, GIF or video",
       "error",
     );
     expect(result.current.imagePath).toBeNull();
@@ -103,5 +103,60 @@ describe("dropping files on the window", () => {
     window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     expect(fake.api.getPathForFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("videos", () => {
+  const video = (name = "clip.mp4", type = "video/mp4") =>
+    new File(["v"], name, { type });
+
+  it("knows the path and name, with no preview to read", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+
+    act(() => result.current.loadImage(video("holiday.mp4")));
+
+    expect(result.current.imagePath).toBe("C:/images/holiday.mp4");
+    expect(result.current.imageName).toBe("holiday.mp4");
+    expect(result.current.isVideo).toBe(true);
+    expect(result.current.imagePreview).toBeNull();
+  });
+
+  it("recognises containers the browser has no type for (mkv, avi)", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+
+    act(() => result.current.loadImage(video("old.avi", "")));
+
+    expect(result.current.isVideo).toBe(true);
+  });
+
+  it("a dropped video is loaded", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+
+    drop([video("dropped.webm", "video/webm")]);
+
+    expect(result.current.imagePath).toBe("C:/images/dropped.webm");
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it("choosing a picture after a video switches back", async () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+    act(() => result.current.loadImage(video()));
+
+    act(() => result.current.loadImage(png("cat.png")));
+
+    await waitFor(() => expect(result.current.isVideo).toBe(false));
+    expect(result.current.imageName).toBe("cat.png");
+    expect(result.current.imagePreview).toMatch(/^data:image\/png/);
+  });
+
+  it("clearImage forgets the video too", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+    act(() => result.current.loadImage(video()));
+
+    act(() => result.current.clearImage());
+
+    expect(result.current.imagePath).toBeNull();
+    expect(result.current.imageName).toBeNull();
+    expect(result.current.isVideo).toBe(false);
   });
 });

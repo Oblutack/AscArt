@@ -67,6 +67,19 @@ describe("starting a conversion", () => {
     );
   });
 
+  it("warns the same for a video", () => {
+    const { result } = setup();
+
+    act(() =>
+      result.current.start("C:/a.mp4", { ...OPTIONS, removeBackground: true }),
+    );
+
+    expect(showToast).toHaveBeenCalledWith(
+      expect.stringContaining("video"),
+      "info",
+    );
+  });
+
   it("doesn't warn for previews or plain images", () => {
     const { result } = setup();
     act(() => result.current.start("C:/a.png", { removeBackground: true }));
