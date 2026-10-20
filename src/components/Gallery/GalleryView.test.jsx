@@ -193,3 +193,44 @@ describe("opening an entry", () => {
     expect(onLoadAscii).not.toHaveBeenCalled();
   });
 });
+
+describe("as a dialog", () => {
+  it("is announced as a modal dialog with a name", async () => {
+    await renderGallery();
+    expect(
+      screen.getByRole("dialog", { name: "History / Gallery" }),
+    ).toHaveAttribute("aria-modal", "true");
+  });
+
+  it("takes focus when it opens", async () => {
+    await renderGallery();
+    expect(screen.getByRole("dialog")).toHaveFocus();
+  });
+
+  it("closes on Escape, without anyone else seeing the key", async () => {
+    await renderGallery();
+    const elsewhere = vi.fn();
+    window.addEventListener("keydown", elsewhere); // like the app's own shortcuts
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(elsewhere).not.toHaveBeenCalled();
+    window.removeEventListener("keydown", elsewhere);
+  });
+
+  it("gives focus back to what had it before", () => {
+    const opener = document.createElement("button");
+    document.body.append(opener);
+    opener.focus();
+
+    const { unmount } = render(
+      <GalleryView onClose={onClose} onLoadAscii={onLoadAscii} />,
+    );
+    expect(opener).not.toHaveFocus();
+    unmount();
+
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
+});

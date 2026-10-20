@@ -19,6 +19,29 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     callbacks.current = { onClose, onLoadAscii };
   });
 
+  // As a dialog: take focus when opened, give it back when closed, and
+  // close on Escape
+  const dialogRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  useEffect(() => {
+    const previouslyFocused = document.activeElement;
+    dialogRef.current?.focus();
+
+    // Capture phase, so Escape closes the gallery instead of also stopping a
+    // conversion running behind it
+    const closeOnEscape = (/** @type {KeyboardEvent} */ event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      callbacks.current.onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape, true);
+
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape, true);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
+  }, []);
+
   useEffect(() => {
     // Listen for the backend, then ask for the history list
     const unsubscribe = ascart.onResponse((data) => {
@@ -105,9 +128,16 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
 
   return (
     <div className="gallery-overlay">
-      <div className="gallery-modal">
+      <div
+        className="gallery-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gallery-title"
+        tabIndex={-1}
+        ref={dialogRef}
+      >
         <div className="gallery-header">
-          <h2>History / Gallery</h2>
+          <h2 id="gallery-title">History / Gallery</h2>
           {history.length > 0 && (
             <button
               className="gallery-select-all-btn"
