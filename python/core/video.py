@@ -51,9 +51,12 @@ def load_video_frames(path, should_cancel=None, max_seconds=MAX_SECONDS, fps=FPS
             '-vf', f"fps={fps},scale='min({MAX_FRAME_WIDTH},iw)':-2",
             os.path.join(folder, 'frame_%04d.png'),
         ]
-        process = subprocess.Popen(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
-            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        try:
+            process = subprocess.Popen(
+                command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        except OSError as e:
+            raise RuntimeError(f"Could not start ffmpeg ({ffmpeg}): {e}") from e
 
         try:
             while process.poll() is None:

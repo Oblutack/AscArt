@@ -98,6 +98,12 @@ class TestWithoutFfmpeg:
         with pytest.raises(RuntimeError, match='needs ffmpeg'):
             load_video_frames('anything.mp4')
 
+    def test_an_ffmpeg_that_cannot_start_is_explained(self, monkeypatch, tmp_path):
+        monkeypatch.setenv('ASCART_FFMPEG', str(tmp_path / 'no-such-ffmpeg'))
+
+        with pytest.raises(RuntimeError, match='Could not start ffmpeg'):
+            load_video_frames('anything.mp4')
+
     def test_ascart_ffmpeg_overrides_the_path(self, monkeypatch):
         monkeypatch.setenv('ASCART_FFMPEG', 'C:/tools/ffmpeg.exe')
         assert find_ffmpeg() == 'C:/tools/ffmpeg.exe'

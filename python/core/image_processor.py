@@ -3,6 +3,7 @@ Image Processing Module
 Handles image loading, background removal, adjustments, and conversion to ASCII
 """
 
+import io
 import os
 
 import numpy as np
@@ -49,7 +50,15 @@ class ImageProcessor:
         if not os.path.exists(path):
             raise FileNotFoundError(f"Image not found: {path}")
 
-        self.original_image = Image.open(path)
+        return self._use_image(Image.open(path))
+
+    def load_image_bytes(self, data):
+        """Load an image from its encoded bytes (a camera frame, for example)"""
+        return self._use_image(Image.open(io.BytesIO(data)))
+
+    def _use_image(self, image):
+        """Make `image` the working image, flattened to RGB on white"""
+        self.original_image = image
         self.image = self.original_image.copy()
         # A mask from a previous image must not leak into this one
         self.alpha_mask = None
@@ -314,6 +323,14 @@ class ImageProcessor:
         """Complete pipeline for a file: load, process, return the Grid"""
         try:
             self.load_image(path)
+            return self.process_image(options)
+        except Exception as e:
+            raise Exception(f"Processing error: {str(e)}") from e
+
+    def process_bytes_to_grid(self, data, options):
+        """Complete pipeline for an encoded image held in memory"""
+        try:
+            self.load_image_bytes(data)
             return self.process_image(options)
         except Exception as e:
             raise Exception(f"Processing error: {str(e)}") from e

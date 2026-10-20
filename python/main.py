@@ -1,3 +1,5 @@
+import base64
+import binascii
 import json
 import os
 import queue
@@ -29,6 +31,10 @@ def send(message):
     sys.stdout.flush()
 
 
+# A picture sent as data (a camera frame) may not be bigger than this, in
+# base64 characters
+MAX_FRAME_BASE64_CHARS = 12_000_000
+
 # The gallery shows thumbnails at most this many characters across / down
 THUMB_COLS = 48
 THUMB_ROWS = 24
@@ -52,7 +58,37 @@ class Backend:
     def handle_ping(self, data):
         return {"status": "success", "type": "pong", "message": "Pong from Python!"}
 
+    def handle_convert_frame(self, data):
+        """
+        One picture sent as data instead of a file (a camera frame). Frames are
+        throwaway: nothing goes to history.
+        """
+        encoded = data.get('imageData')
+        if not isinstance(encoded, str):
+            return error_response("imageData must be base64 text")
+        if len(encoded) > MAX_FRAME_BASE64_CHARS:
+            return error_response("That picture is too large")
+
+        try:
+            raw = base64.b64decode(encoded, validate=True)
+            grid = self.image_processor.process_bytes_to_grid(raw, data.get('options', {}))
+        except binascii.Error:
+            return error_response("imageData is not valid base64")
+        except Exception as e:
+            log_error(f"Frame conversion failed: {e}")
+            return error_response(f"Conversion failed: {e}")
+
+        return {
+            "status": "success",
+            "type": "ascii-result",
+            "ascii": grid.to_html(),
+            "isGif": False,
+        }
+
     def handle_convert(self, data):
+        if data.get('imageData') is not None:
+            return self.handle_convert_frame(data)
+
         path = data.get('path')
         options = data.get('options', {})
         request_id = data.get('requestId')
