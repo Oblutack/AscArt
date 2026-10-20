@@ -1,6 +1,7 @@
 const {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   screen,
@@ -10,7 +11,7 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const { pathToFileURL } = require("url");
-const { stripTags, buildHtml } = require("./export");
+const { stripTags, toAnsi, buildHtml } = require("./export");
 
 // Chatty logging only while developing
 const debug = (...args) => {
@@ -344,32 +345,87 @@ ipcMain.on("to-python", (event, args) => {
   pythonProcess.stdin.write(JSON.stringify(args) + "\n");
 });
 
-// Save As: colored HTML (animated for GIFs) or plain text
-ipcMain.handle("save-ascii", async (event, art) => {
-  if (!art || typeof art.ascii !== "string") {
-    return { error: "Nothing to save" };
-  }
+// Saving: the page asks where (the Save As dialog), then hands over what to
+// write. Text formats are built here from the art; images are drawn by the
+// page (it has a canvas) and arrive as bytes.
+const TEXT_FORMATS = new Set([".html", ".txt", ".ans"]);
+const IMAGE_FORMATS = new Set([".png", ".gif"]);
 
+ipcMain.handle("choose-save-path", async (event, { isGif } = {}) => {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const filters = [
+    { name: "HTML (colored)", extensions: ["html"] },
+    { name: "Text (plain)", extensions: ["txt"] },
+    { name: "Text with terminal colors (ANSI)", extensions: ["ans"] },
+    { name: "Image (PNG)", extensions: ["png"] },
+  ];
+  if (isGif)
+    filters.push({ name: "Animated image (GIF)", extensions: ["gif"] });
+
   const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
     title: "Save ASCII art",
     defaultPath: path.join(app.getPath("documents"), `ascii_${stamp}.html`),
-    filters: [
-      { name: "HTML (colored)", extensions: ["html"] },
-      { name: "Text (plain)", extensions: ["txt"] },
-    ],
+    filters,
   });
-  if (canceled || !filePath) return { canceled: true };
+  return canceled || !filePath ? { canceled: true } : { filePath };
+});
+
+// Writes one of the text formats, chosen by the file's extension
+ipcMain.handle("save-ascii", async (event, { art, filePath } = {}) => {
+  if (!art || typeof art.ascii !== "string" || typeof filePath !== "string") {
+    return { error: "Nothing to save" };
+  }
+
+  const extension = path.extname(filePath).toLowerCase();
+  if (!TEXT_FORMATS.has(extension)) {
+    return {
+      error: `Can't save a ${extension || "file without an extension"} this way`,
+    };
+  }
 
   try {
-    const asText = path.extname(filePath).toLowerCase() === ".txt";
-    const content = asText ? stripTags(art.ascii) : buildHtml(art);
+    const content =
+      extension === ".txt"
+        ? stripTags(art.ascii)
+        : extension === ".ans"
+          ? toAnsi(art.ascii)
+          : buildHtml(art);
     await fs.promises.writeFile(filePath, content, "utf8");
     return { filePath };
   } catch (error) {
     console.error("Failed to save file:", error);
     return { error: error instanceof Error ? error.message : String(error) };
   }
+});
+
+// Writes an image the page drew
+ipcMain.handle("save-binary", async (event, { filePath, bytes } = {}) => {
+  if (typeof filePath !== "string" || !(bytes instanceof Uint8Array)) {
+    return { error: "Nothing to save" };
+  }
+
+  const extension = path.extname(filePath).toLowerCase();
+  if (!IMAGE_FORMATS.has(extension)) {
+    return {
+      error: `Can't save a ${extension || "file without an extension"} this way`,
+    };
+  }
+
+  try {
+    await fs.promises.writeFile(filePath, bytes);
+    return { filePath };
+  } catch (error) {
+    console.error("Failed to save image:", error);
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+// The plain characters of the art, onto the clipboard
+ipcMain.handle("copy-text", (event, art) => {
+  if (!art || typeof art.ascii !== "string")
+    return { error: "Nothing to copy" };
+  clipboard.writeText(stripTags(art.ascii));
+  return { copied: true };
 });
 
 // Settings Management

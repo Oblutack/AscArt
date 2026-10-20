@@ -110,7 +110,18 @@ export interface AscartApi {
   /** Subscribe to the backend; returns the function that unsubscribes */
   onResponse(callback: (message: BackendMessage) => void): () => void;
 
-  saveAscii(art: ArtPayload): Promise<SaveResult>;
+  /** The Save As dialog, with every format; the extension picks the format */
+  chooseSavePath(options: {
+    isGif: boolean;
+  }): Promise<
+    | { filePath: string; canceled?: undefined }
+    | { canceled: true; filePath?: undefined }
+  >;
+  /** Writes html, txt or ans (chosen by the file's extension) */
+  saveAscii(art: ArtPayload, filePath: string): Promise<SaveResult>;
+  /** Writes an image the page drew (png or gif) */
+  saveBinary(filePath: string, bytes: Uint8Array): Promise<SaveResult>;
+  copyText(art: ArtPayload): Promise<{ copied: true } | { error: string }>;
   loadSettings(): Promise<Partial<Settings> | null>;
   saveSettings(settings: Settings): void;
   getPathForFile(file: File): string;

@@ -27,7 +27,12 @@ contextBridge.exposeInMainWorld("ascart", {
   },
 
   // Files and settings
-  saveAscii: (art) => ipcRenderer.invoke("save-ascii", art),
+  chooseSavePath: (options) => ipcRenderer.invoke("choose-save-path", options),
+  saveAscii: (art, filePath) =>
+    ipcRenderer.invoke("save-ascii", { art, filePath }),
+  saveBinary: (filePath, bytes) =>
+    ipcRenderer.invoke("save-binary", { filePath, bytes }),
+  copyText: (art) => ipcRenderer.invoke("copy-text", art),
   loadSettings: () => ipcRenderer.invoke("load-settings"),
   saveSettings: (settings) => ipcRenderer.send("save-settings", settings),
   getPathForFile: (file) => webUtils.getPathForFile(file),
