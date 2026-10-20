@@ -1,12 +1,20 @@
 """
-GIF Processing Module
-Handles animated GIF conversion to ASCII
+Animation Processing Module
+Handles animated GIFs (and short videos, through ffmpeg) frame by frame
 """
+
+import os
 
 from PIL import Image
 
 from .cancel import Cancelled
 from .image_processor import ImageProcessor
+from .video import is_video, load_video_frames
+
+
+def is_animated(path):
+    """Does this file go through the frame-by-frame pipeline?"""
+    return os.path.splitext(path)[1].lower() == '.gif' or is_video(path)
 
 
 class GifProcessor:
@@ -50,6 +58,17 @@ class GifProcessor:
 
         return len(self.frames)
 
+    def load_video(self, path, should_cancel=None):
+        """Load the first seconds of a video as frames and delays"""
+        self.frames, self.delays = load_video_frames(path, should_cancel)
+        return len(self.frames)
+
+    def load(self, path, should_cancel=None):
+        """Load the frames of a GIF or a video"""
+        if is_video(path):
+            return self.load_video(path, should_cancel)
+        return self.load_gif(path, should_cancel)
+
     def convert_frames_to_grids(self, options, progress=None, should_cancel=None):
         """
         Run every loaded frame through the same pipeline as a still image.
@@ -73,7 +92,7 @@ class GifProcessor:
     def process_to_grids(self, path, options, progress=None, should_cancel=None):
         """Complete GIF pipeline, keeping the Grid of every frame"""
         try:
-            frame_count = self.load_gif(path, should_cancel)
+            frame_count = self.load(path, should_cancel)
             return {
                 'grids': self.convert_frames_to_grids(options, progress, should_cancel),
                 'delays': self.delays,
@@ -82,7 +101,7 @@ class GifProcessor:
         except Cancelled:
             raise
         except Exception as e:
-            raise Exception(f"GIF processing error: {str(e)}") from e
+            raise Exception(f"Animation processing error: {str(e)}") from e
 
     def convert_frames_to_ascii(self, options, progress=None):
         """Convert all loaded frames to HTML strings"""

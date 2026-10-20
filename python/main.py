@@ -7,7 +7,7 @@ import traceback
 
 from core.cancel import Cancelled, CancelRegistry
 from core.file_handler import FileHandler
-from core.gif_processor import GifProcessor
+from core.gif_processor import GifProcessor, is_animated
 from core.image_processor import ImageProcessor
 
 
@@ -71,7 +71,7 @@ class Backend:
 
         try:
             checkpoint()  # cancelled while it was still waiting in the queue
-            if os.path.splitext(path)[1].lower() == '.gif':
+            if is_animated(path):
                 def report_progress(current, total):
                     send({
                         "status": "success",
