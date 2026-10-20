@@ -56,7 +56,18 @@ jobs:
           grep -q '"pong"' ping.out
 
       - name: Package the app
-        run: npx electron-builder ${{ matrix.builder }} --publish never
+        shell: bash
+        # If electron-builder fails, show the end of its output in the run's
+        # annotations, where it is easy to find
+        run: |
+          set +e
+          npx electron-builder ${{ matrix.builder }} --publish never 2>&1 | tee builder.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            message=$(tail -n 40 builder.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=electron-builder failed::$message"
+          fi
+          exit "$status"
         env:
           # Signing is optional: add these secrets and the build is signed,
           # leave them out and it is not.
