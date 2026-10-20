@@ -3,5 +3,5 @@
 # Keep these two pins in sync with requirements.txt.
 Pillow==10.3.0
 numpy==1.26.4
-pytest==8.2.2
+pytest==9.1.1
 ruff==0.17.1
