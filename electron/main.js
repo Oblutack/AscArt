@@ -59,7 +59,11 @@ function sendToRenderer(message) {
 function pythonLaunchInfo() {
   if (app.isPackaged) {
     return {
-      command: path.join(process.resourcesPath, "python", "engine.exe"),
+      command: path.join(
+        process.resourcesPath,
+        "python",
+        process.platform === "win32" ? "engine.exe" : "engine"
+      ),
       args: [],
       cwd: process.resourcesPath,
     };
@@ -171,7 +175,7 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
     },
-    icon: path.join(__dirname, "../public/icons/icon.ico"),
+    icon: path.join(__dirname, "../assets/icon.png"),
   });
 
   // DEV vs PROD Loading

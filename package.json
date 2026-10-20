@@ -20,27 +20,53 @@
     "appId": "com.ascart.app",
     "productName": "AscArt",
     "extends": null,
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
       "build/**/*",
       "electron/**/*",
-      "!electron/**/*.test.js",
-      "!build/icon.ico"
+      "assets/icon.png",
+      "!electron/**/*.test.js"
     ],
     "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "7z"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "extraResources": [
       {
         "from": "python/dist",
         "to": "python",
         "filter": [
-          "**/*"
+          "engine",
+          "engine.exe"
         ]
       }
-    ]
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "7z"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.graphics-design",
+      "icon": "assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Graphics",
+      "icon": "assets/icon.png"
+    }
   },
   "dependencies": {
     "react": "^18.2.0",
