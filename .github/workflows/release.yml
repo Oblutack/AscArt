@@ -1,0 +1,90 @@
+name: Release
+
+# Push a tag like v1.2.0 to build installers for every platform and attach
+# them to a GitHub release. "Run workflow" builds them without releasing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            builder: --win
+          - name: macos-arm64
+            os: macos-latest
+            builder: --mac --arm64
+          - name: linux
+            os: ubuntu-22.04
+            builder: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/requirements.txt
+
+      - run: pip install -r python/requirements.txt
+      - run: npm ci
+      - run: npm run react-build
+
+      # The Python backend, frozen into one executable
+      - run: npm run build:engine
+
+      - name: Check that the engine starts and answers
+        shell: bash
+        run: |
+          ENGINE=python/dist/engine
+          if [ -f "$ENGINE.exe" ]; then ENGINE="$ENGINE.exe"; fi
+          echo '{"command":"ping"}' | "$ENGINE" | tee ping.out
+          grep -q '"pong"' ping.out
+
+      - name: Package the app
+        run: npx electron-builder ${{ matrix.builder }} --publish never
+        env:
+          # Signing is optional: add these secrets and the build is signed,
+          # leave them out and it is not.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AscArt-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.7z
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
