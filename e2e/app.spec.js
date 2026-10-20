@@ -275,6 +275,146 @@ test.describe("saving", () => {
   });
 });
 
+/**
+ * Counts the pictures in a GIF by walking its blocks (a plain byte search
+ * would also match inside compressed pixel data).
+ */
+function countGifFrames(bytes) {
+  let position = 13; // header (6) + logical screen descriptor (7)
+  const flags = bytes[10];
+  if (flags & 0x80) position += 3 * 2 ** ((flags & 0x07) + 1); // global colors
+
+  const skipSubBlocks = () => {
+    while (bytes[position] !== 0) position += bytes[position] + 1;
+    position += 1; // the zero-length terminator
+  };
+
+  let frames = 0;
+  while (position < bytes.length && bytes[position] !== 0x3b) {
+    if (bytes[position] === 0x21) {
+      position += 2; // extension introducer + label
+      skipSubBlocks();
+    } else if (bytes[position] === 0x2c) {
+      frames++;
+      const imageFlags = bytes[position + 9];
+      position += 10;
+      if (imageFlags & 0x80) position += 3 * 2 ** ((imageFlags & 0x07) + 1);
+      position += 1; // LZW minimum code size
+      skipSubBlocks();
+    } else {
+      throw new Error(`Unexpected GIF block 0x${bytes[position].toString(16)}`);
+    }
+  }
+  return frames;
+}
+
+const ESC = String.fromCharCode(27);
+
+test.describe("more ways to save", () => {
+  /** Width and height from a PNG's header */
+  const pngSize = (bytes) => ({
+    signature: bytes.subarray(0, 8).toString("hex"),
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  });
+
+  test("ANSI text has terminal color codes", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const target = path.join(userDataDir, "art.ans");
+    await chooseSaveTarget(app, target);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect.poll(() => fs.existsSync(target)).toBe(true);
+
+    const text = fs.readFileSync(target, "utf8");
+    expect(text).toMatch(new RegExp(`${ESC}\\[38;2;\\d+;\\d+;\\d+m`));
+    expect(text).toContain(`${ESC}[0m`);
+    expect(text).not.toContain("<span");
+  });
+
+  test("a PNG is a real picture of the art", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+
+    const target = path.join(userDataDir, "art.png");
+    await chooseSaveTarget(app, target);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect(page.getByRole("status")).toContainText("Saved to");
+
+    const bytes = fs.readFileSync(target);
+    const { signature, width, height } = pngSize(bytes);
+    expect(signature).toBe("89504e470d0a1a0a");
+    expect(width).toBeGreaterThan(500);
+    expect(height).toBeGreaterThan(200);
+
+    // not an empty canvas: decode it in the page and look for colorful pixels
+    const colorful = await page.evaluate(async (base64) => {
+      const image = new Image();
+      image.src = "data:image/png;base64," + base64;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext("2d");
+      context.drawImage(image, 0, 0);
+      const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+      let count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const spread =
+          Math.max(data[i], data[i + 1], data[i + 2]) -
+          Math.min(data[i], data[i + 1], data[i + 2]);
+        if (spread > 80) count++;
+      }
+      return count;
+    }, bytes.toString("base64"));
+    expect(colorful).toBeGreaterThan(200);
+  });
+
+  test("an animated GIF has every frame", async ({
+    ascart: { app, page },
+    userDataDir,
+  }) => {
+    await page.locator("#file-input").setInputFiles(ANIM);
+    await convert(page).click();
+    await expect(page.getByTitle("Pause")).toBeVisible();
+
+    const target = path.join(userDataDir, "anim.gif");
+    await chooseSaveTarget(app, target);
+    await page.getByRole("button", { name: "SAVE" }).click();
+    await expect
+      .poll(() => fs.existsSync(target), { timeout: 30_000 })
+      .toBe(true);
+    await expect(page.getByRole("status")).toContainText("Saved to");
+
+    const bytes = fs.readFileSync(target);
+    expect(bytes.subarray(0, 6).toString("latin1")).toBe("GIF89a");
+
+    expect(countGifFrames(bytes)).toBe(5);
+  });
+
+  test("COPY puts the plain characters on the clipboard", async ({
+    ascart: { app, page },
+  }) => {
+    await page.locator("#file-input").setInputFiles(PHOTO);
+    await expect(art(page).locator("span").first()).toBeVisible();
+    const shown = await art(page).textContent();
+
+    await page.getByRole("button", { name: "COPY" }).click();
+    await expect(page.getByRole("status")).toContainText("Copied");
+
+    const copied = await app.evaluate(({ clipboard }) => clipboard.readText());
+    expect(copied).toBe(shown);
+    expect(copied).not.toContain("<");
+  });
+});
+
 test.describe("a GIF", () => {
   test("waits for CONVERT, then plays", async ({ ascart: { page } }) => {
     await page.locator("#file-input").setInputFiles(ANIM);

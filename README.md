@@ -62,7 +62,8 @@ AscArt is a powerful desktop application that converts images and animated GIFs 
 - **Character Sets** - Detailed and blocks, or write your own ramp from darkest to lightest
 - **Color Schemes** - 8 palettes: Original, Grayscale, Sepia, Blue, Green, Red, Purple, Cyan
 - **Colored HTML Export** - Save with full RGB color information preserved as HTML with inline styles; GIFs export as a self-contained animated page
-- **Plain Text Export** - Save as monochrome .txt files
+- **Plain Text, ANSI and Images** - Save as plain `.txt`, as `.ans` with 24-bit terminal colors (paste or `cat` it in a terminal), as a `.png` picture, or as an animated `.gif`
+- **Copy** - One click copies the plain characters to the clipboard
 - **Font Zoom Controls** - Adjust display size from 4px to 12px for optimal viewing
 - **Playback Controls** - For GIFs: play/pause, stop, speed adjustment (0.5x to 2x)
 - **Stop Processing** - Cancel a long-running conversion; the Python backend is restarted so nothing stale comes back
@@ -205,7 +206,7 @@ GitHub Actions runs all of this on every push and pull request.
    - Options: Background removal, keep original size (up to 400 characters wide)
 3. **Click Convert** - Press the "CONVERT" button to generate ASCII art with your settings
 4. **View Output** - Colored ASCII art appears in the right panel with zoom controls
-5. **Save or Export** - "SAVE" opens a Save As dialog: HTML keeps the colors (animated for GIFs), TXT is plain text (first frame for GIFs)
+5. **Save or Export** - "SAVE" opens a Save As dialog; the file type picks the format: HTML (colors, animated for GIFs), TXT (plain text), ANS (terminal colors), PNG (a picture) or GIF (an animation, for GIFs). Text and PNG use the first frame of a GIF. "COPY" puts the plain text on the clipboard
 6. **Create Widget** - Click "Widget" to display the ASCII art on your desktop
 
 **Note:** Settings are automatically saved and restored when you reopen the app
