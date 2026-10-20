@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ascart } from "../ascart";
 import { isImageFile, isVideoFile } from "../lib/paths";
 
@@ -7,7 +7,7 @@ import { isImageFile, isVideoFile } from "../lib/paths";
  * dropping images anywhere in the window. Without the window-level handlers a
  * drop outside the preview box would make the window navigate to the file.
  */
-export function useImageInput({ showToast }) {
+export function useImageInput({ showToast, onLoad }) {
   const [imagePath, setImagePath] = useState(
     /** @type {string | null} */ (null),
   );
@@ -19,7 +19,14 @@ export function useImageInput({ showToast }) {
   );
   const [isVideo, setIsVideo] = useState(false);
 
+  // Told whenever a file is picked or dropped (the app turns the camera off)
+  const onLoadRef = useRef(onLoad);
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  });
+
   const loadImage = useCallback((/** @type {File} */ file) => {
+    onLoadRef.current?.();
     setImageName(file.name);
 
     if (isVideoFile(file)) {

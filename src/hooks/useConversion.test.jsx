@@ -282,3 +282,95 @@ it("unsubscribes when unmounted", () => {
   unmount();
   expect(fake.listenerCount()).toBe(0);
 });
+
+describe("camera frames", () => {
+  const frame = (result, data = "QUJD") =>
+    result.current.startFrame(data, OPTIONS);
+
+  it("sends the picture as data with a request id", () => {
+    const { result } = setup();
+
+    let sent;
+    act(() => {
+      sent = frame(result);
+    });
+
+    expect(sent).toBe(true);
+    expect(fake.api.convertFrame).toHaveBeenCalledWith(1, "QUJD", OPTIONS);
+    expect(fake.api.convert).not.toHaveBeenCalled();
+  });
+
+  it("shows no spinner and no progress", () => {
+    const { result } = setup();
+    act(() => {
+      frame(result);
+    });
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it("holds the next frame back until the first is answered", () => {
+    const { result } = setup();
+
+    let first;
+    let second;
+    act(() => {
+      first = frame(result);
+      second = frame(result);
+    });
+
+    expect(first).toBe(true);
+    expect(second).toBe(false);
+    expect(fake.api.convertFrame).toHaveBeenCalledTimes(1);
+
+    fake.emit({ type: "ascii-result", ascii: "a", requestId: 1 });
+    let third;
+    act(() => {
+      third = frame(result);
+    });
+    expect(third).toBe(true);
+    expect(fake.api.convertFrame).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the art that comes back", () => {
+    const { result } = setup();
+    act(() => {
+      frame(result);
+    });
+
+    fake.emit({ type: "ascii-result", ascii: "<span>@</span>", requestId: 1 });
+
+    expect(result.current.art.ascii).toBe("<span>@</span>");
+  });
+
+  it("an error frees the slot too", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { result } = setup();
+    act(() => {
+      frame(result);
+    });
+
+    fake.emit({ status: "error", error: "bad frame", requestId: 1 });
+
+    let next;
+    act(() => {
+      next = frame(result);
+    });
+    expect(next).toBe(true);
+  });
+
+  it("an answer for a replaced request still frees the slot", () => {
+    const { result } = setup();
+    act(() => {
+      frame(result);
+    });
+    act(() => result.current.start("C:/a.png", OPTIONS)); // takes over as the active request
+
+    fake.emit({ type: "ascii-result", ascii: "old frame", requestId: 1 });
+
+    let next;
+    act(() => {
+      next = frame(result);
+    });
+    expect(next).toBe(true);
+  });
+});

@@ -309,3 +309,39 @@ describe("InputPanel with a video", () => {
     expect(screen.queryByText("cat.png")).not.toBeInTheDocument();
   });
 });
+
+describe("InputPanel camera button", () => {
+  const props = {
+    onLoadImage: vi.fn(),
+    removeBackground: false,
+    setRemoveBackground: vi.fn(),
+    livePreview: true,
+    setLivePreview: vi.fn(),
+    imagePreview: null,
+    onToggleCamera: vi.fn(),
+  };
+
+  it("starts the camera", async () => {
+    const onToggleCamera = vi.fn();
+    render(<InputPanel {...props} onToggleCamera={onToggleCamera} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "CAMERA" }));
+
+    expect(onToggleCamera).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns into a stop button and says the camera is on", () => {
+    render(<InputPanel {...props} cameraActive />);
+
+    expect(
+      screen.getByRole("button", { name: "STOP CAMERA" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Camera is on")).toBeInTheDocument();
+    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+  });
+
+  it("can't be pressed twice while the camera is starting", () => {
+    render(<InputPanel {...props} cameraStarting />);
+    expect(screen.getByRole("button", { name: "CAMERA" })).toBeDisabled();
+  });
+});

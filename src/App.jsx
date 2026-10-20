@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ascart } from "./ascart";
+import { useCamera } from "./hooks/useCamera";
 import { useConversion } from "./hooks/useConversion";
 import { useImageInput } from "./hooks/useImageInput";
 import { useLivePreview } from "./hooks/useLivePreview";
@@ -28,11 +29,8 @@ function App() {
     restoreOptions,
     conversionOptions,
   } = useSettings();
-  const { imagePath, imagePreview, imageName, isVideo, loadImage, clearImage } =
-    useImageInput({ showToast });
-  const { art, isLoading, progress, start, stop, showArt } = useConversion({
-    showToast,
-  });
+  const { art, isLoading, progress, start, startFrame, stop, showArt } =
+    useConversion({ showToast });
   const [showGallery, setShowGallery] = useState(false);
 
   // A half-typed character set shouldn't be sent to the backend
@@ -41,8 +39,20 @@ function App() {
       ? customCharsError(settings.customChars)
       : null;
 
+  const camera = useCamera({
+    sendFrame: (imageData, options) =>
+      charsetError ? false : startFrame(imageData, options),
+    options: conversionOptions,
+    showToast,
+  });
+
+  // Picking a file replaces the camera as the source
+  const { imagePath, imagePreview, imageName, isVideo, loadImage, clearImage } =
+    useImageInput({ showToast, onLoad: camera.stop });
+
   useLivePreview({
-    enabled: settingsLoaded && settings.livePreview && !charsetError,
+    enabled:
+      settingsLoaded && settings.livePreview && !charsetError && !camera.active,
     path: imagePath,
     options: conversionOptions,
     convert: start,
@@ -55,8 +65,8 @@ function App() {
       if (imagePath && !isLoading) handleConvert();
     },
     onHistory: () => setShowGallery(true),
-    onStop: stop,
-    canStop: isLoading,
+    onStop: camera.active ? camera.stop : stop,
+    canStop: isLoading || camera.active,
   });
 
   // setter("width") is the callback a panel wants for its width control
@@ -67,6 +77,7 @@ function App() {
       showToast(charsetError, "error");
       return;
     }
+    camera.stop();
     start(imagePath, conversionOptions);
   };
 
@@ -111,6 +122,7 @@ function App() {
   };
 
   const handleLoadFromGallery = (ascii, options, isGif, frames, delays) => {
+    camera.stop();
     showArt(ascii, { isGif, frames, delays });
     if (options) restoreOptions(options);
 
@@ -132,6 +144,9 @@ function App() {
             imagePreview={imagePreview}
             imageName={imageName}
             isVideo={isVideo}
+            cameraActive={camera.active}
+            cameraStarting={camera.starting}
+            onToggleCamera={camera.active ? camera.stop : camera.start}
           />
           <ActionButtons
             onConvert={handleConvert}

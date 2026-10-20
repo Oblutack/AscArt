@@ -26,9 +26,16 @@ export function useConversion({ showToast }) {
   // The conversion we are waiting for, if any
   const activeRequest = useRef(/** @type {number | null} */ (null));
   const requestCounter = useRef(0);
+  // A camera frame is on its way: don't send another until it is answered
+  const frameInFlight = useRef(false);
 
   useEffect(() => {
     const handleResponse = (data) => {
+      // Any final answer (even one for a request we gave up on) frees the slot
+      if (data.type !== "progress" && data.type !== "stopped") {
+        frameInFlight.current = false;
+      }
+
       const isStale =
         data.requestId !== undefined &&
         data.requestId !== activeRequest.current;
@@ -93,6 +100,25 @@ export function useConversion({ showToast }) {
     [showToast],
   );
 
+  // One camera frame: no spinner, not in history. Returns false (and does
+  // nothing) while the previous frame is still being converted, so a slow
+  // backend just drops frames instead of falling behind.
+  const startFrame = useCallback(
+    (
+      /** @type {string} */ imageData,
+      /** @type {import("../types").ConversionOptions} */ options,
+    ) => {
+      if (frameInFlight.current) return false;
+      frameInFlight.current = true;
+
+      const requestId = ++requestCounter.current;
+      activeRequest.current = requestId;
+      ascart.convertFrame(requestId, imageData, options);
+      return true;
+    },
+    [],
+  );
+
   const stop = useCallback(() => {
     const requestId = activeRequest.current;
     activeRequest.current = null; // anything that still arrives for it is ignored
@@ -120,5 +146,5 @@ export function useConversion({ showToast }) {
     [],
   );
 
-  return { art, isLoading, progress, start, stop, showArt };
+  return { art, isLoading, progress, start, startFrame, stop, showArt };
 }

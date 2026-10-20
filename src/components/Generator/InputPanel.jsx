@@ -11,6 +11,9 @@ const InputPanel = ({
   imagePreview,
   imageName,
   isVideo,
+  cameraActive,
+  cameraStarting,
+  onToggleCamera,
 }) => {
   const handleFileInput = (e) => {
     const file = e.target.files[0];
@@ -23,7 +26,22 @@ const InputPanel = ({
     <div className="panel input-panel">
       <div className="panel-header">INPUT</div>
       <div className="image-preview-box">
-        {isVideo ? (
+        {cameraActive ? (
+          <div className="preview-placeholder preview-video">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M23 7l-7 5 7 5V7z" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+            <span className="preview-caption">Camera is on</span>
+          </div>
+        ) : isVideo ? (
           <div className="preview-placeholder preview-video">
             <svg
               width="48"
@@ -70,6 +88,15 @@ const InputPanel = ({
         shortcut="Ctrl+O"
       >
         LOAD
+      </Button>
+      <Button
+        variant="load"
+        fullWidth
+        onClick={onToggleCamera}
+        disabled={cameraStarting}
+        title={cameraActive ? "Turn the camera off" : "Convert the webcam live"}
+      >
+        {cameraActive ? "STOP CAMERA" : "CAMERA"}
       </Button>
       <Toggle
         label="Remove Background"
