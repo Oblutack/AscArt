@@ -1,5 +1,6 @@
 import Button from "../Shared/Button";
 import Toggle from "../Shared/Toggle";
+import { openFilePicker } from "../../lib/dom";
 
 const InputPanel = ({
   onLoadImage,
@@ -48,7 +49,8 @@ const InputPanel = ({
       <Button
         variant="load"
         fullWidth
-        onClick={() => document.getElementById("file-input")?.click()}
+        onClick={openFilePicker}
+        shortcut="Ctrl+O"
       >
         LOAD
       </Button>

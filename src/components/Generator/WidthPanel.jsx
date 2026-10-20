@@ -44,7 +44,7 @@ const WidthPanel = ({
       <div className="width-display">{width}</div>
       <div className="width-label">chars</div>
       <Slider
-        label=""
+        ariaLabel="Width"
         value={width}
         onChange={setWidth}
         min={20}

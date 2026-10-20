@@ -7,6 +7,8 @@
  *   fullWidth?: boolean,
  *   disabled?: boolean,
  *   className?: string,
+ *   title?: string,
+ *   shortcut?: string,
  * }} props
  */
 const Button = ({
@@ -17,6 +19,8 @@ const Button = ({
   fullWidth = false,
   disabled = false,
   className = "",
+  title,
+  shortcut,
 }) => {
   const getVariantClass = () => {
     switch (variant) {
@@ -42,6 +46,8 @@ const Button = ({
       } ${className}`}
       onClick={onClick}
       disabled={disabled}
+      title={shortcut ? `${title ?? ""} (${shortcut})`.trim() : title}
+      aria-keyshortcuts={shortcut}
     >
       {icon && <span className="btn-icon">{icon}</span>}
       {children}

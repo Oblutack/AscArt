@@ -18,6 +18,7 @@ const ActionButtons = ({
           variant="history"
           fullWidth
           onClick={onConvert}
+          shortcut="Ctrl+Enter"
           disabled={!hasImage || isLoading}
           icon={
             <svg
@@ -38,6 +39,7 @@ const ActionButtons = ({
           variant="save"
           fullWidth
           onClick={onSave}
+          shortcut="Ctrl+S"
           disabled={disabled}
           icon={
             <svg
@@ -81,6 +83,7 @@ const ActionButtons = ({
           variant="history"
           fullWidth
           onClick={onHistory}
+          shortcut="Ctrl+H"
           icon={
             <svg
               width="16"

@@ -45,6 +45,7 @@ const AdjustmentPanel = ({
         />
         <Slider
           label="Contrast"
+          unit="%"
           value={contrast}
           onChange={setContrast}
           min={0}

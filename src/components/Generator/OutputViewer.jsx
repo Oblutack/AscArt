@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import IconButton from "../Shared/IconButton";
+
+const MIN_FONT = 4;
+const MAX_FONT = 12;
 
 const OutputViewer = ({
   asciiArt,
@@ -57,64 +61,27 @@ const OutputViewer = ({
         OUTPUT
         <div className="output-controls">
           {isLoading && (
-            <div
-              className="zoom-btn"
-              onClick={onStopProcessing}
+            <IconButton
               title="Stop Processing"
-              role="button"
-              tabIndex={0}
-              onKeyPress={(e) => e.key === "Enter" && onStopProcessing()}
-              style={{
-                background: "rgba(220, 53, 69, 0.2)",
-                border: "1px solid rgba(220, 53, 69, 0.5)",
-                color: "#dc3545",
-                fontFamily: "Arial, sans-serif",
-                fontSize: "11px",
-                fontWeight: "bold",
-                padding: "5px 12px",
-              }}
+              variant="danger"
+              onClick={onStopProcessing}
             >
               STOP
-            </div>
+            </IconButton>
           )}
           {asciiArt && (
             <>
               {isGif && gifFrames.length > 1 && (
                 <>
-                  <div
-                    className="zoom-btn"
-                    onClick={togglePlayback}
+                  <IconButton
                     title={isPlaying ? "Pause" : "Play"}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === "Enter" && togglePlayback()}
-                    style={{
-                      background: "rgba(73, 80, 87, 0.2)",
-                      border: "1px solid rgba(73, 80, 87, 0.5)",
-                      color: "#495057",
-                      fontFamily: "Arial, sans-serif",
-                      fontSize: "12px",
-                    }}
+                    onClick={togglePlayback}
                   >
                     {isPlaying ? "||" : "▶"}
-                  </div>
-                  <div
-                    className="zoom-btn"
-                    onClick={stopPlayback}
-                    title="Stop"
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === "Enter" && stopPlayback()}
-                    style={{
-                      background: "rgba(73, 80, 87, 0.2)",
-                      border: "1px solid rgba(73, 80, 87, 0.5)",
-                      color: "#495057",
-                      fontFamily: "Arial, sans-serif",
-                      fontSize: "12px",
-                    }}
-                  >
+                  </IconButton>
+                  <IconButton title="Stop" onClick={stopPlayback}>
                     ■
-                  </div>
+                  </IconButton>
                   <select
                     className="speed-select"
                     value={playbackSpeed}
@@ -122,6 +89,7 @@ const OutputViewer = ({
                       setPlaybackSpeed(parseFloat(e.target.value))
                     }
                     title="Playback Speed"
+                    aria-label="Playback Speed"
                   >
                     <option value="0.5">0.5×</option>
                     <option value="1">1×</option>
@@ -131,41 +99,31 @@ const OutputViewer = ({
                   <span className="zoom-label">
                     {currentFrame + 1}/{gifFrames.length}
                   </span>
-                  <span style={{ margin: "0 8px", color: "#666" }}>|</span>
+                  <span className="output-divider" aria-hidden="true">
+                    |
+                  </span>
                 </>
               )}
-              <div
-                className="zoom-btn"
-                onClick={() => setFontSize(Math.max(4, fontSize - 1))}
+              <IconButton
                 title="Zoom Out"
-                role="button"
-                tabIndex={0}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && setFontSize(Math.max(4, fontSize - 1))
-                }
+                onClick={() => setFontSize(Math.max(MIN_FONT, fontSize - 1))}
               >
                 −
-              </div>
+              </IconButton>
               <span className="zoom-label">{fontSize}px</span>
-              <div
-                className="zoom-btn"
-                onClick={() => setFontSize(Math.min(12, fontSize + 1))}
+              <IconButton
                 title="Zoom In"
-                role="button"
-                tabIndex={0}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && setFontSize(Math.min(12, fontSize + 1))
-                }
+                onClick={() => setFontSize(Math.min(MAX_FONT, fontSize + 1))}
               >
                 +
-              </div>
+              </IconButton>
             </>
           )}
         </div>
       </div>
       <div className="output-content">
         {isLoading ? (
-          <div className="output-loading">
+          <div className="output-loading" role="status">
             <div className="loading-spinner"></div>
             <p>
               {progress
@@ -176,6 +134,8 @@ const OutputViewer = ({
         ) : displayArt ? (
           <pre
             className="ascii-display"
+            role="img"
+            aria-label="ASCII art"
             style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize}px` }}
             dangerouslySetInnerHTML={{ __html: displayArt }}
           />
@@ -187,6 +147,7 @@ const OutputViewer = ({
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />

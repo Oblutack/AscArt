@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OutputViewer from "./OutputViewer";
 
@@ -89,13 +90,28 @@ describe("zoom", () => {
     expect(screen.getByText("4px")).toBeInTheDocument();
   });
 
-  it("works from the keyboard", () => {
+  it("the controls are real buttons, reachable and usable from the keyboard", async () => {
+    const user = userEvent.setup();
     render(<OutputViewer {...still} />);
-    fireEvent.keyPress(screen.getByTitle("Zoom In"), {
-      key: "Enter",
-      charCode: 13,
-    });
+
+    const zoomOut = screen.getByRole("button", { name: "Zoom Out" });
+    const zoomIn = screen.getByRole("button", { name: "Zoom In" });
+    expect(zoomIn.tagName).toBe("BUTTON");
+
+    await user.tab();
+    expect(zoomOut).toHaveFocus();
+    await user.tab();
+    expect(zoomIn).toHaveFocus();
+
+    await user.keyboard("{Enter}");
     expect(screen.getByText("9px")).toBeInTheDocument();
+    await user.keyboard(" ");
+    expect(screen.getByText("10px")).toBeInTheDocument();
+  });
+
+  it("the art is announced as an image", () => {
+    render(<OutputViewer {...still} />);
+    expect(screen.getByRole("img", { name: "ASCII art" })).toBeInTheDocument();
   });
 });
 
