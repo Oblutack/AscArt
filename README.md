@@ -304,7 +304,10 @@ The application uses a modern grayscale aesthetic. Modify `src/styles/main.css` 
 --iron-grey: #495057; /* Style/Output panel accent */
 --gunmetal: #343a40; /* Panel backgrounds */
 --shadow-grey: #212529; /* Main background */
+--danger: #dc3545; /* Errors, destructive actions */
 ```
+
+They live in the `:root` block at the top of `main.css`; the `-rgb` twins (for example `--pale-slate-2-rgb`) exist so translucent colors can use `rgba(var(--pale-slate-2-rgb), 0.3)`.
 
 ## Troubleshooting
 
