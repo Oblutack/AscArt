@@ -357,7 +357,7 @@ function App() {
 
   return (
     <MainLayout>
-      {process.env.NODE_ENV === "development" && debugInfo && (
+      {import.meta.env.DEV && debugInfo && (
         <div
           style={{
             position: "fixed",
