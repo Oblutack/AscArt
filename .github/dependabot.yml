@@ -27,6 +27,14 @@ updates:
       - dependency-name: rembg
       - dependency-name: pyinstaller
 
+  - package-ecosystem: gomod
+    directory: /cli
+    schedule:
+      interval: weekly
+    groups:
+      charm:
+        patterns: ["charm.land/*", "github.com/charmbracelet/*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

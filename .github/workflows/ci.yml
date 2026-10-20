@@ -27,6 +27,37 @@ jobs:
       - run: python -m pytest
         working-directory: python
 
+  # The terminal app and command line (cli/), on the three systems it ships for
+  go:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+      # The video tests need a real ffmpeg; elsewhere they skip themselves
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; echo "run gofmt -w"; exit 1; }
+      - run: go vet ./...
+      - name: Tests (with the race detector where there is a C compiler)
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            go test -race ./...
+          else
+            go test ./...
+          fi
+
   # The real app, end to end: Electron, the Python backend and the built UI
   e2e:
     runs-on: windows-latest

@@ -90,6 +90,11 @@ def main():
         f.write('\n')
     print(f'wrote {len(manifest)} cases')
 
+    # a three-frame GIF with different delays, for the command line tests
+    frames = [Image.new('RGB', (24, 16), color) for color in [(220, 40, 40), (40, 200, 60), (50, 60, 230)]]
+    frames[0].save(os.path.join(HERE, 'anim.gif'), save_all=True, append_images=frames[1:],
+                   duration=[50, 60, 70], loop=0)
+
 
 if __name__ == '__main__':
     main()
