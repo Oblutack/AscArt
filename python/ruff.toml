@@ -1,0 +1,18 @@
+# Linting only; the code base isn't auto-formatted.
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes: unused imports/variables, undefined names
+    "W",   # pycodestyle warnings
+    "B",   # likely bugs
+    "I",   # import order
+]
+ignore = [
+    "E501",  # long lines are fine, the limit above only guides
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011"]

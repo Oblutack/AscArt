@@ -4,6 +4,7 @@ Handles animated GIF conversion to ASCII
 """
 
 from PIL import Image
+
 from .cancel import Cancelled
 from .image_processor import ImageProcessor
 
@@ -81,7 +82,7 @@ class GifProcessor:
         except Cancelled:
             raise
         except Exception as e:
-            raise Exception(f"GIF processing error: {str(e)}")
+            raise Exception(f"GIF processing error: {str(e)}") from e
 
     def convert_frames_to_ascii(self, options, progress=None):
         """Convert all loaded frames to HTML strings"""

@@ -36,7 +36,7 @@ class Grid:
         breaks = np.flatnonzero((row_rgb[1:] != row_rgb[:-1]).any(axis=1)) + 1
         starts = [0] + breaks.tolist()
         ends = breaks.tolist() + [self.cols]
-        yield from zip(starts, ends)
+        yield from zip(starts, ends, strict=True)
 
     def to_text(self):
         """Plain characters, one line per row"""

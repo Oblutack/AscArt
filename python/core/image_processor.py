@@ -3,9 +3,10 @@ Image Processing Module
 Handles image loading, background removal, adjustments, and conversion to ASCII
 """
 
-from PIL import Image, ImageEnhance, ImageOps
-import numpy as np
 import os
+
+import numpy as np
+from PIL import Image, ImageEnhance, ImageOps
 
 from .art import Grid
 
@@ -17,13 +18,15 @@ def _get_rembg():
     global _rembg_remove, _rembg_session
     if _rembg_remove is None:
         try:
-            from rembg import remove, new_session
+            from rembg import new_session, remove
             # Use u2netp model: 4.7MB vs 176MB for u2net
             # 95% accuracy is perfect for ASCII art preprocessing
             _rembg_session = new_session("u2netp")
             _rembg_remove = remove
-        except ImportError:
-            raise ImportError("rembg is not installed. Background removal is not available.")
+        except ImportError as e:
+            # Keep the reason: "not installed" and "a DLL failed to load"
+            # need very different fixes
+            raise ImportError(f"Background removal is not available: {e}") from e
     return _rembg_remove, _rembg_session
 
 
@@ -39,7 +42,7 @@ class ImageProcessor:
         'standard': 'detailed',
         'simple': 'blocks',
     }
-    
+
     # Widest output "Keep Original" will produce, in characters
     MAX_KEEP_ORIGINAL_WIDTH = 400
 
@@ -47,17 +50,17 @@ class ImageProcessor:
         self.image = None
         self.original_image = None
         self.alpha_mask = None
-        
+
     def load_image(self, path):
         """Load image from file path"""
         if not os.path.exists(path):
             raise FileNotFoundError(f"Image not found: {path}")
-        
+
         self.original_image = Image.open(path)
         self.image = self.original_image.copy()
         # A mask from a previous image must not leak into this one
         self.alpha_mask = None
-        
+
         # Handle transparency: convert RGBA to RGB with white background
         if self.image.mode in ('RGBA', 'LA', 'P'):
             # Create white background
@@ -73,62 +76,62 @@ class ImageProcessor:
             self.image = background
         elif self.image.mode != 'RGB':
             self.image = self.image.convert('RGB')
-            
+
         return True
-    
+
     def remove_background(self):
         """Remove background using rembg with optimized u2netp model"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
+
         # Get rembg remove function and session
         remove_func, session = _get_rembg()
-        
+
         # Remove background using the optimized session
         output = remove_func(self.image, session=session)
-        
+
         # Store alpha mask for transparency detection
         if output.mode == 'RGBA':
             self.alpha_mask = output.split()[3]
         else:
             self.alpha_mask = None
-        
+
         # Create white background for processing
         background = Image.new('RGB', output.size, (255, 255, 255))
         background.paste(output, mask=output.split()[3] if output.mode == 'RGBA' else None)
-        
+
         self.image = background
         return True
-    
+
     def adjust_brightness(self, value):
         """Adjust brightness (-100 to 100)"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
+
         # Convert to factor (0.0 to 2.0)
         factor = 1.0 + (value / 100.0)
         enhancer = ImageEnhance.Brightness(self.image)
         self.image = enhancer.enhance(factor)
-        
+
     def adjust_contrast(self, value):
         """Adjust contrast (0 to 200)"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
+
         # Convert to factor (0.0 to 2.0)
         factor = value / 100.0
         enhancer = ImageEnhance.Contrast(self.image)
         self.image = enhancer.enhance(factor)
-    
+
     def invert_colors(self):
         """Invert image colors"""
         if self.image is None:
             raise ValueError("No image loaded")
-        
-        self.image = ImageOps.invert(self.image)
-    
 
-    
+        self.image = ImageOps.invert(self.image)
+
+
+
     def resize_image(self, width, ratio=None, keep_original=False):
         """Resize image to target width while maintaining aspect ratio"""
         if self.image is None:
@@ -154,7 +157,7 @@ class ImageProcessor:
         height = max(1, int(width / aspect_ratio * 0.55))
 
         self.image = self.image.resize((width, height), Image.Resampling.LANCZOS)
-    
+
     # Colour schemes that tint the luminance: divisors for (r, g, b)
     TINT_DIVISORS = {
         'blue': (3, 2, 1),
@@ -320,7 +323,7 @@ class ImageProcessor:
             self.load_image(path)
             return self.process_image(options)
         except Exception as e:
-            raise Exception(f"Processing error: {str(e)}")
+            raise Exception(f"Processing error: {str(e)}") from e
 
     def process_and_convert(self, path, options):
         """Complete pipeline for a file, as an HTML string"""

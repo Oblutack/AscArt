@@ -2,8 +2,8 @@
 AscArt Core Processing Module
 """
 
-from .image_processor import ImageProcessor
-from .gif_processor import GifProcessor
 from .file_handler import FileHandler
+from .gif_processor import GifProcessor
+from .image_processor import ImageProcessor
 
 __all__ = ['ImageProcessor', 'GifProcessor', 'FileHandler']

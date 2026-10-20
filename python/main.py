@@ -1,13 +1,14 @@
-import sys
 import json
 import os
 import queue
+import sys
 import threading
 import traceback
-from core.cancel import CancelRegistry, Cancelled
-from core.image_processor import ImageProcessor
-from core.gif_processor import GifProcessor
+
+from core.cancel import Cancelled, CancelRegistry
 from core.file_handler import FileHandler
+from core.gif_processor import GifProcessor
+from core.image_processor import ImageProcessor
 
 
 def log_error(message):
