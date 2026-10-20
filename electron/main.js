@@ -1,4 +1,11 @@
-const { app, BrowserWindow, dialog, ipcMain, screen } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  screen,
+  session,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -228,8 +235,36 @@ ipcMain.on("stop-python", (event, requestId) => {
   );
 });
 
+// Where the app's own pages live. Navigation anywhere else is refused.
+const allowedPageBases = [
+  pathToFileURL(path.join(__dirname, "widget") + path.sep).href,
+];
+
+// Applies to every window, including ones created later (widgets): no
+// navigating away from the app's own pages (a stray file drop or a link in the
+// art must not turn a window into a browser), no new windows, no <webview>.
+app.on("web-contents-created", (event, contents) => {
+  contents.on("will-navigate", (navigation, url) => {
+    if (!allowedPageBases.some((base) => url.startsWith(base))) {
+      navigation.preventDefault();
+    }
+  });
+  contents.on("will-attach-webview", (attach) => attach.preventDefault());
+  contents.setWindowOpenHandler(() => ({ action: "deny" }));
+});
+
+// Nothing in AscArt needs camera, microphone, location, notifications and so
+// on, so every permission request is refused.
+function denyAllPermissions() {
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback) => callback(false),
+  );
+  session.defaultSession.setPermissionCheckHandler(() => false);
+}
+
 function createWindow() {
   migrateLegacyHistory();
+  denyAllPermissions();
 
   // Tall enough that the left panels fit without scrolling, but never taller
   // than the screen
@@ -263,13 +298,8 @@ function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  // The app never navigates away from itself. A stray file drop or a link in
-  // the art must not turn the window into a browser.
-  const appBase = new URL(".", startUrl).href;
-  mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(appBase)) event.preventDefault();
-  });
-  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // Only this page (and the widget page) may be shown; see lockDownWebContents
+  allowedPageBases.push(new URL(".", startUrl).href);
 
   // DevTools disabled - press Ctrl+Shift+I to open manually if needed
 

@@ -391,6 +391,51 @@ test.describe("widgets", () => {
   });
 });
 
+test.describe("lockdown", () => {
+  test("the page cannot navigate away or open windows", async ({
+    ascart: { app, page },
+  }) => {
+    const before = page.url();
+
+    await page.evaluate(() => {
+      window.location.href = "https://example.com/";
+    });
+    const opened = await page.evaluate(() =>
+      window.open("https://example.com/"),
+    );
+    await page.waitForTimeout(800);
+
+    expect(page.url()).toBe(before);
+    expect(opened).toBeNull();
+    expect(app.windows()).toHaveLength(1);
+    // Playwright still waits for the cancelled navigation to "finish", so ask
+    // the page directly rather than through locators
+    expect(
+      await page.evaluate(
+        () => document.querySelector(".generator-grid") !== null,
+      ),
+    ).toBe(true);
+  });
+
+  test("permission requests are refused", async ({ ascart: { page } }) => {
+    const result = await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            () => resolve("granted"),
+            (error) =>
+              resolve(
+                error.code === error.PERMISSION_DENIED
+                  ? "denied"
+                  : `error ${error.code}`,
+              ),
+          );
+        }),
+    );
+    expect(result).toBe("denied");
+  });
+});
+
 test.describe("the keyboard", () => {
   test("toggles can be reached and operated without a mouse", async ({
     ascart: { page },
