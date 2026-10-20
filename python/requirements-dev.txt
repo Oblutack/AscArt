@@ -1,7 +1,7 @@
 # Enough to run the test suite: python -m pytest (from python/)
 # rembg is only imported when background removal runs, so it is not needed here.
 # Keep these two pins in sync with requirements.txt.
-Pillow==10.3.0
+Pillow==13.0.0
 numpy==1.26.4
 pytest==9.1.1
 ruff==0.17.1
