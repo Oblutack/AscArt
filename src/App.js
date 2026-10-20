@@ -262,11 +262,11 @@ function App() {
   };
 
   const handleStopProcessing = () => {
-    console.log("🛑 Stopping current processing");
-    activeRequest.current = null;
+    const requestId = activeRequest.current;
+    activeRequest.current = null; // anything that still arrives for it is ignored
     setIsLoading(false);
     setProgress(null);
-    ascart.stop();
+    ascart.stop(requestId);
   };
 
   const handleReset = () => {

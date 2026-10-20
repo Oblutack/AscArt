@@ -151,6 +151,14 @@ function startPython() {
       try {
         const message = JSON.parse(line);
         backendRestarts = 0; // it is talking, so it is healthy
+
+        // Any final answer for a request (cancelled, finished, failed) means
+        // the backend is fine and the restart timer is not needed
+        if (message.requestId !== undefined && message.type !== "progress") {
+          clearTimeout(cancelTimers.get(message.requestId));
+          cancelTimers.delete(message.requestId);
+        }
+
         sendToRenderer(message);
       } catch (parseError) {
         console.warn("Failed to parse line:", line.substring(0, 100));
@@ -164,16 +172,46 @@ function startPython() {
   });
 }
 
-// Python handles one command at a time, so the only way to cancel a running
-// conversion is to restart it.
-ipcMain.on("stop-python", () => {
+// How long Python gets to react to a cancel before we give up on it
+const CANCEL_GRACE_MS = 5000;
+
+// requestId -> timer that restarts the backend if it never answers
+const cancelTimers = new Map();
+
+function restartBackend() {
   const old = pythonProcess;
   if (old) {
     killedOnPurpose.add(old);
     killProcessTree(old);
   }
   startPython();
+}
+
+// Stop: ask Python to cancel that request. It notices between frames, so the
+// loaded models stay in memory. Only a backend that doesn't react within a
+// few seconds (stuck inside a single long step) is restarted.
+ipcMain.on("stop-python", (event, requestId) => {
   sendToRenderer({ status: "success", type: "stopped" });
+
+  if (!pythonProcess || !pythonProcess.stdin.writable) {
+    startPython();
+    return;
+  }
+  if (requestId === undefined || requestId === null) return;
+
+  pythonProcess.stdin.write(
+    JSON.stringify({ command: "cancel", requestId }) + "\n"
+  );
+
+  clearTimeout(cancelTimers.get(requestId));
+  cancelTimers.set(
+    requestId,
+    setTimeout(() => {
+      cancelTimers.delete(requestId);
+      console.warn(`Backend ignored the cancel for request ${requestId}; restarting it`);
+      restartBackend();
+    }, CANCEL_GRACE_MS)
+  );
 });
 
 function createWindow() {
