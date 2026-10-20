@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld("ascart", {
     }),
   stop: (requestId) => ipcRenderer.send("stop-python", requestId),
   getHistory: () => ipcRenderer.send("to-python", { command: "get_history" }),
+  getHistoryEntry: (id) =>
+    ipcRenderer.send("to-python", { command: "get_history_entry", id }),
   deleteHistory: (ids) =>
     ipcRenderer.send("to-python", { command: "delete_history", ids }),
 

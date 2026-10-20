@@ -268,7 +268,13 @@ app.on("window-all-closed", () => {
 });
 
 // Communication Bridge. The page may only send commands the backend offers.
-const BACKEND_COMMANDS = new Set(["convert", "get_history", "delete_history", "ping"]);
+const BACKEND_COMMANDS = new Set([
+  "convert",
+  "get_history",
+  "get_history_entry",
+  "delete_history",
+  "ping",
+]);
 
 ipcMain.on("to-python", (event, args) => {
   if (!args || !BACKEND_COMMANDS.has(args.command)) {

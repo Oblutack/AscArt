@@ -1,29 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // Provided by electron/preload.js
 const ascart = window.ascart;
-
-// Entries saved before thumbnails existed only have the full art; showing its
-// first rows is enough for a tile (whole rows, so no <span> gets cut in half)
-const LEGACY_PREVIEW_ROWS = 24;
-const previewOf = (item) =>
-  item.thumb ??
-  item.ascii.split("\n").slice(0, LEGACY_PREVIEW_ROWS).join("\n");
 
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState([]);
 
+  const [isOpening, setIsOpening] = useState(false);
+
+  // The latest callbacks, so the subscription below can stay put
+  const callbacks = useRef({ onClose, onLoadAscii });
+  callbacks.current = { onClose, onLoadAscii };
+
   useEffect(() => {
-    // Listen for the history response, then ask for it
+    // Listen for the backend, then ask for the history list
     const unsubscribe = ascart.onResponse((data) => {
       if (data.type === "history") {
         setHistory(data.history);
         setIsLoading(false);
+      } else if (data.type === "history-entry") {
+        // The full art of the entry that was selected
+        const { entry } = data;
+        callbacks.current.onLoadAscii?.(
+          entry.ascii,
+          entry.options,
+          entry.isGif,
+          entry.frames,
+          entry.delays
+        );
+        callbacks.current.onClose();
       } else if (data.status === "error") {
         // The app shows the error; just don't spin forever
         setIsLoading(false);
+        setIsOpening(false);
       }
     });
     ascart.getHistory();
@@ -53,19 +64,11 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     }
   };
 
+  // The list only has thumbnails; fetch the full art of the selected entry
   const handleLoadItem = () => {
-    if (selectedItems.length === 1 && onLoadAscii) {
-      const item = selectedItems[0];
-      // Pass full item data including GIF frames if available
-      onLoadAscii(
-        item.ascii,
-        item.options,
-        item.isGif,
-        item.frames,
-        item.delays
-      );
-    }
-    onClose();
+    if (selectedItems.length !== 1) return;
+    setIsOpening(true);
+    ascart.getHistoryEntry(selectedItems[0].id);
   };
 
   const handleDeleteItems = () => {
@@ -139,7 +142,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
                   onClick={(e) => handleItemClick(item, e)}
                 >
                   <div className="gallery-item-preview">
-                    <pre dangerouslySetInnerHTML={{ __html: previewOf(item) }} />
+                    <pre dangerouslySetInnerHTML={{ __html: item.thumb || "" }} />
                   </div>
                   <div className="gallery-item-info">
                     <span className="gallery-item-date">
@@ -170,7 +173,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
               <button
                 className="gallery-btn gallery-btn-load"
                 onClick={handleLoadItem}
-                disabled={selectedItems.length !== 1}
+                disabled={selectedItems.length !== 1 || isOpening}
                 style={{ opacity: selectedItems.length !== 1 ? 0.5 : 1 }}
               >
                 Load Selected
