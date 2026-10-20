@@ -324,3 +324,92 @@ describe("window", () => {
     expect(fake.api.minimize).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("keyboard shortcuts", () => {
+  const showArt = async () => {
+    render(<App />);
+    await chooseImage();
+    await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
+    await fake.emit({
+      type: "ascii-result",
+      ascii: ART,
+      requestId: lastConvert().id,
+    });
+  };
+
+  it("Ctrl+S saves", async () => {
+    await showArt();
+    await userEvent.keyboard("{Control>}s{/Control}");
+    await waitFor(() => expect(fake.api.saveAscii).toHaveBeenCalled());
+  });
+
+  it("Ctrl+Enter converts and saves to history", async () => {
+    await showArt();
+    await userEvent.click(screen.getByLabelText("Live Preview"));
+    fake.api.convert.mockClear();
+
+    await userEvent.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(lastConvert().saveHistory).toBe(true);
+  });
+
+  it("Ctrl+Enter does nothing without an image", async () => {
+    render(<App />);
+    await userEvent.keyboard("{Control>}{Enter}{/Control}");
+    expect(fake.api.convert).not.toHaveBeenCalled();
+  });
+
+  it("Ctrl+H opens the history and Escape closes it again", async () => {
+    render(<App />);
+
+    await userEvent.keyboard("{Control>}h{/Control}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(fake.api.getHistory).toHaveBeenCalled();
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("Escape stops a running conversion, but not while the history is open", async () => {
+    render(<App />);
+    await chooseImage("anim.gif");
+    await userEvent.click(convertButton());
+    const { id } = lastConvert();
+
+    await userEvent.keyboard("{Control>}h{/Control}");
+    await userEvent.keyboard("{Escape}"); // closes the history only
+    expect(fake.api.stop).not.toHaveBeenCalled();
+
+    await userEvent.keyboard("{Escape}"); // now it stops
+    expect(fake.api.stop).toHaveBeenCalledWith(id);
+  });
+
+  it("Ctrl+O opens the file picker", async () => {
+    render(<App />);
+    const click = vi.spyOn(document.querySelector("#file-input"), "click");
+
+    await userEvent.keyboard("{Control>}o{/Control}");
+
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  it("the buttons tell you their shortcuts", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /CONVERT/ })).toHaveAttribute(
+      "title",
+      "(Ctrl+Enter)",
+    );
+    expect(screen.getByRole("button", { name: /SAVE/ })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Ctrl+S",
+    );
+    expect(screen.getByRole("button", { name: /HISTORY/ })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Ctrl+H",
+    );
+    expect(screen.getByRole("button", { name: "LOAD" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Ctrl+O",
+    );
+  });
+});

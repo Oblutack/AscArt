@@ -4,6 +4,7 @@ import { useConversion } from "./hooks/useConversion";
 import { useImageInput } from "./hooks/useImageInput";
 import { useLivePreview } from "./hooks/useLivePreview";
 import { useSettings } from "./hooks/useSettings";
+import { useShortcuts } from "./hooks/useShortcuts";
 import { useToast } from "./hooks/useToast";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
@@ -13,6 +14,7 @@ import OutputViewer from "./components/Generator/OutputViewer";
 import ActionButtons from "./components/Generator/ActionButtons";
 import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
+import { openFilePicker } from "./lib/dom";
 
 function App() {
   const { toast, showToast, dismissToast } = useToast();
@@ -37,6 +39,17 @@ function App() {
     path: imagePath,
     options: conversionOptions,
     convert: start,
+  });
+
+  useShortcuts({
+    onOpen: openFilePicker,
+    onSave: () => handleSave(),
+    onConvert: () => {
+      if (imagePath && !isLoading) handleConvert();
+    },
+    onHistory: () => setShowGallery(true),
+    onStop: stop,
+    canStop: isLoading,
   });
 
   // setter("width") is the callback a panel wants for its width control
