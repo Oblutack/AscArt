@@ -40,7 +40,7 @@ const PAGE_STYLE = `
     color: #d0d0d0;
     font-family: "Courier New", Consolas, monospace;
     font-size: 8px;
-    line-height: 1;
+    line-height: 1.09;
     white-space: pre;
   }`;
 

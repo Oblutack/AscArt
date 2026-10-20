@@ -77,7 +77,7 @@ describe("zoom", () => {
     fireEvent.click(screen.getByTitle("Zoom In"));
 
     expect(screen.getByText("9px")).toBeInTheDocument();
-    expect(art(container)).toHaveStyle({ fontSize: "9px", lineHeight: "9px" });
+    expect(art(container)).toHaveStyle({ fontSize: "9px", lineHeight: "1.09" });
   });
 
   it("stays between 4 and 12", () => {

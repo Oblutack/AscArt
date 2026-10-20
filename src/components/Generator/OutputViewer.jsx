@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import IconButton from "../Shared/IconButton";
+import { LINE_HEIGHT } from "../../lib/renderArt";
 
 const MIN_FONT = 4;
 const MAX_FONT = 12;
@@ -136,7 +137,7 @@ const OutputViewer = ({
             className="ascii-display"
             role="img"
             aria-label="ASCII art"
-            style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize}px` }}
+            style={{ fontSize: `${fontSize}px`, lineHeight: LINE_HEIGHT }}
             dangerouslySetInnerHTML={{ __html: displayArt }}
           />
         ) : (

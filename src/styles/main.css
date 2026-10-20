@@ -525,7 +525,7 @@ a {
 .ascii-display {
   font-family: "Courier New", Consolas, monospace;
   font-size: 8px;
-  line-height: 1;
+  line-height: 1.09;
   white-space: pre;
   margin: 0;
   display: inline-block;
@@ -963,7 +963,7 @@ a {
 .gallery-item-preview pre {
   font-family: "Courier New", monospace;
   font-size: 4px;
-  line-height: 1;
+  line-height: 1.09;
   color: var(--text-muted);
   margin: 0;
   white-space: pre;

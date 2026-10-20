@@ -6,9 +6,13 @@ const BACKGROUND = "#212529"; // the page's --shadow-grey
 const DEFAULT_COLOR = "#d0d0d0"; // uncolored art (halftone)
 const FONT_FAMILY = '"Courier New", Consolas, "DejaVu Sans Mono", monospace';
 
-// A monospace glyph is about this much wider than the font size; lines are as
-// tall as the font size, like in the viewer
+// A monospace glyph is about this much wider than the font size
 const GLYPH_ASPECT = 0.6;
+
+// The converters assume a character cell is 1/0.55 times as tall as it is wide,
+// so lines are this many font sizes tall (0.6 / 0.55). Taller lines are what
+// keep the art from looking squashed.
+export const LINE_HEIGHT = 1.09;
 
 /**
  * @typedef {{ text: string, color: string | null }} Run
@@ -93,7 +97,8 @@ export function drawArt(rows, { fontSize, scale = 1 }) {
 
   const padding = Math.round(size);
   canvas.width = Math.ceil(columnsOf(rows) * cellWidth) + padding * 2;
-  canvas.height = rows.length * size + padding * 2;
+  const lineHeight = size * LINE_HEIGHT;
+  canvas.height = Math.ceil(rows.length * lineHeight) + padding * 2;
 
   // Resizing a canvas resets its state
   context.font = font;
@@ -105,7 +110,7 @@ export function drawArt(rows, { fontSize, scale = 1 }) {
     let x = padding;
     for (const run of row) {
       context.fillStyle = run.color ?? DEFAULT_COLOR;
-      context.fillText(run.text, x, padding + y * size);
+      context.fillText(run.text, x, padding + y * lineHeight);
       x += [...run.text].length * cellWidth;
     }
   });

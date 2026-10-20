@@ -69,7 +69,7 @@
   function setFontSize(size) {
     fontSize = Math.min(MAX_FONT, Math.max(MIN_FONT, size));
     content.style.fontSize = `${fontSize}px`;
-    content.style.lineHeight = `${fontSize}px`;
+    content.style.lineHeight = "1.09"; // see LINE_HEIGHT in src/lib/renderArt.js
     sizeInfo.textContent = `${fontSize}px`;
   }
 

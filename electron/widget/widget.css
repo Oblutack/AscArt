@@ -43,7 +43,7 @@ body {
 #ascii-display pre {
   font-family: "Courier New", monospace;
   font-size: 6px;
-  line-height: 1;
+  line-height: 1.09;
   white-space: pre;
   margin: 0;
   pointer-events: none;
