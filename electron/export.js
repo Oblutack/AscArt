@@ -34,7 +34,7 @@ function jsonForScript(value) {
 }
 
 const PAGE_STYLE = `
-  body { margin: 0; padding: 20px; background: #0a0a0f; }
+  body { margin: 0; padding: 20px; background: #0b0c10; }
   pre {
     margin: 0;
     color: #d0d0d0;

@@ -2,7 +2,7 @@ import { GIFEncoder, applyPalette, quantize } from "gifenc";
 
 // Draws the art (the HTML the backend produces) as pixels, for PNG and GIF.
 
-const BACKGROUND = "#212529"; // the page's --shadow-grey
+const BACKGROUND = "#0b0c10"; // the stage behind the art (--bg-stage)
 const DEFAULT_COLOR = "#d0d0d0"; // uncolored art (halftone)
 const FONT_FAMILY =
   '"JetBrains Mono", "Courier New", Consolas, "DejaVu Sans Mono", monospace';
