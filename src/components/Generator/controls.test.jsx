@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import ActionButtons from "./ActionButtons";
 import AdjustmentPanel from "./AdjustmentPanel";
 import InputPanel from "./InputPanel";
+import StatusBar from "./StatusBar";
+import Toolbar from "./Toolbar";
 import WidthPanel from "./WidthPanel";
 
 describe("WidthPanel", () => {
@@ -51,58 +52,71 @@ describe("WidthPanel", () => {
   });
 });
 
-describe("ActionButtons", () => {
+describe("Toolbar", () => {
   const props = {
-    onConvert: vi.fn(),
+    hasArt: true,
     onSave: vi.fn(),
+    onCopy: vi.fn(),
     onWidget: vi.fn(),
     onHistory: vi.fn(),
-    onQuit: vi.fn(),
-    disabled: false,
-    hasImage: true,
-    isLoading: false,
   };
   const button = (name) => screen.getByRole("button", { name });
 
-  it("can convert only with an image, and not while converting", () => {
-    const { rerender } = render(<ActionButtons {...props} hasImage={false} />);
-    expect(button(/CONVERT/)).toBeDisabled();
-
-    rerender(<ActionButtons {...props} isLoading />);
-    expect(button(/CONVERTING/)).toBeDisabled();
-
-    rerender(<ActionButtons {...props} />);
-    expect(button(/CONVERT/)).toBeEnabled();
+  it("can save, copy and make a widget only when there is art", () => {
+    render(<Toolbar {...props} hasArt={false} />);
+    expect(button("Save")).toBeDisabled();
+    expect(button("Copy")).toBeDisabled();
+    expect(button("Widget")).toBeDisabled();
   });
 
-  it("can save and make a widget only when there is art", () => {
-    render(<ActionButtons {...props} disabled />);
-    expect(button(/SAVE/)).toBeDisabled();
-    expect(button(/WIDGET/)).toBeDisabled();
-  });
-
-  it("history and quit are always available", () => {
-    render(<ActionButtons {...props} disabled hasImage={false} />);
-    expect(button(/HISTORY/)).toBeEnabled();
-    expect(button(/QUIT/)).toBeEnabled();
+  it("history is always available", () => {
+    render(<Toolbar {...props} hasArt={false} />);
+    expect(button("History")).toBeEnabled();
   });
 
   it("calls the right handler", async () => {
     const handlers = {
-      onConvert: vi.fn(),
       onSave: vi.fn(),
+      onCopy: vi.fn(),
       onWidget: vi.fn(),
       onHistory: vi.fn(),
-      onQuit: vi.fn(),
     };
-    render(<ActionButtons {...props} {...handlers} />);
+    render(<Toolbar {...props} {...handlers} />);
 
-    await userEvent.click(button(/SAVE/));
-    await userEvent.click(button(/HISTORY/));
+    await userEvent.click(button("Save"));
+    await userEvent.click(button("History"));
 
     expect(handlers.onSave).toHaveBeenCalledTimes(1);
     expect(handlers.onHistory).toHaveBeenCalledTimes(1);
-    expect(handlers.onConvert).not.toHaveBeenCalled();
+    expect(handlers.onCopy).not.toHaveBeenCalled();
+    expect(handlers.onWidget).not.toHaveBeenCalled();
+  });
+
+  it("says what is on screen", () => {
+    render(<Toolbar {...props} summary="92 × 50 · 48 frames" />);
+    expect(screen.getByText("92 × 50 · 48 frames")).toBeInTheDocument();
+  });
+});
+
+describe("StatusBar", () => {
+  it("says what the app is doing", () => {
+    const { rerender } = render(<StatusBar state="ready" />);
+    expect(screen.getByText("ready")).toBeInTheDocument();
+
+    rerender(
+      <StatusBar state="converting" progress={{ current: 3, total: 10 }} />,
+    );
+    expect(screen.getByText("converting 3/10")).toBeInTheDocument();
+
+    rerender(<StatusBar state="camera" />);
+    expect(screen.getByText("camera on")).toBeInTheDocument();
+  });
+
+  it("shows the settings it is given and the shortcuts", () => {
+    render(<StatusBar state="live" details={["blocks", "sepia"]} />);
+    expect(screen.getByText("blocks")).toBeInTheDocument();
+    expect(screen.getByText("sepia")).toBeInTheDocument();
+    expect(screen.getByText("history")).toBeInTheDocument();
   });
 });
 
@@ -156,8 +170,6 @@ describe("InputPanel", () => {
     onLoadImage: vi.fn(),
     removeBackground: false,
     setRemoveBackground: vi.fn(),
-    livePreview: true,
-    setLivePreview: vi.fn(),
     imagePreview: null,
   };
 
@@ -194,22 +206,13 @@ describe("InputPanel", () => {
     );
   });
 
-  it("has toggles for background removal and live preview", async () => {
+  it("has a toggle for background removal", async () => {
     const setRemoveBackground = vi.fn();
-    const setLivePreview = vi.fn();
-    render(
-      <InputPanel
-        {...props}
-        setRemoveBackground={setRemoveBackground}
-        setLivePreview={setLivePreview}
-      />,
-    );
+    render(<InputPanel {...props} setRemoveBackground={setRemoveBackground} />);
 
     await userEvent.click(screen.getByLabelText("Remove Background"));
-    await userEvent.click(screen.getByLabelText("Live Preview"));
 
     expect(setRemoveBackground).toHaveBeenCalledWith(true);
-    expect(setLivePreview).toHaveBeenCalledWith(false);
   });
 });
 
@@ -284,8 +287,6 @@ describe("InputPanel with a video", () => {
     onLoadImage: vi.fn(),
     removeBackground: false,
     setRemoveBackground: vi.fn(),
-    livePreview: true,
-    setLivePreview: vi.fn(),
     imagePreview: null,
   };
 
@@ -315,8 +316,6 @@ describe("InputPanel camera button", () => {
     onLoadImage: vi.fn(),
     removeBackground: false,
     setRemoveBackground: vi.fn(),
-    livePreview: true,
-    setLivePreview: vi.fn(),
     imagePreview: null,
     onToggleCamera: vi.fn(),
   };
@@ -325,7 +324,7 @@ describe("InputPanel camera button", () => {
     const onToggleCamera = vi.fn();
     render(<InputPanel {...props} onToggleCamera={onToggleCamera} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "CAMERA" }));
+    await userEvent.click(screen.getByRole("button", { name: "Camera" }));
 
     expect(onToggleCamera).toHaveBeenCalledTimes(1);
   });
@@ -334,7 +333,7 @@ describe("InputPanel camera button", () => {
     render(<InputPanel {...props} cameraActive />);
 
     expect(
-      screen.getByRole("button", { name: "STOP CAMERA" }),
+      screen.getByRole("button", { name: "Stop camera" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Camera is on")).toBeInTheDocument();
     expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
@@ -342,6 +341,6 @@ describe("InputPanel camera button", () => {
 
   it("can't be pressed twice while the camera is starting", () => {
     render(<InputPanel {...props} cameraStarting />);
-    expect(screen.getByRole("button", { name: "CAMERA" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Camera" })).toBeDisabled();
   });
 });

@@ -12,11 +12,17 @@ import InputPanel from "./components/Generator/InputPanel";
 import WidthPanel from "./components/Generator/WidthPanel";
 import AdjustmentPanel from "./components/Generator/AdjustmentPanel";
 import OutputViewer from "./components/Generator/OutputViewer";
-import ActionButtons from "./components/Generator/ActionButtons";
+import Toolbar from "./components/Generator/Toolbar";
+import StatusBar from "./components/Generator/StatusBar";
 import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
+import Button from "./components/Shared/Button";
+import Icon from "./components/Shared/Icon";
+import Toggle from "./components/Shared/Toggle";
+import { artSize } from "./lib/artSize";
 import { customCharsError } from "./lib/customChars";
 import { openFilePicker } from "./lib/dom";
+import { isAnimatedPath } from "./lib/paths";
 import { saveArt } from "./lib/saveArt";
 
 function App() {
@@ -131,71 +137,124 @@ function App() {
     clearImage();
   };
 
+  // Live preview skips GIFs, videos and background removal, and never keeps
+  // anything in history: that is what Convert is for
+  const needsConvert =
+    !!imagePath &&
+    (!settings.livePreview ||
+      isAnimatedPath(imagePath) ||
+      settings.removeBackground);
+
+  const size = artSize(art.ascii);
+  const summary = size
+    ? [
+        `${size.cols} × ${size.rows}`,
+        art.isGif && art.frames.length > 1 && `${art.frames.length} frames`,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+
+  const status = camera.active
+    ? "camera"
+    : isLoading
+      ? "converting"
+      : imagePath && !needsConvert
+        ? "live"
+        : "ready";
+
   return (
-    <MainLayout>
-      <div className="generator-grid">
-        <div className="left-sidebar">
-          <InputPanel
-            onLoadImage={loadImage}
-            removeBackground={settings.removeBackground}
-            setRemoveBackground={setter("removeBackground")}
-            livePreview={settings.livePreview}
-            setLivePreview={setter("livePreview")}
-            imagePreview={imagePreview}
-            imageName={imageName}
-            isVideo={isVideo}
-            cameraActive={camera.active}
-            cameraStarting={camera.starting}
-            onToggleCamera={camera.active ? camera.stop : camera.start}
-          />
-          <ActionButtons
-            onConvert={handleConvert}
+    <MainLayout
+      title={camera.active ? "camera" : imageName}
+      statusBar={
+        <StatusBar
+          state={status}
+          progress={progress}
+          details={
+            art.ascii ? [settings.charset, settings.colorScheme] : undefined
+          }
+        />
+      }
+    >
+      <div className="workspace">
+        <aside className="sidebar" aria-label="Settings">
+          <div className="sidebar-scroll">
+            <InputPanel
+              onLoadImage={loadImage}
+              removeBackground={settings.removeBackground}
+              setRemoveBackground={setter("removeBackground")}
+              imagePreview={imagePreview}
+              imageName={imageName}
+              isVideo={isVideo}
+              cameraActive={camera.active}
+              cameraStarting={camera.starting}
+              onToggleCamera={camera.active ? camera.stop : camera.start}
+            />
+            <WidthPanel
+              width={settings.width}
+              setWidth={setter("width")}
+              ratio={settings.ratio}
+              setRatio={setter("ratio")}
+              keepOriginal={settings.keepOriginal}
+              setKeepOriginal={setter("keepOriginal")}
+              charset={settings.charset}
+              setCharset={setter("charset")}
+              customChars={settings.customChars}
+              setCustomChars={setter("customChars")}
+              customCharsError={charsetError}
+              colorScheme={settings.colorScheme}
+              setColorScheme={setter("colorScheme")}
+            />
+            <AdjustmentPanel
+              invert={settings.invert}
+              setInvert={setter("invert")}
+              dither={settings.dither}
+              setDither={setter("dither")}
+              brightness={settings.brightness}
+              setBrightness={setter("brightness")}
+              contrast={settings.contrast}
+              setContrast={setter("contrast")}
+              onReset={resetAdjustments}
+            />
+          </div>
+          <div className="sidebar-footer">
+            <Toggle
+              label="Live Preview"
+              checked={settings.livePreview}
+              onChange={setter("livePreview")}
+            />
+            <Button
+              variant={needsConvert ? "primary" : "outline"}
+              onClick={handleConvert}
+              disabled={!imagePath || isLoading}
+              shortcut="Ctrl+Enter"
+              title="Convert and keep it in history"
+              icon={<Icon name="convert" />}
+            >
+              {isLoading ? "Converting…" : "Convert"}
+            </Button>
+          </div>
+        </aside>
+
+        <section className="stage-area" aria-label="Art">
+          <Toolbar
+            summary={summary}
+            hasArt={!!art.ascii}
             onSave={handleSave}
             onCopy={handleCopy}
             onWidget={handleWidget}
             onHistory={() => setShowGallery(true)}
-            onQuit={() => ascart.quit()}
-            disabled={!art.ascii}
-            hasImage={!!imagePath}
+          />
+          <OutputViewer
+            asciiArt={art.ascii}
             isLoading={isLoading}
+            progress={progress}
+            isGif={art.isGif}
+            gifFrames={art.frames}
+            gifDelays={art.delays}
+            onStopProcessing={stop}
           />
-          <WidthPanel
-            width={settings.width}
-            setWidth={setter("width")}
-            ratio={settings.ratio}
-            setRatio={setter("ratio")}
-            keepOriginal={settings.keepOriginal}
-            setKeepOriginal={setter("keepOriginal")}
-            charset={settings.charset}
-            setCharset={setter("charset")}
-            customChars={settings.customChars}
-            setCustomChars={setter("customChars")}
-            customCharsError={charsetError}
-            colorScheme={settings.colorScheme}
-            setColorScheme={setter("colorScheme")}
-          />
-          <AdjustmentPanel
-            invert={settings.invert}
-            setInvert={setter("invert")}
-            dither={settings.dither}
-            setDither={setter("dither")}
-            brightness={settings.brightness}
-            setBrightness={setter("brightness")}
-            contrast={settings.contrast}
-            setContrast={setter("contrast")}
-            onReset={resetAdjustments}
-          />
-        </div>
-
-        <OutputViewer
-          asciiArt={art.ascii}
-          isLoading={isLoading}
-          progress={progress}
-          isGif={art.isGif}
-          gifFrames={art.frames}
-          gifDelays={art.delays}
-          onStopProcessing={stop}
-        />
+        </section>
       </div>
 
       <Toast toast={toast} onDismiss={dismissToast} />

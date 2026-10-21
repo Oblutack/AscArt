@@ -19,7 +19,7 @@ const chooseImage = async (name = "cat.png") => {
   await screen.findByAltText("Preview");
 };
 
-const convertButton = () => screen.getByRole("button", { name: /CONVERT/ });
+const convertButton = () => screen.getByRole("button", { name: /^Convert/ });
 const output = () => document.querySelector(".ascii-display");
 
 // The newest conversion the app asked for
@@ -85,7 +85,7 @@ describe("converting", () => {
     await waitFor(() => expect(output().innerHTML).toBe(ART));
   });
 
-  it("CONVERT shows a spinner, keeps the result in history and enables saving", async () => {
+  it("Convert shows a spinner, keeps the result in history and enables saving", async () => {
     render(<App />);
     await chooseImage();
     await userEvent.click(screen.getByLabelText("Live Preview")); // switch live preview off
@@ -95,7 +95,7 @@ describe("converting", () => {
 
     expect(lastConvert().saveHistory).toBe(true);
     expect(screen.getByText("Generating ASCII art...")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /CONVERTING/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Converting/ })).toBeDisabled();
 
     await fake.emit({
       type: "ascii-result",
@@ -104,7 +104,7 @@ describe("converting", () => {
     });
 
     expect(output().innerHTML).toBe(ART);
-    expect(screen.getByRole("button", { name: /SAVE/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
   it("changing a setting converts again", async () => {
@@ -118,7 +118,7 @@ describe("converting", () => {
     expect(lastConvert().options.charset).toBe("blocks");
   });
 
-  it("with live preview off, nothing happens until CONVERT", async () => {
+  it("with live preview off, nothing happens until Convert", async () => {
     render(<App />);
     await userEvent.click(screen.getByLabelText("Live Preview"));
     await chooseImage();
@@ -128,7 +128,7 @@ describe("converting", () => {
     expect(fake.api.convert).not.toHaveBeenCalled();
   });
 
-  it("a GIF waits for CONVERT, shows progress, then plays", async () => {
+  it("a GIF waits for Convert, shows progress, then plays", async () => {
     render(<App />);
     await chooseImage("anim.gif");
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -212,7 +212,7 @@ describe("with art on screen", () => {
   it("saves it and says where", async () => {
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /SAVE/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(fake.api.chooseSavePath).toHaveBeenCalledWith({ isGif: false });
     expect(fake.api.saveAscii).toHaveBeenCalledWith(
@@ -228,7 +228,7 @@ describe("with art on screen", () => {
     fake.api.chooseSavePath.mockResolvedValue({ canceled: true });
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /SAVE/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(fake.api.chooseSavePath).toHaveBeenCalled());
     expect(fake.api.saveAscii).not.toHaveBeenCalled();
@@ -240,7 +240,7 @@ describe("with art on screen", () => {
     fake.api.saveAscii.mockResolvedValue({ error: "disk full" });
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /SAVE/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Save failed: disk full",
@@ -250,7 +250,7 @@ describe("with art on screen", () => {
   it("copies the text to the clipboard", async () => {
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /COPY/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
 
     expect(fake.api.copyText).toHaveBeenCalledWith({
       ascii: ART,
@@ -265,7 +265,7 @@ describe("with art on screen", () => {
     fake.api.copyText.mockResolvedValue({ error: "no clipboard" });
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /COPY/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Copy failed: no clipboard",
@@ -274,14 +274,14 @@ describe("with art on screen", () => {
 
   it("has nothing to copy or save before there is art", () => {
     render(<App />);
-    expect(screen.getByRole("button", { name: /COPY/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /SAVE/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
   it("opens it as a widget", async () => {
     await showArt();
 
-    await userEvent.click(screen.getByRole("button", { name: /WIDGET/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Widget" }));
 
     expect(fake.api.openWidget).toHaveBeenCalledWith({
       isGif: false,
@@ -299,7 +299,7 @@ describe("history", () => {
     await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
     fake.api.convert.mockClear();
 
-    await userEvent.click(screen.getByRole("button", { name: /HISTORY/ }));
+    await userEvent.click(screen.getByRole("button", { name: "History" }));
     const id = "d".repeat(32);
     await fake.emit({
       type: "history",
@@ -346,10 +346,10 @@ describe("history", () => {
 });
 
 describe("window", () => {
-  it("quits and minimizes", async () => {
+  it("closes and minimizes", async () => {
     render(<App />);
 
-    await userEvent.click(screen.getByRole("button", { name: /QUIT/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
     await userEvent.click(screen.getByRole("button", { name: "Minimize" }));
 
     expect(fake.api.quit).toHaveBeenCalledTimes(1);
@@ -428,19 +428,19 @@ describe("keyboard shortcuts", () => {
 
   it("the buttons tell you their shortcuts", () => {
     render(<App />);
-    expect(screen.getByRole("button", { name: /CONVERT/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^Convert/ })).toHaveAttribute(
       "title",
-      "(Ctrl+Enter)",
+      "Convert and keep it in history (Ctrl+Enter)",
     );
-    expect(screen.getByRole("button", { name: /SAVE/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
       "aria-keyshortcuts",
       "Ctrl+S",
     );
-    expect(screen.getByRole("button", { name: /HISTORY/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "History" })).toHaveAttribute(
       "aria-keyshortcuts",
       "Ctrl+H",
     );
-    expect(screen.getByRole("button", { name: "LOAD" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Open…" })).toHaveAttribute(
       "aria-keyshortcuts",
       "Ctrl+O",
     );
@@ -492,7 +492,7 @@ describe("custom characters", () => {
     ).toBe(false);
   });
 
-  it("CONVERT with an invalid ramp shows the problem instead of converting", async () => {
+  it("Convert with an invalid ramp shows the problem instead of converting", async () => {
     render(<App />);
     await chooseImage();
     await userEvent.click(screen.getByLabelText("Live Preview"));
@@ -513,7 +513,7 @@ describe("camera", () => {
     camera = installFakeCamera();
   });
 
-  const cameraButton = () => screen.getByRole("button", { name: "CAMERA" });
+  const cameraButton = () => screen.getByRole("button", { name: "Camera" });
   const frameCount = () => fake.api.convertFrame.mock.calls.length;
 
   it("turns the webcam into live art", async () => {
@@ -522,7 +522,7 @@ describe("camera", () => {
     await userEvent.click(cameraButton());
 
     expect(
-      await screen.findByRole("button", { name: "STOP CAMERA" }),
+      await screen.findByRole("button", { name: "Stop camera" }),
     ).toBeInTheDocument();
     await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
     const [id, imageData, options] = fake.api.convertFrame.mock.calls[0];
@@ -552,40 +552,40 @@ describe("camera", () => {
     );
   });
 
-  it("STOP CAMERA releases the camera and stops sending", async () => {
+  it("Stop camera releases the camera and stops sending", async () => {
     render(<App />);
     await userEvent.click(cameraButton());
     await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
 
-    await userEvent.click(screen.getByRole("button", { name: "STOP CAMERA" }));
+    await userEvent.click(screen.getByRole("button", { name: "Stop camera" }));
 
     expect(camera.track.stop).toHaveBeenCalled();
     const sent = frameCount();
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(frameCount()).toBe(sent);
-    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Camera" })).toBeInTheDocument();
   });
 
   it("Escape turns the camera off", async () => {
     render(<App />);
     await userEvent.click(cameraButton());
-    await screen.findByRole("button", { name: "STOP CAMERA" });
+    await screen.findByRole("button", { name: "Stop camera" });
 
     await userEvent.keyboard("{Escape}");
 
     expect(camera.track.stop).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Camera" })).toBeInTheDocument();
   });
 
   it("picking a picture takes over from the camera", async () => {
     render(<App />);
     await userEvent.click(cameraButton());
-    await screen.findByRole("button", { name: "STOP CAMERA" });
+    await screen.findByRole("button", { name: "Stop camera" });
 
     await chooseImage();
 
     expect(camera.track.stop).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "CAMERA" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Camera" })).toBeInTheDocument();
   });
 
   it("live preview of a loaded picture waits while the camera is on", async () => {
@@ -612,7 +612,7 @@ describe("camera", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Camera access was refused",
     );
-    expect(screen.getByRole("button", { name: "CAMERA" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Camera" })).toBeEnabled();
   });
 
   it("doesn't send a half-typed character set", async () => {
@@ -621,7 +621,7 @@ describe("camera", () => {
     await userEvent.clear(screen.getByLabelText("Chars:"));
 
     await userEvent.click(cameraButton());
-    await screen.findByRole("button", { name: "STOP CAMERA" });
+    await screen.findByRole("button", { name: "Stop camera" });
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     expect(fake.api.convertFrame).not.toHaveBeenCalled();

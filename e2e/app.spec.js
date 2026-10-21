@@ -36,7 +36,7 @@ async function launch(userDataDir, extraEnv = {}) {
     if (message.type() === "error") problems.push(`console: ${message.text()}`);
   });
 
-  await page.waitForSelector(".generator-grid");
+  await page.waitForSelector(".workspace");
   return { app, page, problems };
 }
 
@@ -74,7 +74,7 @@ const art = (page) => page.locator(".ascii-display");
 const toggle = (page, label) =>
   page.locator("label.toggle-container", { hasText: label }).click();
 const convert = (page) =>
-  page.getByRole("button", { name: "CONVERT", exact: true });
+  page.getByRole("button", { name: "Convert", exact: true });
 
 /** The history list as the backend reports it */
 const historyList = (page) =>
@@ -232,7 +232,7 @@ test.describe("saving", () => {
 
     const html = path.join(userDataDir, "art.html");
     await chooseSaveTarget(app, html);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByRole("status")).toContainText(`Saved to ${html}`);
     const savedHtml = fs.readFileSync(html, "utf8");
     expect(savedHtml).toContain("<!DOCTYPE html>");
@@ -240,7 +240,7 @@ test.describe("saving", () => {
 
     const text = path.join(userDataDir, "art.txt");
     await chooseSaveTarget(app, text);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect.poll(() => fs.existsSync(text)).toBe(true);
     const savedText = fs.readFileSync(text, "utf8");
     expect(savedText).not.toContain("<");
@@ -256,7 +256,7 @@ test.describe("saving", () => {
     await app.evaluate(({ dialog }) => {
       dialog.showSaveDialog = async () => ({ canceled: true });
     });
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
 
     await page.waitForTimeout(500);
     await expect(page.getByRole("status")).toHaveCount(0);
@@ -273,7 +273,7 @@ test.describe("saving", () => {
 
     const html = path.join(userDataDir, "anim.html");
     await chooseSaveTarget(app, html);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect.poll(() => fs.existsSync(html)).toBe(true);
 
     const saved = fs.readFileSync(html, "utf8");
@@ -334,7 +334,7 @@ test.describe("more ways to save", () => {
 
     const target = path.join(userDataDir, "art.ans");
     await chooseSaveTarget(app, target);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect.poll(() => fs.existsSync(target)).toBe(true);
 
     const text = fs.readFileSync(target, "utf8");
@@ -352,7 +352,7 @@ test.describe("more ways to save", () => {
 
     const target = path.join(userDataDir, "art.png");
     await chooseSaveTarget(app, target);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByRole("status")).toContainText("Saved to");
 
     const bytes = fs.readFileSync(target);
@@ -394,7 +394,7 @@ test.describe("more ways to save", () => {
 
     const target = path.join(userDataDir, "anim.gif");
     await chooseSaveTarget(app, target);
-    await page.getByRole("button", { name: "SAVE" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
     await expect
       .poll(() => fs.existsSync(target), { timeout: 30_000 })
       .toBe(true);
@@ -413,7 +413,7 @@ test.describe("more ways to save", () => {
     await expect(art(page).locator("span").first()).toBeVisible();
     const shown = await art(page).textContent();
 
-    await page.getByRole("button", { name: "COPY" }).click();
+    await page.getByRole("button", { name: "Copy" }).click();
     await expect(page.getByRole("status")).toContainText("Copied");
 
     const copied = await app.evaluate(({ clipboard }) => clipboard.readText());
@@ -485,7 +485,7 @@ test.describe("history", () => {
     // change everything, then bring the old result back from history
     await page.getByLabel("Style:").selectOption("detailed");
     await page.getByLabel("Colors:").selectOption("original");
-    await page.getByRole("button", { name: "HISTORY" }).click();
+    await page.getByRole("button", { name: "History" }).click();
     const tile = page.getByRole("button", { name: /characters wide/ });
     await tile.focus();
     await page.keyboard.press("Space");
@@ -503,7 +503,7 @@ test.describe("history", () => {
     await convert(page).click();
     await expect.poll(async () => (await historyList(page)).length).toBe(1);
 
-    await page.getByRole("button", { name: "HISTORY" }).click();
+    await page.getByRole("button", { name: "History" }).click();
     await page.getByRole("button", { name: /characters wide/ }).click();
     await page.getByRole("button", { name: /Delete \(1\)/ }).click();
 
@@ -520,7 +520,7 @@ test.describe("widgets", () => {
     await expect(art(page).locator("span").first()).toBeVisible();
 
     const opened = app.waitForEvent("window");
-    await page.getByRole("button", { name: "WIDGET" }).click();
+    await page.getByRole("button", { name: "Widget" }).click();
     const widget = await opened;
     await widget.waitForSelector("#ascii-content span");
 
@@ -542,7 +542,7 @@ test.describe("widgets", () => {
     await expect(page.getByTitle("Pause")).toBeVisible();
 
     const opened = app.waitForEvent("window");
-    await page.getByRole("button", { name: "WIDGET" }).click();
+    await page.getByRole("button", { name: "Widget" }).click();
     const widget = await opened;
     await widget.waitForSelector("#ascii-content span");
 
@@ -577,9 +577,7 @@ test.describe("lockdown", () => {
     // Playwright still waits for the cancelled navigation to "finish", so ask
     // the page directly rather than through locators
     expect(
-      await page.evaluate(
-        () => document.querySelector(".generator-grid") !== null,
-      ),
+      await page.evaluate(() => document.querySelector(".workspace") !== null),
     ).toBe(true);
   });
 
@@ -610,7 +608,10 @@ test.describe("a video", () => {
 
     await page.locator("#file-input").setInputFiles(CLIP);
     // no picture to show: the name stands in, and nothing converts by itself
-    await expect(page.getByText("clip.mp4")).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Source" }).getByText("clip.mp4"),
+    ).toBeVisible();
+    await expect(page.locator(".title-name")).toHaveText("clip.mp4");
     await expect(page.getByAltText("Preview")).toHaveCount(0);
     await page.waitForTimeout(800);
     await expect(page.getByText("No output yet")).toBeVisible();
@@ -677,9 +678,9 @@ test.describe("the camera", () => {
   }) => {
     const { app, page, problems } = await launchWithCamera(userDataDir);
 
-    await page.getByRole("button", { name: "CAMERA", exact: true }).click();
+    await page.getByRole("button", { name: "Camera", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: "STOP CAMERA" }),
+      page.getByRole("button", { name: "Stop camera" }),
     ).toBeVisible();
     await expect(page.getByText("Camera is on")).toBeVisible();
 
@@ -697,9 +698,9 @@ test.describe("the camera", () => {
     // nothing goes to history
     expect(await historyList(page)).toHaveLength(0);
 
-    await page.getByRole("button", { name: "STOP CAMERA" }).click();
+    await page.getByRole("button", { name: "Stop camera" }).click();
     await expect(
-      page.getByRole("button", { name: "CAMERA", exact: true }),
+      page.getByRole("button", { name: "Camera", exact: true }),
     ).toBeVisible();
     const last = await art(page).innerHTML();
     await page.waitForTimeout(1000);
@@ -729,7 +730,7 @@ test.describe("the camera", () => {
     await expect(art(page).locator("span").first()).toBeVisible();
 
     const opened = app.waitForEvent("window");
-    await page.getByRole("button", { name: "WIDGET" }).click();
+    await page.getByRole("button", { name: "Widget" }).click();
     const widget = await opened;
     await widget.waitForSelector("#ascii-content span");
 

@@ -1,49 +1,52 @@
 import { ascart } from "../ascart";
+import Icon from "../components/Shared/Icon";
 
-const MainLayout = ({ children }) => {
-  return (
-    <div className="main-layout">
-      <header className="app-header draggable">
-        <h1 className="app-title">
-          <span className="title-main">AscArt</span>
-          <span className="title-subtitle">{"// Image & GIF Converter"}</span>
-        </h1>
-        <div className="drag-hint no-drag">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Drag & Drop files here
-        </div>
-        <div className="window-controls no-drag">
-          <button
-            className="window-btn"
-            onClick={() => ascart.minimize()}
-            title="Minimize"
-            aria-label="Minimize"
-          >
-            &minus;
-          </button>
-          <button
-            className="window-btn window-btn-close"
-            onClick={() => ascart.quit()}
-            title="Close"
-            aria-label="Close"
-          >
-            &times;
-          </button>
-        </div>
-      </header>
-      <main className="app-content">{children}</main>
-    </div>
-  );
-};
+/**
+ * The window: a title bar you can drag the window by, the content, and the
+ * status bar.
+ *
+ * @param {{
+ *   title?: string | null,
+ *   statusBar?: import("react").ReactNode,
+ *   children: import("react").ReactNode,
+ * }} props
+ */
+const MainLayout = ({ title, statusBar, children }) => (
+  <div className="app-window">
+    <header className="title-bar draggable">
+      <h1 className="wordmark">ascart</h1>
+      {title && (
+        <>
+          <span className="title-separator" aria-hidden="true">
+            /
+          </span>
+          <span className="title-name">{title}</span>
+        </>
+      )}
+      <div className="window-controls no-drag">
+        <button
+          type="button"
+          className="window-btn"
+          onClick={() => ascart.minimize()}
+          title="Minimize"
+          aria-label="Minimize"
+        >
+          <Icon name="minus" />
+        </button>
+        <button
+          type="button"
+          className="window-btn window-btn-close"
+          onClick={() => ascart.quit()}
+          title="Close"
+          aria-label="Close"
+        >
+          <Icon name="close" />
+        </button>
+      </div>
+    </header>
+    <main className="app-content">{children}</main>
+    {statusBar}
+  </div>
+);
 
 export default MainLayout;

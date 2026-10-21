@@ -1,35 +1,33 @@
-/* ==================== LAYOUT ==================== */
-.main-layout {
+/* The window: title bar, sidebar beside the art, status bar along the bottom */
+
+.app-window {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(
-    135deg,
-    rgba(var(--shadow-grey-rgb), 0.98) 0%,
-    rgba(var(--gunmetal-rgb), 0.98) 100%
-  );
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(var(--pale-slate-2-rgb), 0.3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.app-header {
+/* ---------- Title bar ---------- */
+
+.title-bar {
+  height: 38px;
+  flex-shrink: 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid rgba(var(--pale-slate-2-rgb), 0.2);
-  margin-bottom: 15px;
+  gap: var(--space-2);
+  padding: 0 6px 0 var(--space-4);
+  border-bottom: 1px solid var(--line);
 }
 
-/* Make header draggable */
+/* The window is moved by dragging the title bar */
 .draggable {
   -webkit-app-region: drag;
-  cursor: move;
 }
 
-/* Prevent drag on interactive elements */
 .no-drag,
 .no-drag *,
 button,
@@ -38,93 +36,190 @@ select,
 textarea,
 a {
   -webkit-app-region: no-drag;
-  cursor: default;
 }
 
-.app-title {
-  font-size: 18px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.wordmark {
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
 }
 
-.title-main {
-  color: var(--pale-slate-2);
+.title-separator {
+  color: var(--text-faint);
 }
 
-.title-subtitle {
-  color: var(--alabaster);
-  font-size: 14px;
-  font-weight: normal;
-}
-
-.drag-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--pale-slate-2);
-  font-size: 12px;
-}
-
-.drag-hint svg {
-  stroke: var(--pale-slate-2);
-}
-
-.app-content {
-  flex: 1;
-  overflow: hidden;
-  min-width: 0;
-}
-
-/* ==================== GENERATOR GRID ==================== */
-.generator-grid {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  grid-template-rows: 1fr;
-  gap: 15px;
-  height: 100%;
-  width: 100%;
+.title-name {
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
 }
 
-.left-sidebar {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 15px;
-  overflow-y: auto;
-  padding-right: 5px;
-  min-width: 0;
-}
-
-/* Window controls (minimize / close) */
 .window-controls {
+  margin-left: auto;
   display: flex;
-  gap: 6px;
-  margin-left: 20px;
+  gap: 2px;
 }
 
 .window-btn {
-  width: 28px;
+  width: 34px;
   height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius);
   background: transparent;
-  border: 1px solid rgba(var(--pale-slate-2-rgb), 0.4);
-  border-radius: 4px;
-  color: var(--pale-slate-2);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
+  color: var(--text-muted);
+  transition: background var(--duration);
 }
 
 .window-btn:hover {
-  background: rgba(var(--pale-slate-2-rgb), 0.15);
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .window-btn-close:hover {
-  background: rgba(var(--danger-rgb), 0.25);
-  border-color: var(--danger);
-  color: var(--danger-soft);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ---------- Content ---------- */
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.workspace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 18px;
+  border-top: 1px solid var(--line);
+}
+
+.stage-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-stage);
+}
+
+/* ---------- Toolbar above the art ---------- */
+
+.toolbar {
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar-summary {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ---------- Status bar ---------- */
+
+.status-bar {
+  min-height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: var(--space-1) 14px;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.status-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.status-converting .status-dot,
+.status-camera .status-dot {
+  background: var(--accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.status-keys {
+  display: flex;
+  gap: 14px;
+}
+
+.status-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+kbd {
+  font: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text);
 }
