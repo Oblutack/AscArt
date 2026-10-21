@@ -1,3 +1,32 @@
+/* The widget window: just the art on the desktop, with one slim strip of
+   controls that can be hidden. Colours as in src/styles/tokens.css. */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400;
+  font-display: block;
+  src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 500;
+  font-display: block;
+  src: url("../fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}
+
+:root {
+  --bg-raised: #12141b;
+  --bg-hover: #1f2430;
+  --line: #262b35;
+  --line-strong: #2a2f3a;
+  --text: #c9d1e3;
+  --text-muted: #8a90a3;
+  --accent: #7aa2f7;
+  --danger: #f7768e;
+  --font: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -8,6 +37,9 @@ body {
   background: transparent;
   overflow: hidden;
   cursor: move;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--text);
   -webkit-app-region: drag;
 }
 
@@ -20,17 +52,22 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: background 0.3s ease;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 #widget-container.controls-visible {
-  background: rgba(52, 58, 64, 0.95);
-  border: 2px solid #495057;
-  border-radius: 8px;
+  background: rgba(18, 20, 27, 0.94);
+  border-color: var(--line-strong);
 }
 
 #ascii-display {
   flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,26 +77,20 @@ body {
   -webkit-app-region: no-drag;
 }
 
-#ascii-display pre {
-  font-family: "Courier New", monospace;
-  font-size: 6px;
-  line-height: 1.09;
+#ascii-content {
+  font-family: var(--font);
   white-space: pre;
-  margin: 0;
-  pointer-events: none;
 }
 
-#ascii-display pre span {
-  text-shadow: 0 0 5px currentColor;
-}
+/* ---------- The controls strip ---------- */
 
 #widget-controls {
   display: none;
-  padding: 15px;
-  background: rgba(33, 37, 41, 0.8);
-  border-top: 1px solid #495057;
-  flex-direction: column;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid var(--line);
   -webkit-app-region: no-drag;
 }
 
@@ -67,79 +98,98 @@ body {
   display: flex;
 }
 
-.widget-controls-row {
+.widget-group {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 2px;
 }
 
-.widget-controls-left {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.widget-spacer {
+  flex: 1;
 }
 
 .widget-btn {
-  background: rgba(173, 181, 189, 0.1);
-  border: 2px solid #adb5bd;
-  color: #adb5bd;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-family: "Courier New", monospace;
-  font-size: 11px;
-  font-weight: bold;
+  min-width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.12s;
 }
 
 .widget-btn:hover {
-  background: rgba(173, 181, 189, 0.2);
-  transform: translateY(-2px);
+  background: var(--bg-hover);
 }
 
-.widget-btn-small {
-  padding: 6px 12px;
-  font-size: 10px;
+.widget-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.widget-btn svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Play and pause are filled shapes */
+#btn-play svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+#btn-play .icon-play,
+#btn-play.is-paused .icon-pause {
+  display: none;
+}
+
+#btn-play.is-paused .icon-play {
+  display: block;
+}
+
+.widget-btn-text {
+  padding: 0 10px;
 }
 
 .widget-btn-close {
-  border-color: #dc3545;
-  color: #dc3545;
+  color: var(--danger);
 }
 
 .widget-btn-close:hover {
-  background: rgba(220, 53, 69, 0.2);
+  background: rgba(247, 118, 142, 0.12);
 }
 
-.frame-info {
-  font-family: "Courier New", monospace;
-  font-size: 10px;
-  color: #495057;
-  min-width: 80px;
+.widget-info {
+  min-width: 40px;
   text-align: center;
-}
-
-.size-info {
-  min-width: 50px;
-}
-
-.size-label {
-  color: #adb5bd;
-  font-family: "Courier New", monospace;
+  color: var(--text-muted);
   font-size: 11px;
-  margin-right: 10px;
+  font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Right-click menu ---------- */
 
 #context-menu {
   display: none;
   position: fixed;
-  background: rgba(52, 58, 64, 0.98);
-  border: 2px solid #495057;
-  border-radius: 6px;
-  padding: 5px 0;
-  min-width: 180px;
   z-index: 10000;
-  box-shadow: 0 4px 20px rgba(73, 80, 87, 0.4);
+  min-width: 170px;
+  padding: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  -webkit-app-region: no-drag;
 }
 
 #context-menu.visible {
@@ -147,28 +197,21 @@ body {
 }
 
 .context-menu-item {
-  padding: 10px 20px;
-  color: #adb5bd;
-  font-family: "Courier New", monospace;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  background: transparent;
   width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   text-align: left;
+  cursor: pointer;
 }
 
 .context-menu-item:hover {
-  background: rgba(73, 80, 87, 0.3);
-  color: #ced4da;
+  background: var(--bg-hover);
 }
 
 .context-menu-item.danger {
-  color: #6c757d;
-}
-
-.context-menu-item.danger:hover {
-  background: rgba(108, 117, 125, 0.3);
-  color: #adb5bd;
+  color: var(--danger);
 }

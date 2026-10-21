@@ -31,7 +31,7 @@
   function showFrame(index) {
     current = index;
     content.innerHTML = frames[index];
-    frameInfo.textContent = `Frame ${index + 1}/${frames.length}`;
+    frameInfo.textContent = `${index + 1}/${frames.length}`;
   }
 
   function scheduleNext() {
@@ -49,7 +49,11 @@
 
   function setPlaying(playing) {
     isPlaying = playing;
-    playButton.textContent = playing ? "|| Pause" : "▶ Play";
+    // The button holds both icons; the class picks which one shows
+    const label = playing ? "Pause" : "Play";
+    playButton.classList.toggle("is-paused", !playing);
+    playButton.setAttribute("aria-label", label);
+    playButton.title = label;
     if (playing) {
       scheduleNext();
     } else {
@@ -71,6 +75,26 @@
     content.style.fontSize = `${fontSize}px`;
     content.style.lineHeight = "1.09"; // see LINE_HEIGHT in src/lib/renderArt.js
     sizeInfo.textContent = `${fontSize}px`;
+  }
+
+  // A new widget starts at the largest size (up to the default) at which the
+  // whole art fits the window, so wide art isn't cut off at the edges
+  function fitToWindow() {
+    const style = getComputedStyle(display);
+    const width =
+      display.clientWidth -
+      parseFloat(style.paddingLeft) -
+      parseFloat(style.paddingRight);
+    const height =
+      display.clientHeight -
+      parseFloat(style.paddingTop) -
+      parseFloat(style.paddingBottom);
+    while (
+      fontSize > MIN_FONT &&
+      (content.scrollWidth > width || content.scrollHeight > height)
+    ) {
+      setFontSize(fontSize - 1);
+    }
   }
 
   function setControlsVisible(visible) {
@@ -187,5 +211,7 @@
     } else {
       content.innerHTML = data.ascii || "";
     }
+    // Measure with the real font, not the one shown while it loads
+    document.fonts.ready.then(fitToWindow);
   });
 })();

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'"
     />
     <title>AscArt Widget</title>
     <link rel="stylesheet" href="widget.css" />
@@ -12,10 +12,10 @@
   <body>
     <div id="context-menu">
       <button class="context-menu-item" data-action="show-controls">
-        Show Controls
+        Show controls
       </button>
       <button class="context-menu-item danger" data-action="close">
-        Remove Widget
+        Remove widget
       </button>
     </div>
 
@@ -25,48 +25,87 @@
       </div>
 
       <div id="widget-controls">
-        <div class="widget-controls-row">
-          <div class="widget-controls-left">
-            <button class="widget-btn" data-action="toggle-controls">
-              Hide Controls
-            </button>
-          </div>
-          <button class="widget-btn widget-btn-close" data-action="close">
-            Close Widget
+        <div id="playback-controls" class="widget-group hidden">
+          <button
+            class="widget-btn"
+            data-action="prev"
+            aria-label="Previous frame"
+            title="Previous frame"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+          </button>
+          <button
+            id="btn-play"
+            class="widget-btn"
+            data-action="toggle-play"
+            aria-label="Pause"
+            title="Pause"
+          >
+            <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6.5" y="5" width="3.5" height="14" rx="1" />
+              <rect x="14" y="5" width="3.5" height="14" rx="1" />
+            </svg>
+            <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5.5v13l10-6.5z" />
+            </svg>
+          </button>
+          <button
+            class="widget-btn"
+            data-action="next"
+            aria-label="Next frame"
+            title="Next frame"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+          <span class="widget-info" id="frame-info">1/1</span>
+        </div>
+
+        <div class="widget-group">
+          <button
+            class="widget-btn"
+            data-action="smaller"
+            aria-label="Smaller"
+            title="Smaller"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 12h12" />
+            </svg>
+          </button>
+          <span class="widget-info" id="size-info">6px</span>
+          <button
+            class="widget-btn"
+            data-action="larger"
+            aria-label="Larger"
+            title="Larger"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 6v12M6 12h12" />
+            </svg>
           </button>
         </div>
 
-        <div id="playback-controls" class="widget-controls-row hidden">
-          <div class="widget-controls-left">
-            <button
-              id="btn-play"
-              class="widget-btn widget-btn-small"
-              data-action="toggle-play"
-            >
-              || Pause
-            </button>
-            <button class="widget-btn widget-btn-small" data-action="prev">
-              ◀ Prev
-            </button>
-            <button class="widget-btn widget-btn-small" data-action="next">
-              Next ▶
-            </button>
-          </div>
-          <span class="frame-info" id="frame-info">Frame 1/1</span>
-        </div>
+        <span class="widget-spacer"></span>
 
-        <div class="widget-controls-row">
-          <div class="widget-controls-left">
-            <span class="size-label">Size:</span>
-            <button class="widget-btn widget-btn-small" data-action="smaller">
-              − Smaller
-            </button>
-            <span class="frame-info size-info" id="size-info">6px</span>
-            <button class="widget-btn widget-btn-small" data-action="larger">
-              Larger +
-            </button>
-          </div>
-        </div>
+        <button
+          class="widget-btn widget-btn-text"
+          data-action="toggle-controls"
+        >
+          Hide controls
+        </button>
+        <button
+          class="widget-btn widget-btn-close"
+          data-action="close"
+          aria-label="Close widget"
+          title="Close widget"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7l10 10M17 7 7 17" />
+          </svg>
+        </button>
       </div>
     </div>
 
