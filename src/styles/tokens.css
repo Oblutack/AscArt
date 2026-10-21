@@ -1,0 +1,70 @@
+/* The design tokens: every colour, size and font the app uses. The palette is
+   the terminal app's (cli/internal/tui), so the two look like one product.
+   Text colours keep 4.5:1 or better against every surface they sit on. */
+
+:root {
+  /* Surfaces, darkest first */
+  --bg-stage: #0b0c10; /* behind the art */
+  --bg: #0f1117; /* the window */
+  --bg-raised: #12141b; /* sidebar, status bar, menus */
+  --bg-hover: #1a1e27;
+  --bg-selected: #222733;
+
+  /* Lines */
+  --line: #1d212a; /* dividers between areas */
+  --line-strong: #262b35; /* outlines of controls */
+  --line-input: #3a404d; /* checkboxes, text fields */
+
+  /* Text, brightest first */
+  --text-strong: #e6e9ef;
+  --text: #c9d1e3;
+  --text-muted: #8a90a3;
+  --text-faint: #808699; /* section headings */
+
+  /* Colour, used sparingly */
+  --accent: #7aa2f7;
+  --accent-hover: #a9c1fa;
+  --accent-bg: rgba(122, 162, 247, 0.16);
+  --on-accent: #0f1117; /* text on an accent background */
+  --danger: #f7768e;
+  --danger-bg: rgba(247, 118, 142, 0.12);
+  --ok: #9ece6a;
+
+  /* Type */
+  --font: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 14px;
+  --text-xl: 18px;
+
+  /* Space and shape */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --duration: 120ms;
+
+  /* The old palette's names, pointed at the new colours, for the styles the
+     later redesign steps haven't replaced yet */
+  --bright-snow: var(--text-strong);
+  --platinum: var(--text-strong);
+  --alabaster: var(--text);
+  --pale-slate: var(--text);
+  --pale-slate-2: var(--text-muted);
+  --slate-grey: #4a5060;
+  --iron-grey: var(--line-strong);
+  --gunmetal: var(--bg-raised);
+  --shadow-grey: var(--bg);
+  --danger-soft: var(--danger);
+  --pale-slate-2-rgb: 138, 144, 163;
+  --iron-grey-rgb: 38, 43, 53;
+  --gunmetal-rgb: 18, 20, 27;
+  --shadow-grey-rgb: 15, 17, 23;
+  --danger-rgb: 247, 118, 142;
+}
