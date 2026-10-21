@@ -34,7 +34,9 @@ describe("start", () => {
   it("shows the panels and an empty output", async () => {
     render(<App />);
 
-    expect(screen.getByText("No output yet")).toBeInTheDocument();
+    expect(
+      screen.getByText("Drop a picture, GIF or video"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Characters" }),
     ).toBeInTheDocument();
@@ -319,10 +321,7 @@ describe("history", () => {
     });
 
     await userEvent.click(
-      screen.getByRole("button", { name: /characters wide/ }),
-    );
-    await userEvent.click(
-      screen.getByRole("button", { name: "Load Selected" }),
+      screen.getByRole("button", { name: /^Open .*80 characters wide/ }),
     );
     expect(fake.api.getHistoryEntry).toHaveBeenCalledWith(id);
 
@@ -345,7 +344,7 @@ describe("history", () => {
     // and live preview must not now overwrite the loaded art with the old image
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(fake.api.convert).not.toHaveBeenCalled();
-    expect(screen.queryByText("History / Gallery")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 

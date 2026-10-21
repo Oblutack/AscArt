@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Button from "../Shared/Button";
 import Icon from "../Shared/Icon";
 import IconButton from "../Shared/IconButton";
 import { LINE_HEIGHT } from "../../lib/renderArt";
@@ -14,6 +15,10 @@ const OutputViewer = ({
   gifFrames,
   gifDelays,
   onStopProcessing,
+  hasSource = false,
+  onOpen,
+  onCamera,
+  cameraBusy = false,
 }) => {
   const [fontSize, setFontSize] = useState(8);
   const [isPlaying, setIsPlaying] = useState(isGif && gifFrames.length > 0);
@@ -96,12 +101,36 @@ const OutputViewer = ({
             style={{ fontSize: `${fontSize}px`, lineHeight: LINE_HEIGHT }}
             dangerouslySetInnerHTML={{ __html: displayArt }}
           />
-        ) : (
-          <div className="stage-message stage-empty">
-            <Icon name="picture" size={32} />
+        ) : hasSource ? (
+          <div className="stage-message">
+            <Icon name="convert" size={28} />
             <p className="stage-title">No output yet</p>
-            <p className="stage-hint">
-              Load an image, GIF or video to generate ASCII art
+            <p>Press Convert to turn it into art</p>
+          </div>
+        ) : (
+          <div className="drop-target">
+            <Icon name="drop" size={28} />
+            <p className="stage-title">Drop a picture, GIF or video</p>
+            <p>anywhere in this window</p>
+            <div className="drop-actions">
+              <Button
+                variant="primary"
+                onClick={onOpen}
+                shortcut="Ctrl+O"
+                title="Open a picture, GIF or video"
+              >
+                Open a file
+              </Button>
+              <Button
+                onClick={onCamera}
+                disabled={cameraBusy}
+                icon={<Icon name="camera" />}
+              >
+                Use the camera
+              </Button>
+            </div>
+            <p className="drop-formats">
+              pictures · animated GIFs · mp4 mov webm mkv avi
             </p>
           </div>
         )}

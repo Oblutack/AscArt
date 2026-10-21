@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { installFakeAscart } from "../../test/fakeAscart";
@@ -32,29 +32,44 @@ const renderGallery = async (entries = [entry(A), entry(B), entry(C)]) => {
   await fake.emit({ status: "success", type: "history", history: entries });
 };
 
-const tiles = () => screen.getAllByRole("button", { name: /characters wide/ });
+const openButtons = () => screen.getAllByRole("button", { name: /^Open / });
+const deleteButtons = () => screen.getAllByRole("button", { name: /^Delete / });
 
 describe("loading", () => {
-  it("asks for the history and shows a spinner meanwhile", () => {
+  it("asks for the history and says it is loading meanwhile", () => {
     render(<GalleryView onClose={onClose} onLoadAscii={onLoadAscii} />);
 
     expect(fake.api.getHistory).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Loading history...")).toBeInTheDocument();
   });
 
-  it("shows one tile per entry with its thumbnail", async () => {
-    await renderGallery();
+  it("shows one entry per conversion with its thumbnail and settings", async () => {
+    await renderGallery([
+      entry(A),
+      entry(B, {
+        options: { width: 64, charset: "blocks", colorScheme: "sepia" },
+      }),
+      entry(C, { isGif: true }),
+    ]);
 
-    expect(tiles()).toHaveLength(3);
+    expect(openButtons()).toHaveLength(3);
     expect(screen.getByText("thumb-" + B)).toBeInTheDocument();
+    expect(
+      screen.getByText("64 characters wide · blocks · sepia"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/· animation$/)).toBeInTheDocument();
+    expect(screen.getByText("3 kept, up to 50")).toBeInTheDocument();
   });
 
   it("says when there is no history", async () => {
     await renderGallery([]);
     expect(screen.getByText("No history yet")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Clear all…" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("stops spinning when the backend reports an error", async () => {
+  it("stops loading when the backend reports an error", async () => {
     render(<GalleryView onClose={onClose} onLoadAscii={onLoadAscii} />);
     await fake.emit({ status: "error", error: "history broke" });
 
@@ -62,95 +77,13 @@ describe("loading", () => {
   });
 });
 
-describe("selecting", () => {
-  it("selects one tile at a time on click", async () => {
-    await renderGallery();
-
-    await userEvent.click(tiles()[0]);
-    await userEvent.click(tiles()[1]);
-
-    expect(tiles()[0]).toHaveAttribute("aria-pressed", "false");
-    expect(tiles()[1]).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("adds to the selection with Ctrl+click", async () => {
-    const user = userEvent.setup(); // one session, so the held key is remembered
-    await renderGallery();
-
-    await user.click(tiles()[0]);
-    await user.keyboard("{Control>}");
-    await user.click(tiles()[2]);
-    await user.keyboard("{/Control}");
-
-    expect(tiles()[0]).toHaveAttribute("aria-pressed", "true");
-    expect(tiles()[2]).toHaveAttribute("aria-pressed", "true");
-    expect(
-      screen.getByRole("button", { name: "Delete (2)" }),
-    ).toBeInTheDocument();
-  });
-
-  it("can be operated from the keyboard", async () => {
-    await renderGallery();
-
-    await userEvent.tab(); // select all button comes first
-    tiles()[0].focus();
-    await userEvent.keyboard(" ");
-    tiles()[2].focus();
-    await userEvent.keyboard("{Enter}");
-
-    expect(tiles()[0]).toHaveAttribute("aria-pressed", "true");
-    expect(tiles()[1]).toHaveAttribute("aria-pressed", "false");
-    expect(tiles()[2]).toHaveAttribute("aria-pressed", "true");
-
-    tiles()[0].focus();
-    await userEvent.keyboard(" "); // toggles off again
-    expect(tiles()[0]).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("selects and deselects everything", async () => {
-    await renderGallery();
-
-    await userEvent.click(screen.getByRole("button", { name: "Select All" }));
-    expect(
-      screen.getByRole("button", { name: "Delete (3)" }),
-    ).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Deselect All" }));
-    expect(
-      screen.queryByRole("button", { name: /Delete/ }),
-    ).not.toBeInTheDocument();
-  });
-});
-
-describe("deleting", () => {
-  it("deletes the selected entries by id and removes their tiles", async () => {
-    const user = userEvent.setup();
-    await renderGallery();
-    await user.click(tiles()[0]);
-    await user.keyboard("{Control>}");
-    await user.click(tiles()[1]);
-    await user.keyboard("{/Control}");
-
-    await user.click(screen.getByRole("button", { name: "Delete (2)" }));
-
-    expect(fake.api.deleteHistory).toHaveBeenCalledWith([A, B]);
-    expect(tiles()).toHaveLength(1);
-    expect(screen.getByText("thumb-" + C)).toBeInTheDocument();
-  });
-});
-
 describe("opening an entry", () => {
   it("fetches the full entry, then hands it over and closes", async () => {
     await renderGallery();
-    await userEvent.click(tiles()[1]);
+    await userEvent.click(openButtons()[1]);
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Load Selected" }),
-    );
     expect(fake.api.getHistoryEntry).toHaveBeenCalledWith(B);
-    expect(
-      screen.getByRole("button", { name: "Load Selected" }),
-    ).toBeDisabled();
+    for (const button of openButtons()) expect(button).toBeDisabled();
     expect(onLoadAscii).not.toHaveBeenCalled();
 
     await fake.emit({
@@ -174,32 +107,69 @@ describe("opening an entry", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("can't load several entries at once", async () => {
+  it("can be opened from the keyboard", async () => {
     await renderGallery();
-    await userEvent.click(screen.getByRole("button", { name: "Select All" }));
+    openButtons()[0].focus();
 
-    expect(
-      screen.getByRole("button", { name: "Load Selected" }),
-    ).toBeDisabled();
+    await userEvent.keyboard("{Enter}");
+
+    expect(fake.api.getHistoryEntry).toHaveBeenCalledWith(A);
   });
 
-  it("closes without loading from the close button", async () => {
+  it("goes back to the art without loading anything", async () => {
     await renderGallery();
-    const header = screen.getByText("History / Gallery").parentElement;
 
-    await userEvent.click(within(header).getByRole("button", { name: "×" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Back to the art" }),
+    );
 
     expect(onClose).toHaveBeenCalled();
     expect(onLoadAscii).not.toHaveBeenCalled();
   });
 });
 
+describe("deleting", () => {
+  it("deletes one entry by id and removes it", async () => {
+    await renderGallery();
+
+    await userEvent.click(deleteButtons()[0]);
+
+    expect(fake.api.deleteHistory).toHaveBeenCalledWith([A]);
+    expect(openButtons()).toHaveLength(2);
+    expect(screen.queryByText("thumb-" + A)).not.toBeInTheDocument();
+  });
+
+  it("clears everything, but only after asking", async () => {
+    await renderGallery();
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear all…" }));
+    expect(fake.api.deleteHistory).not.toHaveBeenCalled();
+    expect(screen.getByText(/Delete all 3\?/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete all" }));
+
+    expect(fake.api.deleteHistory).toHaveBeenCalledWith([A, B, C]);
+    expect(screen.getByText("No history yet")).toBeInTheDocument();
+  });
+
+  it("can change its mind about clearing", async () => {
+    await renderGallery();
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear all…" }));
+    await userEvent.click(screen.getByRole("button", { name: "Keep them" }));
+
+    expect(fake.api.deleteHistory).not.toHaveBeenCalled();
+    expect(openButtons()).toHaveLength(3);
+  });
+});
+
 describe("as a dialog", () => {
   it("is announced as a modal dialog with a name", async () => {
     await renderGallery();
-    expect(
-      screen.getByRole("dialog", { name: "History / Gallery" }),
-    ).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("dialog", { name: "History" })).toHaveAttribute(
+      "aria-modal",
+      "true",
+    );
   });
 
   it("takes focus when it opens", async () => {

@@ -1,17 +1,40 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ascart } from "../../ascart";
+import Button from "../Shared/Button";
+import Icon from "../Shared/Icon";
+import IconButton from "../Shared/IconButton";
 
+const formatDate = (/** @type {string} */ isoString) =>
+  new Date(isoString).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+/** The settings an entry was made with, in a few words */
+const describeEntry = (
+  /** @type {import("../../types").HistoryEntrySummary} */ item,
+) =>
+  [
+    `${item.options.width} characters wide`,
+    item.options.charset,
+    item.options.colorScheme,
+    item.isGif && "animation",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+/**
+ * The history: every kept conversion with its settings. Opening one restores
+ * its art and settings; entries can be deleted one at a time or all at once.
+ */
 const GalleryView = ({ onClose, onLoadAscii }) => {
   const [history, setHistory] = useState(
     /** @type {import("../../types").HistoryEntrySummary[]} */ ([]),
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState(
-    /** @type {import("../../types").HistoryEntrySummary[]} */ ([]),
-  );
-
   const [isOpening, setIsOpening] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   // The latest callbacks, so the subscription below can stay put
   const callbacks = useRef({ onClose, onLoadAscii });
@@ -26,7 +49,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     const previouslyFocused = document.activeElement;
     dialogRef.current?.focus();
 
-    // Capture phase, so Escape closes the gallery instead of also stopping a
+    // Capture phase, so Escape closes the history instead of also stopping a
     // conversion running behind it
     const closeOnEscape = (/** @type {KeyboardEvent} */ event) => {
       if (event.key !== "Escape") return;
@@ -49,7 +72,7 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
         setHistory(data.history);
         setIsLoading(false);
       } else if (data.type === "history-entry") {
-        // The full art of the entry that was selected
+        // The full art of the entry that was opened
         const { entry } = data;
         callbacks.current.onLoadAscii?.(
           entry.ascii,
@@ -70,175 +93,115 @@ const GalleryView = ({ onClose, onLoadAscii }) => {
     return unsubscribe;
   }, []);
 
-  const handleItemClick = (item, event) => {
-    if (event.ctrlKey || event.metaKey) {
-      // Multi-select with Ctrl/Cmd
-      if (selectedItems.includes(item)) {
-        setSelectedItems(selectedItems.filter((i) => i !== item));
-      } else {
-        setSelectedItems([...selectedItems, item]);
-      }
-    } else {
-      // Single select
-      setSelectedItems([item]);
-    }
-  };
-
-  // Keyboard: Space or Enter adds/removes the tile, like Ctrl+click
-  const handleItemKeyDown = (item, event) => {
-    if (event.key !== " " && event.key !== "Enter") return;
-    event.preventDefault();
-    setSelectedItems((current) =>
-      current.includes(item)
-        ? current.filter((i) => i !== item)
-        : [...current, item],
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.length === history.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems([...history]);
-    }
-  };
-
-  // The list only has thumbnails; fetch the full art of the selected entry
-  const handleLoadItem = () => {
-    if (selectedItems.length !== 1) return;
+  // The list only has thumbnails; fetch the full art of the entry
+  const openEntry = (item) => {
     setIsOpening(true);
-    ascart.getHistoryEntry(selectedItems[0].id);
+    ascart.getHistoryEntry(item.id);
   };
 
-  const handleDeleteItems = () => {
-    if (selectedItems.length === 0) return;
-
-    ascart.deleteHistory(selectedItems.map((item) => item.id));
-
-    // Update local state
-    const newHistory = history.filter((item) => !selectedItems.includes(item));
-    setHistory(newHistory);
-    setSelectedItems([]);
+  const deleteEntries = (items) => {
+    ascart.deleteHistory(items.map((item) => item.id));
+    setHistory((current) => current.filter((item) => !items.includes(item)));
   };
 
-  const formatDate = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleString();
+  const clearAll = () => {
+    deleteEntries(history);
+    setConfirmingClear(false);
   };
 
   return (
-    <div className="gallery-overlay">
-      <div
-        className="gallery-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="gallery-title"
-        tabIndex={-1}
-        ref={dialogRef}
-      >
-        <div className="gallery-header">
-          <h2 id="gallery-title">History / Gallery</h2>
-          {history.length > 0 && (
-            <button
-              className="gallery-select-all-btn"
-              onClick={handleSelectAll}
-            >
-              {selectedItems.length === history.length
-                ? "Deselect All"
-                : "Select All"}
-            </button>
-          )}
-          <button className="gallery-close-btn" onClick={onClose}>
-            ×
-          </button>
-        </div>
-
-        <div className="gallery-content">
-          {isLoading ? (
-            <div className="gallery-loading">
-              <div className="loading-spinner"></div>
-              <p>Loading history...</p>
-            </div>
-          ) : history.length === 0 ? (
-            <div className="gallery-empty">
-              <svg
-                width="64"
-                height="64"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <p>No history yet</p>
-              <p className="gallery-empty-subtitle">
-                Convert some images to see them here
-              </p>
-            </div>
+    <div
+      className="history-view"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="history-title"
+      tabIndex={-1}
+      ref={dialogRef}
+    >
+      <div className="history-bar">
+        <Button variant="ghost" onClick={onClose} icon={<Icon name="back" />}>
+          Back to the art
+        </Button>
+        <h2 id="history-title" className="history-title">
+          History
+        </h2>
+        {history.length > 0 && (
+          <span className="history-count">{history.length} kept, up to 50</span>
+        )}
+        <span className="history-spacer" />
+        {history.length > 0 &&
+          (confirmingClear ? (
+            <span className="history-confirm" role="group" aria-label="Clear">
+              Delete all {history.length}?
+              <Button variant="danger" onClick={clearAll}>
+                Delete all
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirmingClear(false)}>
+                Keep them
+              </Button>
+            </span>
           ) : (
-            <div className="gallery-grid">
-              {history.map((item) => (
-                <div
-                  key={item.id}
-                  className={`gallery-item ${
-                    selectedItems.includes(item) ? "selected" : ""
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={selectedItems.includes(item)}
-                  aria-label={`${formatDate(item.timestamp)}, ${item.options.width} characters wide`}
-                  onClick={(e) => handleItemClick(item, e)}
-                  onKeyDown={(e) => handleItemKeyDown(item, e)}
-                >
-                  <div className="gallery-item-preview">
+            <Button variant="danger" onClick={() => setConfirmingClear(true)}>
+              Clear all…
+            </Button>
+          ))}
+      </div>
+
+      <div className="history-content">
+        {isLoading ? (
+          <div className="stage-message" role="status">
+            <div className="progress-track" aria-hidden="true">
+              <div className="progress-fill progress-indeterminate" />
+            </div>
+            <p>Loading history...</p>
+          </div>
+        ) : history.length === 0 ? (
+          <div className="stage-message">
+            <Icon name="history" size={32} />
+            <p className="stage-title">No history yet</p>
+            <p>Every conversion you make with Convert is kept here</p>
+          </div>
+        ) : (
+          <ul className="history-grid">
+            {history.map((item) => {
+              const description = `${formatDate(item.timestamp)}, ${describeEntry(item)}`;
+              return (
+                <li key={item.id} className="history-card">
+                  <div className="history-thumb" aria-hidden="true">
                     <pre
                       dangerouslySetInnerHTML={{ __html: item.thumb || "" }}
                     />
                   </div>
-                  <div className="gallery-item-info">
-                    <span className="gallery-item-date">
-                      {formatDate(item.timestamp)}
-                    </span>
-                    <span className="gallery-item-settings">
-                      {item.options.width}ch · {item.options.charset}
-                    </span>
+                  <div className="history-info">
+                    <div className="history-text">
+                      <span className="history-date">
+                        {formatDate(item.timestamp)}
+                      </span>
+                      <span className="history-meta">
+                        {describeEntry(item)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => openEntry(item)}
+                      disabled={isOpening}
+                      aria-label={`Open ${description}`}
+                    >
+                      Open
+                    </button>
+                    <IconButton
+                      title={`Delete ${description}`}
+                      variant="danger"
+                      onClick={() => deleteEntries([item])}
+                    >
+                      <Icon name="trash" />
+                    </IconButton>
                   </div>
-                  {selectedItems.includes(item) && (
-                    <div className="gallery-item-checkmark">✓</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {selectedItems.length > 0 && (
-          <div className="gallery-footer">
-            <button
-              className="gallery-btn gallery-btn-delete"
-              onClick={handleDeleteItems}
-            >
-              Delete ({selectedItems.length})
-            </button>
-            <div className="gallery-footer-right">
-              <button
-                className="gallery-btn gallery-btn-load"
-                onClick={handleLoadItem}
-                disabled={selectedItems.length !== 1 || isOpening}
-                style={{ opacity: selectedItems.length !== 1 ? 0.5 : 1 }}
-              >
-                Load Selected
-              </button>
-              <button
-                className="gallery-btn gallery-btn-cancel"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>

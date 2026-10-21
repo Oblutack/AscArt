@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import Icon from "./Icon";
 
 // Errors stay up a bit longer than plain notices
 const DURATION_MS = { info: 4000, error: 8000 };
@@ -24,7 +25,7 @@ const Toast = ({ toast, onDismiss }) => {
         onClick={onDismiss}
         aria-label="Dismiss"
       >
-        ×
+        <Icon name="close" size={12} />
       </button>
     </div>
   );

@@ -53,8 +53,15 @@ function App() {
   });
 
   // Picking a file replaces the camera as the source
-  const { imagePath, imagePreview, imageName, isVideo, loadImage, clearImage } =
-    useImageInput({ showToast, onLoad: camera.stop });
+  const {
+    imagePath,
+    imagePreview,
+    imageName,
+    isVideo,
+    isDragging,
+    loadImage,
+    clearImage,
+  } = useImageInput({ showToast, onLoad: camera.stop });
 
   useLivePreview({
     enabled:
@@ -254,11 +261,24 @@ function App() {
             gifFrames={art.frames}
             gifDelays={art.delays}
             onStopProcessing={stop}
+            hasSource={!!imagePath || camera.active}
+            onOpen={openFilePicker}
+            onCamera={camera.start}
+            cameraBusy={camera.starting}
           />
         </section>
       </div>
 
       <Toast toast={toast} onDismiss={dismissToast} />
+
+      {isDragging && (
+        <div className="drop-overlay" aria-hidden="true">
+          <div className="drop-overlay-box">
+            <Icon name="drop" size={28} />
+            Drop to open
+          </div>
+        </div>
+      )}
 
       {showGallery && (
         <GalleryView

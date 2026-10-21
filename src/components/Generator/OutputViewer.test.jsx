@@ -26,9 +26,32 @@ const art = (container) => container.querySelector(".ascii-display");
 const advance = (ms) => act(() => vi.advanceTimersByTime(ms));
 
 describe("a still image", () => {
-  it("shows a placeholder when there is nothing yet", () => {
-    render(<OutputViewer {...still} asciiArt="" />);
+  it("with nothing loaded, offers to open a file or use the camera", async () => {
+    const onOpen = vi.fn();
+    const onCamera = vi.fn();
+    render(
+      <OutputViewer
+        {...still}
+        asciiArt=""
+        onOpen={onOpen}
+        onCamera={onCamera}
+      />,
+    );
+
+    expect(screen.getByText("Drop a picture, GIF or video")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Open a file" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Use the camera" }),
+    );
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(onCamera).toHaveBeenCalledTimes(1);
+  });
+
+  it("with a file loaded but not converted yet, says to convert", () => {
+    render(<OutputViewer {...still} asciiArt="" hasSource />);
     expect(screen.getByText("No output yet")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open a file" })).toBeNull();
   });
 
   it("shows the art, colors included", () => {

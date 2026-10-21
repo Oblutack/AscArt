@@ -1,42 +1,66 @@
-/* Toast notifications */
+/* Notices that come and go above the status bar */
+
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 44px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: 70%;
-  padding: 12px 20px;
-  background: rgba(var(--shadow-grey-rgb), 0.97);
-  border: 2px solid var(--pale-slate-2);
-  border-radius: 6px;
-  color: var(--alabaster);
-  font-family: var(--font);
-  font-size: 12px;
-  line-height: 1.4;
+  z-index: 1000;
+  max-width: min(560px, 80%);
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  z-index: 10000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-2) var(--space-2) var(--space-2) 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  animation: toast-in 160ms ease-out;
+}
+
+/* A dot in the notice's colour: blue for news, red for problems */
+.toast::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .toast-error {
-  border-color: var(--danger);
-  color: var(--danger-soft);
+  border-color: rgba(247, 118, 142, 0.45);
+}
+
+.toast-error::before {
+  background: var(--danger);
+}
+
+.toast-message {
+  overflow-wrap: anywhere;
 }
 
 .toast-dismiss {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
   background: transparent;
-  border: none;
-  color: inherit;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0 2px;
-  cursor: pointer;
-  opacity: 0.7;
+  color: var(--text-muted);
 }
 
-.toast-dismiss:hover,
-.toast-dismiss:focus-visible {
-  opacity: 1;
+.toast-dismiss:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
 }

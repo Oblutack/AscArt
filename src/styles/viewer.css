@@ -75,6 +75,65 @@
   }
 }
 
+/* ---------- Nothing loaded yet: a place to drop a file ---------- */
+
+.drop-target {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 44px 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.drop-target .stage-title {
+  font-size: var(--text-xl);
+}
+
+.drop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.drop-formats {
+  margin-top: 6px;
+  font-size: var(--text-xs);
+}
+
+/* While files are dragged over the window */
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: rgba(11, 12, 16, 0.82);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+.drop-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.drop-overlay-box .icon {
+  color: var(--accent);
+}
+
 /* ---------- Floating controls: playback and zoom ---------- */
 
 .stage-controls {

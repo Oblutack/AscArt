@@ -6,6 +6,7 @@ import { isImageFile, isVideoFile } from "../lib/paths";
  * The image the user picked (a preview to show, a path for the backend) and
  * dropping images anywhere in the window. Without the window-level handlers a
  * drop outside the preview box would make the window navigate to the file.
+ * `isDragging` is true while files are dragged over the window.
  */
 export function useImageInput({ showToast, onLoad }) {
   const [imagePath, setImagePath] = useState(
@@ -18,6 +19,7 @@ export function useImageInput({ showToast, onLoad }) {
     /** @type {string | null} */ (null),
   );
   const [isVideo, setIsVideo] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Told whenever a file is picked or dropped (the app turns the camera off)
   const onLoadRef = useRef(onLoad);
@@ -55,9 +57,27 @@ export function useImageInput({ showToast, onLoad }) {
   }, []);
 
   useEffect(() => {
+    // dragenter and dragleave fire for every element the pointer crosses, so
+    // count them: the drag has left the window when the count is back to 0
+    let depth = 0;
+    const carriesFiles = (e) =>
+      Array.from(e.dataTransfer?.types ?? []).includes("Files");
+
+    const handleDragEnter = (e) => {
+      if (!carriesFiles(e)) return;
+      depth += 1;
+      setIsDragging(true);
+    };
+    const handleDragLeave = (e) => {
+      if (!carriesFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setIsDragging(false);
+    };
     const handleDragOver = (e) => e.preventDefault();
     const handleDrop = (e) => {
       e.preventDefault();
+      depth = 0;
+      setIsDragging(false);
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
 
@@ -71,9 +91,13 @@ export function useImageInput({ showToast, onLoad }) {
       }
     };
 
+    window.addEventListener("dragenter", handleDragEnter);
+    window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("drop", handleDrop);
     return () => {
+      window.removeEventListener("dragenter", handleDragEnter);
+      window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("drop", handleDrop);
     };
@@ -84,6 +108,7 @@ export function useImageInput({ showToast, onLoad }) {
     imagePreview,
     imageName,
     isVideo,
+    isDragging,
     loadImage,
     clearImage,
   };

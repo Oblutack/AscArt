@@ -160,3 +160,44 @@ describe("videos", () => {
     expect(result.current.isVideo).toBe(false);
   });
 });
+
+describe("dragging files over the window", () => {
+  const drag = (type, types = ["Files"]) => {
+    const event = new Event(type, { cancelable: true });
+    event.dataTransfer = { types, files: [] };
+    act(() => {
+      window.dispatchEvent(event);
+    });
+  };
+
+  it("is dragging from when files come in until they leave", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+    expect(result.current.isDragging).toBe(false);
+
+    drag("dragenter");
+    expect(result.current.isDragging).toBe(true);
+
+    // crossing into a child element: one more enter, then a leave
+    drag("dragenter");
+    drag("dragleave");
+    expect(result.current.isDragging).toBe(true);
+
+    drag("dragleave");
+    expect(result.current.isDragging).toBe(false);
+  });
+
+  it("stops when the files are dropped", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+    drag("dragenter");
+
+    drop([png()]);
+
+    expect(result.current.isDragging).toBe(false);
+  });
+
+  it("ignores dragging things that aren't files, like selected text", () => {
+    const { result } = renderHook(() => useImageInput({ showToast }));
+    drag("dragenter", ["text/plain"]);
+    expect(result.current.isDragging).toBe(false);
+  });
+});

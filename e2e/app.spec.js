@@ -490,13 +490,11 @@ test.describe("history", () => {
     await choose(page, "detailed");
     await choose(page, "Original");
     await page.getByRole("button", { name: "History" }).click();
-    const tile = page.getByRole("button", { name: /characters wide/ });
-    await tile.focus();
-    await page.keyboard.press("Space");
-    await expect(tile).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Load Selected" }).click();
+    const open = page.getByRole("button", { name: /^Open .*characters wide/ });
+    await open.focus();
+    await page.keyboard.press("Enter");
 
-    await expect(page.getByText("History / Gallery")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("radio", { name: "blocks" })).toBeChecked();
     await expect(page.getByRole("radio", { name: "Sepia" })).toBeChecked();
     expect(await art(page).innerHTML()).toBe(converted);
@@ -508,8 +506,9 @@ test.describe("history", () => {
     await expect.poll(async () => (await historyList(page)).length).toBe(1);
 
     await page.getByRole("button", { name: "History" }).click();
-    await page.getByRole("button", { name: /characters wide/ }).click();
-    await page.getByRole("button", { name: /Delete \(1\)/ }).click();
+    await page
+      .getByRole("button", { name: /^Delete .*characters wide/ })
+      .click();
 
     await expect(page.getByText("No history yet")).toBeVisible();
     expect(await historyList(page)).toHaveLength(0);
@@ -531,10 +530,21 @@ test.describe("widgets", () => {
     expect(await widget.evaluate(() => typeof window.require)).toBe(
       "undefined",
     );
+    // it starts at a size that fits the window, and can be made larger
+    const size = widget.locator("#size-info");
+    const before = parseInt((await size.textContent()) ?? "", 10);
+    expect(before).toBeGreaterThanOrEqual(2);
+    expect(
+      await widget.evaluate(() => {
+        const art = document.getElementById("ascii-content");
+        const box = document.getElementById("ascii-display");
+        return art.scrollWidth <= box.clientWidth;
+      }),
+    ).toBe(true);
     await widget.locator('[data-action="larger"]').click();
-    await expect(widget.locator("#size-info")).toHaveText("7px");
+    await expect(size).toHaveText(`${before + 1}px`);
 
-    await widget.getByRole("button", { name: "Close Widget" }).click();
+    await widget.getByRole("button", { name: "Close widget" }).click();
     await expect.poll(() => app.windows().length).toBe(1);
   });
 
@@ -783,9 +793,7 @@ test.describe("the keyboard", () => {
     await expect.poll(() => fs.existsSync(target)).toBe(true);
 
     await page.keyboard.press("Control+h");
-    await expect(
-      page.getByRole("dialog", { name: "History / Gallery" }),
-    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "History" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
