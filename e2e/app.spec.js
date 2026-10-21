@@ -69,10 +69,14 @@ const test = base.extend({
 
 const art = (page) => page.locator(".ascii-display");
 
-// The checkbox itself is visually hidden behind a custom checkmark, so click
-// the label (which is what a person does)
+// Checkboxes, switches and the segmented choices are visually hidden inputs
+// inside their labels, so click the label (which is what a person does)
 const toggle = (page, label) =>
-  page.locator("label.toggle-container", { hasText: label }).click();
+  page.locator("label", { hasText: new RegExp(`^${label}$`) }).click();
+const choose = (page, name) =>
+  page
+    .locator("label", { has: page.getByRole("radio", { name, exact: true }) })
+    .click();
 const convert = (page) =>
   page.getByRole("button", { name: "Convert", exact: true });
 
@@ -145,7 +149,7 @@ test.describe("a picture", () => {
     await expect(art(page).locator("span").first()).toBeVisible();
     const colorful = await art(page).innerHTML();
 
-    await page.getByLabel("Colors:").selectOption("grayscale");
+    await choose(page, "Grayscale");
 
     await expect.poll(() => art(page).innerHTML()).not.toBe(colorful);
     // grayscale means r = g = b in every color
@@ -166,7 +170,7 @@ test.describe("a picture", () => {
     await page.locator("#file-input").setInputFiles(PHOTO);
     await expect(art(page).locator("span").first()).toBeVisible();
 
-    await page.getByLabel("Style:").selectOption("blocks");
+    await choose(page, "blocks");
 
     await expect
       .poll(async () => await art(page).textContent())
@@ -180,8 +184,8 @@ test.describe("a picture", () => {
     await page.locator("#file-input").setInputFiles(PHOTO);
     await expect(art(page).locator("span").first()).toBeVisible();
 
-    await page.getByLabel("Style:").selectOption("custom");
-    await page.getByLabel("Chars:").fill("AB");
+    await choose(page, "custom");
+    await page.getByLabel("Your characters").fill("AB");
 
     await expect
       .poll(async () =>
@@ -189,7 +193,7 @@ test.describe("a picture", () => {
       )
       .toMatch(/^[AB]+$/);
     // a ramp that can't work is explained instead of sent
-    await page.getByLabel("Chars:").fill("A");
+    await page.getByLabel("Your characters").fill("A");
     await expect(page.getByRole("alert")).toContainText("at least 2");
   });
 
@@ -199,7 +203,7 @@ test.describe("a picture", () => {
     await page.locator("#file-input").setInputFiles(PHOTO);
     await expect(art(page).locator("span").first()).toBeVisible();
 
-    await toggle(page, "DITHER");
+    await toggle(page, "Halftone");
 
     await expect
       .poll(async () => (await art(page).textContent()) ?? "")
@@ -207,10 +211,10 @@ test.describe("a picture", () => {
     expect(await art(page).locator("span").count()).toBe(0); // no colors in halftone
   });
 
-  test("with live preview off nothing converts until CONVERT", async ({
+  test("with live preview off nothing converts until Convert", async ({
     ascart: { page },
   }) => {
-    await toggle(page, "Live Preview");
+    await toggle(page, "Live preview");
     await page.locator("#file-input").setInputFiles(PHOTO);
     await expect(page.getByAltText("Preview")).toBeVisible();
 
@@ -473,8 +477,8 @@ test.describe("history", () => {
     ascart: { page },
   }) => {
     await page.locator("#file-input").setInputFiles(PHOTO);
-    await page.getByLabel("Style:").selectOption("blocks");
-    await page.getByLabel("Colors:").selectOption("sepia");
+    await choose(page, "blocks");
+    await choose(page, "Sepia");
     await expect
       .poll(async () => (await art(page).textContent()) ?? "")
       .toMatch(/[█▓▒░]/);
@@ -483,8 +487,8 @@ test.describe("history", () => {
     const converted = await art(page).innerHTML();
 
     // change everything, then bring the old result back from history
-    await page.getByLabel("Style:").selectOption("detailed");
-    await page.getByLabel("Colors:").selectOption("original");
+    await choose(page, "detailed");
+    await choose(page, "Original");
     await page.getByRole("button", { name: "History" }).click();
     const tile = page.getByRole("button", { name: /characters wide/ });
     await tile.focus();
@@ -493,8 +497,8 @@ test.describe("history", () => {
     await page.getByRole("button", { name: "Load Selected" }).click();
 
     await expect(page.getByText("History / Gallery")).toHaveCount(0);
-    await expect(page.getByLabel("Style:")).toHaveValue("blocks");
-    await expect(page.getByLabel("Colors:")).toHaveValue("sepia");
+    await expect(page.getByRole("radio", { name: "blocks" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Sepia" })).toBeChecked();
     expect(await art(page).innerHTML()).toBe(converted);
   });
 
@@ -690,7 +694,7 @@ test.describe("the camera", () => {
     await expect.poll(() => art(page).innerHTML()).not.toBe(first);
 
     // settings apply to the next frame
-    await page.getByLabel("Style:").selectOption("blocks");
+    await choose(page, "blocks");
     await expect
       .poll(async () => (await art(page).textContent()) ?? "")
       .toMatch(/[█▓▒░]/);
@@ -751,7 +755,7 @@ test.describe("the keyboard", () => {
     ascart: { page },
   }) => {
     const invert = page
-      .locator("label.toggle-container", { hasText: "INVERT" })
+      .locator("label.toggle-container", { hasText: "Invert" })
       .locator("input");
 
     await invert.focus();
@@ -815,17 +819,21 @@ test.describe("the window", () => {
 
   test("keeps its settings between runs", async ({ userDataDir }) => {
     const first = await launch(userDataDir);
-    await first.page.getByLabel("Colors:").selectOption("cyan");
-    await toggle(first.page, "Live Preview");
-    await toggle(first.page, "INVERT");
+    await choose(first.page, "Cyan");
+    await toggle(first.page, "Live preview");
+    await toggle(first.page, "Invert");
     await first.page.waitForTimeout(500); // saving is asynchronous
     expect(first.problems).toEqual([]);
     await first.app.close();
 
     const second = await launch(userDataDir);
-    await expect(second.page.getByLabel("Colors:")).toHaveValue("cyan");
-    await expect(second.page.getByLabel("Live Preview")).not.toBeChecked();
-    await expect(second.page.getByLabel("INVERT")).toBeChecked();
+    await expect(
+      second.page.getByRole("radio", { name: "Cyan" }),
+    ).toBeChecked();
+    await expect(
+      second.page.getByRole("switch", { name: "Live preview" }),
+    ).not.toBeChecked();
+    await expect(second.page.getByLabel("Invert")).toBeChecked();
     expect(second.problems).toEqual([]);
     await second.app.close();
   });

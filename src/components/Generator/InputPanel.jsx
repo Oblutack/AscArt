@@ -74,7 +74,7 @@ const InputPanel = ({
         </Button>
       </div>
       <Toggle
-        label="Remove Background"
+        label="Remove background"
         checked={removeBackground}
         onChange={setRemoveBackground}
       />

@@ -20,6 +20,8 @@ const chooseImage = async (name = "cat.png") => {
 };
 
 const convertButton = () => screen.getByRole("button", { name: /^Convert/ });
+const widthField = () =>
+  screen.getByRole("spinbutton", { name: "Width in characters" });
 const output = () => document.querySelector(".ascii-display");
 
 // The newest conversion the app asked for
@@ -33,7 +35,9 @@ describe("start", () => {
     render(<App />);
 
     expect(screen.getByText("No output yet")).toBeInTheDocument();
-    expect(screen.getByLabelText("Style:")).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Characters" }),
+    ).toBeInTheDocument();
     expect(convertButton()).toBeDisabled(); // no image yet
     await waitFor(() => expect(fake.api.loadSettings).toHaveBeenCalled());
   });
@@ -45,16 +49,16 @@ describe("start", () => {
     render(<App />);
 
     await waitFor(() =>
-      expect(screen.getByLabelText("Colors:")).toHaveValue("sepia"),
+      expect(screen.getByRole("radio", { name: "Sepia" })).toBeChecked(),
     );
-    expect(screen.getByText("150")).toBeInTheDocument();
+    expect(widthField()).toHaveValue(150);
   });
 
   it("saves a setting when it changes", async () => {
     render(<App />);
     await waitFor(() => expect(fake.api.saveSettings).toHaveBeenCalled());
 
-    await userEvent.selectOptions(screen.getByLabelText("Colors:"), "cyan");
+    await userEvent.click(screen.getByRole("radio", { name: "Cyan" }));
 
     expect(fake.api.saveSettings).toHaveBeenLastCalledWith(
       expect.objectContaining({ colorScheme: "cyan" }),
@@ -88,7 +92,7 @@ describe("converting", () => {
   it("Convert shows a spinner, keeps the result in history and enables saving", async () => {
     render(<App />);
     await chooseImage();
-    await userEvent.click(screen.getByLabelText("Live Preview")); // switch live preview off
+    await userEvent.click(screen.getByLabelText("Live preview")); // switch live preview off
     fake.api.convert.mockClear();
 
     await userEvent.click(convertButton());
@@ -112,7 +116,7 @@ describe("converting", () => {
     await chooseImage();
     await waitFor(() => expect(fake.api.convert).toHaveBeenCalledTimes(1));
 
-    await userEvent.selectOptions(screen.getByLabelText("Style:"), "blocks");
+    await userEvent.click(screen.getByRole("radio", { name: "blocks" }));
 
     await waitFor(() => expect(fake.api.convert).toHaveBeenCalledTimes(2));
     expect(lastConvert().options.charset).toBe("blocks");
@@ -120,7 +124,7 @@ describe("converting", () => {
 
   it("with live preview off, nothing happens until Convert", async () => {
     render(<App />);
-    await userEvent.click(screen.getByLabelText("Live Preview"));
+    await userEvent.click(screen.getByLabelText("Live preview"));
     await chooseImage();
 
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -154,7 +158,7 @@ describe("converting", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     render(<App />);
     await chooseImage();
-    await userEvent.click(screen.getByLabelText("Live Preview"));
+    await userEvent.click(screen.getByLabelText("Live preview"));
     await userEvent.click(convertButton());
 
     await fake.emit({
@@ -333,9 +337,9 @@ describe("history", () => {
     });
 
     expect(output().innerHTML).toBe(ART);
-    expect(screen.getByLabelText("Style:")).toHaveValue("blocks");
-    expect(screen.getByLabelText("Colors:")).toHaveValue("sepia");
-    expect(screen.getByText("80")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "blocks" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Sepia" })).toBeChecked();
+    expect(widthField()).toHaveValue(80);
     expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
 
     // and live preview must not now overwrite the loaded art with the old image
@@ -378,7 +382,7 @@ describe("keyboard shortcuts", () => {
 
   it("Ctrl+Enter converts and saves to history", async () => {
     await showArt();
-    await userEvent.click(screen.getByLabelText("Live Preview"));
+    await userEvent.click(screen.getByLabelText("Live preview"));
     fake.api.convert.mockClear();
 
     await userEvent.keyboard("{Control>}{Enter}{/Control}");
@@ -449,8 +453,8 @@ describe("keyboard shortcuts", () => {
 
 describe("custom characters", () => {
   const chooseCustom = async () => {
-    await userEvent.selectOptions(screen.getByLabelText("Style:"), "custom");
-    const field = screen.getByLabelText("Chars:");
+    await userEvent.click(screen.getByRole("radio", { name: "custom" }));
+    const field = screen.getByLabelText("Your characters");
     await userEvent.clear(field);
     return field;
   };
@@ -476,9 +480,9 @@ describe("custom characters", () => {
     render(<App />);
     await chooseImage();
     await waitFor(() => expect(fake.api.convert).toHaveBeenCalled());
-    await userEvent.click(screen.getByLabelText("Live Preview")); // off
+    await userEvent.click(screen.getByLabelText("Live preview")); // off
     fake.api.convert.mockClear();
-    await userEvent.click(screen.getByLabelText("Live Preview")); // on again
+    await userEvent.click(screen.getByLabelText("Live preview")); // on again
 
     const field = await chooseCustom();
     await userEvent.type(field, "A");
@@ -495,7 +499,7 @@ describe("custom characters", () => {
   it("Convert with an invalid ramp shows the problem instead of converting", async () => {
     render(<App />);
     await chooseImage();
-    await userEvent.click(screen.getByLabelText("Live Preview"));
+    await userEvent.click(screen.getByLabelText("Live preview"));
     await chooseCustom();
     fake.api.convert.mockClear();
 
@@ -539,7 +543,7 @@ describe("camera", () => {
     await userEvent.click(cameraButton());
     await waitFor(() => expect(fake.api.convertFrame).toHaveBeenCalled());
 
-    await userEvent.selectOptions(screen.getByLabelText("Style:"), "blocks");
+    await userEvent.click(screen.getByRole("radio", { name: "blocks" }));
     // answer the frame that was in flight so the next one can go out
     await fake.emit({
       type: "ascii-result",
@@ -595,7 +599,7 @@ describe("camera", () => {
     fake.api.convert.mockClear();
 
     await userEvent.click(cameraButton());
-    await userEvent.selectOptions(screen.getByLabelText("Style:"), "blocks");
+    await userEvent.click(screen.getByRole("radio", { name: "blocks" }));
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     expect(fake.api.convert).not.toHaveBeenCalled();
@@ -617,8 +621,8 @@ describe("camera", () => {
 
   it("doesn't send a half-typed character set", async () => {
     render(<App />);
-    await userEvent.selectOptions(screen.getByLabelText("Style:"), "custom");
-    await userEvent.clear(screen.getByLabelText("Chars:"));
+    await userEvent.click(screen.getByRole("radio", { name: "custom" }));
+    await userEvent.clear(screen.getByLabelText("Your characters"));
 
     await userEvent.click(cameraButton());
     await screen.findByRole("button", { name: "Stop camera" });

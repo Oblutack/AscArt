@@ -21,7 +21,7 @@ const AdjustmentPanel = ({
       </h2>
       <button type="button" className="link-button" onClick={onReset}>
         <Icon name="reset" size={12} />
-        RESET
+        Reset
       </button>
     </div>
     <Slider
@@ -44,8 +44,18 @@ const AdjustmentPanel = ({
       showValue={true}
     />
     <div className="toggle-row">
-      <Toggle label="INVERT" checked={invert} onChange={setInvert} />
-      <Toggle label="DITHER" checked={dither} onChange={setDither} />
+      <Toggle
+        label="Invert"
+        title="Swap light and dark"
+        checked={invert}
+        onChange={setInvert}
+      />
+      <Toggle
+        label="Halftone"
+        title="Black and white dots, like a newspaper photo"
+        checked={dither}
+        onChange={setDither}
+      />
     </div>
   </section>
 );

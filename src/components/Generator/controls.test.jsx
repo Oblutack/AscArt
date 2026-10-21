@@ -5,9 +5,9 @@ import AdjustmentPanel from "./AdjustmentPanel";
 import InputPanel from "./InputPanel";
 import StatusBar from "./StatusBar";
 import Toolbar from "./Toolbar";
-import WidthPanel from "./WidthPanel";
+import StylePanel from "./StylePanel";
 
-describe("WidthPanel", () => {
+describe("StylePanel", () => {
   const props = {
     width: 120,
     setWidth: vi.fn(),
@@ -20,35 +20,124 @@ describe("WidthPanel", () => {
     colorScheme: "original",
     setColorScheme: vi.fn(),
   };
+  const radio = (name) => screen.getByRole("radio", { name });
 
-  it("labels each dropdown, so screen readers and getByLabelText find them", () => {
-    render(<WidthPanel {...props} />);
+  it("names each group of choices and marks the current one", () => {
+    render(<StylePanel {...props} />);
 
-    expect(screen.getByLabelText("Ratio:")).toHaveValue("--");
-    expect(screen.getByLabelText("Style:")).toHaveValue("detailed");
-    expect(screen.getByLabelText("Colors:")).toHaveValue("original");
+    expect(screen.getByRole("group", { name: "Characters" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Shape" })).toBeVisible();
+    expect(radio("detailed")).toBeChecked();
+    expect(radio("Original")).toBeChecked();
+    expect(radio("auto")).toBeChecked();
   });
 
   it("offers the character sets the backend has, plus a custom one", () => {
-    render(<WidthPanel {...props} />);
-    const options = [...screen.getByLabelText("Style:").options].map(
-      (o) => o.value,
-    );
-    expect(options).toEqual(["detailed", "blocks", "custom"]);
+    render(<StylePanel {...props} />);
+    const group = screen.getByRole("group", { name: "Characters" });
+    const values = [...group.querySelectorAll("input")].map((i) => i.value);
+    expect(values).toEqual(["detailed", "blocks", "custom"]);
+  });
+
+  it("offers all eight colour schemes", () => {
+    render(<StylePanel {...props} />);
+    const group = screen.getByRole("group", { name: /Colors/ });
+    expect(group.querySelectorAll("input")).toHaveLength(8);
   });
 
   it("passes changes up", async () => {
-    const setColorScheme = vi.fn();
-    render(<WidthPanel {...props} setColorScheme={setColorScheme} />);
+    const handlers = {
+      setColorScheme: vi.fn(),
+      setCharset: vi.fn(),
+      setRatio: vi.fn(),
+    };
+    render(<StylePanel {...props} {...handlers} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Colors:"), "sepia");
+    await userEvent.click(radio("Sepia"));
+    await userEvent.click(radio("blocks"));
+    await userEvent.click(radio("16:9"));
 
-    expect(setColorScheme).toHaveBeenCalledWith("sepia");
+    expect(handlers.setColorScheme).toHaveBeenCalledWith("sepia");
+    expect(handlers.setCharset).toHaveBeenCalledWith("blocks");
+    expect(handlers.setRatio).toHaveBeenCalledWith("16:9");
   });
 
+  it("the arrow keys move between choices", async () => {
+    const setCharset = vi.fn();
+    render(<StylePanel {...props} setCharset={setCharset} />);
+
+    radio("detailed").focus();
+    await userEvent.keyboard("{ArrowRight}");
+
+    expect(setCharset).toHaveBeenCalledWith("blocks");
+  });
+});
+
+describe("StylePanel width", () => {
+  const props = {
+    width: 120,
+    setWidth: vi.fn(),
+    ratio: "--",
+    setRatio: vi.fn(),
+    keepOriginal: false,
+    setKeepOriginal: vi.fn(),
+    charset: "detailed",
+    setCharset: vi.fn(),
+    colorScheme: "original",
+    setColorScheme: vi.fn(),
+  };
+  const field = () =>
+    screen.getByRole("spinbutton", { name: "Width in characters" });
+
   it("shows the width", () => {
-    render(<WidthPanel {...props} width={187} />);
-    expect(screen.getByText("187")).toBeInTheDocument();
+    render(<StylePanel {...props} width={187} />);
+    expect(field()).toHaveValue(187);
+    expect(screen.getByRole("slider", { name: "Width" })).toHaveValue("187");
+  });
+
+  it("takes a typed width on Enter, not on every key", async () => {
+    const setWidth = vi.fn();
+    render(<StylePanel {...props} setWidth={setWidth} />);
+
+    await userEvent.clear(field());
+    await userEvent.type(field(), "150");
+    expect(setWidth).not.toHaveBeenCalled();
+
+    await userEvent.keyboard("{Enter}");
+    expect(setWidth).toHaveBeenCalledWith(150);
+    expect(setWidth).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a typed width within limits", async () => {
+    const setWidth = vi.fn();
+    render(<StylePanel {...props} setWidth={setWidth} />);
+
+    await userEvent.clear(field());
+    await userEvent.type(field(), "5000");
+    await userEvent.tab();
+
+    expect(setWidth).toHaveBeenCalledWith(300);
+    expect(field()).toHaveValue(300);
+  });
+
+  it("puts the width back when the box is left empty or Escape is pressed", async () => {
+    const setWidth = vi.fn();
+    render(<StylePanel {...props} setWidth={setWidth} />);
+
+    await userEvent.clear(field());
+    await userEvent.tab();
+    expect(field()).toHaveValue(120);
+
+    await userEvent.type(field(), "9");
+    await userEvent.keyboard("{Escape}");
+    expect(field()).toHaveValue(120);
+    expect(setWidth).not.toHaveBeenCalled();
+  });
+
+  it("follows the width when it changes elsewhere", () => {
+    const { rerender } = render(<StylePanel {...props} />);
+    rerender(<StylePanel {...props} width={64} />);
+    expect(field()).toHaveValue(64);
   });
 });
 
@@ -150,8 +239,8 @@ describe("AdjustmentPanel", () => {
       />,
     );
 
-    await userEvent.click(screen.getByLabelText("INVERT"));
-    await userEvent.click(screen.getByLabelText("DITHER"));
+    await userEvent.click(screen.getByLabelText("Invert"));
+    await userEvent.click(screen.getByLabelText("Halftone"));
 
     expect(setInvert).toHaveBeenCalledWith(true);
     expect(setDither).toHaveBeenCalledWith(true);
@@ -160,7 +249,7 @@ describe("AdjustmentPanel", () => {
   it("resets", async () => {
     const onReset = vi.fn();
     render(<AdjustmentPanel {...props} onReset={onReset} />);
-    await userEvent.click(screen.getByRole("button", { name: /RESET/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Reset" }));
     expect(onReset).toHaveBeenCalledTimes(1);
   });
 });
@@ -210,13 +299,13 @@ describe("InputPanel", () => {
     const setRemoveBackground = vi.fn();
     render(<InputPanel {...props} setRemoveBackground={setRemoveBackground} />);
 
-    await userEvent.click(screen.getByLabelText("Remove Background"));
+    await userEvent.click(screen.getByLabelText("Remove background"));
 
     expect(setRemoveBackground).toHaveBeenCalledWith(true);
   });
 });
 
-describe("WidthPanel custom characters", () => {
+describe("StylePanel custom characters", () => {
   const props = {
     width: 120,
     setWidth: vi.fn(),
@@ -234,14 +323,14 @@ describe("WidthPanel custom characters", () => {
   };
 
   it("has no field for the built-in sets", () => {
-    render(<WidthPanel {...props} charset="blocks" />);
-    expect(screen.queryByLabelText("Chars:")).not.toBeInTheDocument();
+    render(<StylePanel {...props} charset="blocks" />);
+    expect(screen.queryByLabelText("Your characters")).not.toBeInTheDocument();
   });
 
   it("shows a field with the current characters and a hint", () => {
-    render(<WidthPanel {...props} />);
+    render(<StylePanel {...props} />);
 
-    expect(screen.getByLabelText("Chars:")).toHaveValue("#.");
+    expect(screen.getByLabelText("Your characters")).toHaveValue("#.");
     expect(
       screen.getByText("Darkest first, lightest last"),
     ).toBeInTheDocument();
@@ -250,10 +339,10 @@ describe("WidthPanel custom characters", () => {
   it("passes what is typed up", async () => {
     const setCustomChars = vi.fn();
     render(
-      <WidthPanel {...props} customChars="" setCustomChars={setCustomChars} />,
+      <StylePanel {...props} customChars="" setCustomChars={setCustomChars} />,
     );
 
-    await userEvent.type(screen.getByLabelText("Chars:"), "ab");
+    await userEvent.type(screen.getByLabelText("Your characters"), "ab");
 
     expect(setCustomChars).toHaveBeenLastCalledWith("b");
     expect(setCustomChars).toHaveBeenCalledTimes(2);
@@ -261,10 +350,10 @@ describe("WidthPanel custom characters", () => {
 
   it("shows the problem, marks the field invalid and announces it", () => {
     render(
-      <WidthPanel {...props} customCharsError="Enter at least 2 characters" />,
+      <StylePanel {...props} customCharsError="Enter at least 2 characters" />,
     );
 
-    expect(screen.getByLabelText("Chars:")).toHaveAttribute(
+    expect(screen.getByLabelText("Your characters")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -277,8 +366,11 @@ describe("WidthPanel custom characters", () => {
   });
 
   it("limits the length", () => {
-    render(<WidthPanel {...props} />);
-    expect(screen.getByLabelText("Chars:")).toHaveAttribute("maxLength", "100");
+    render(<StylePanel {...props} />);
+    expect(screen.getByLabelText("Your characters")).toHaveAttribute(
+      "maxLength",
+      "100",
+    );
   });
 });
 

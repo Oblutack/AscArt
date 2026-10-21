@@ -9,7 +9,7 @@ import { useShortcuts } from "./hooks/useShortcuts";
 import { useToast } from "./hooks/useToast";
 import MainLayout from "./layouts/MainLayout";
 import InputPanel from "./components/Generator/InputPanel";
-import WidthPanel from "./components/Generator/WidthPanel";
+import StylePanel from "./components/Generator/StylePanel";
 import AdjustmentPanel from "./components/Generator/AdjustmentPanel";
 import OutputViewer from "./components/Generator/OutputViewer";
 import Toolbar from "./components/Generator/Toolbar";
@@ -18,7 +18,7 @@ import GalleryView from "./components/Gallery/GalleryView";
 import Toast from "./components/Shared/Toast";
 import Button from "./components/Shared/Button";
 import Icon from "./components/Shared/Icon";
-import Toggle from "./components/Shared/Toggle";
+import Switch from "./components/Shared/Switch";
 import { artSize } from "./lib/artSize";
 import { customCharsError } from "./lib/customChars";
 import { openFilePicker } from "./lib/dom";
@@ -190,7 +190,7 @@ function App() {
               cameraStarting={camera.starting}
               onToggleCamera={camera.active ? camera.stop : camera.start}
             />
-            <WidthPanel
+            <StylePanel
               width={settings.width}
               setWidth={setter("width")}
               ratio={settings.ratio}
@@ -218,8 +218,9 @@ function App() {
             />
           </div>
           <div className="sidebar-footer">
-            <Toggle
-              label="Live Preview"
+            <Switch
+              label="Live preview"
+              title="Convert again after every change"
               checked={settings.livePreview}
               onChange={setter("livePreview")}
             />

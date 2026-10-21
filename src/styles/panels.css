@@ -76,20 +76,9 @@
   gap: 6px;
 }
 
-.field-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.field-row > .field-label {
-  width: 64px;
-  flex-shrink: 0;
-}
-
 .field-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
 }
 
@@ -98,9 +87,10 @@
   color: var(--text-muted);
 }
 
-.width-number {
-  color: var(--text-strong);
-  font-variant-numeric: tabular-nums;
+.field-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .field-hint,
