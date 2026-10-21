@@ -170,7 +170,7 @@ body {
 }
 
 .widget-info {
-  min-width: 40px;
+  min-width: 34px;
   text-align: center;
   color: var(--text-muted);
   font-size: 11px;
