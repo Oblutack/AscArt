@@ -11,7 +11,6 @@ import { useId } from "react";
  *   max?: number,
  *   step?: number,
  *   showValue?: boolean,
- *   color?: string,
  * }} props
  * With no visible label, pass ariaLabel so the slider still has a name.
  */
@@ -25,9 +24,10 @@ const Slider = ({
   max = 100,
   step = 1,
   showValue = true,
-  color = "cyan",
 }) => {
   const id = useId();
+  // How far along the track the value is, for the filled part of the track
+  const fill = `${((value - min) / (max - min)) * 100}%`;
 
   return (
     <div className="slider-container">
@@ -53,7 +53,10 @@ const Slider = ({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className={`neon-slider slider-${color}`}
+        className="neon-slider"
+        style={
+          /** @type {import("react").CSSProperties} */ ({ "--fill": fill })
+        }
       />
     </div>
   );

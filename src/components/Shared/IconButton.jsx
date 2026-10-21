@@ -12,7 +12,7 @@
 const IconButton = ({ title, onClick, variant, children }) => (
   <button
     type="button"
-    className={`zoom-btn${variant ? ` zoom-btn-${variant}` : ""}`}
+    className={`icon-btn${variant ? ` icon-btn-${variant}` : ""}`}
     title={title}
     aria-label={title}
     onClick={onClick}
