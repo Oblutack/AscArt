@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"image"
 	"strings"
 	"testing"
@@ -237,6 +238,15 @@ func TestExport(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Errorf("the page lacks %q", want)
 		}
+	}
+}
+
+func TestHTMLPageRowsAreAsTallAsTheConversionAssumed(t *testing.T) {
+	page := twoRows().Export(FormatHTML, NoColor)
+	// Courier New is 0.6 of the font size wide; a row is 1/CellAspect widths
+	want := fmt.Sprintf("line-height: %.2f;", 0.6/CellAspect)
+	if !strings.Contains(page, want) {
+		t.Errorf("the page lacks %q, so the art would look squashed or stretched", want)
 	}
 }
 

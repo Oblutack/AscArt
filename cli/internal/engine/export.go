@@ -55,6 +55,11 @@ func (g *Grid) Export(format Format, profile Profile) string {
 	}
 }
 
+// htmlLineHeight makes each row as tall as the conversion assumed: Courier
+// New is 0.6 of the font size wide, and a row is 1/CellAspect times a
+// character's width, so 0.6/0.55 font sizes. At 1 the art looks squashed.
+const htmlLineHeight = "1.09"
+
 // htmlPage wraps the art in a page that shows it on a dark background.
 func htmlPage(art string) string {
 	return `<!DOCTYPE html>
@@ -63,8 +68,8 @@ func htmlPage(art string) string {
 <meta charset="utf-8">
 <title>ASCII Art</title>
 <style>
-  body { margin: 0; padding: 20px; background: #0a0a0f; }
-  pre { margin: 0; color: #d0d0d0; font-family: "Courier New", Consolas, monospace; font-size: 8px; line-height: 1; white-space: pre; }
+  body { margin: 0; padding: 20px; background: #0b0c10; }
+  pre { margin: 0; color: #d0d0d0; font-family: "Courier New", Consolas, monospace; font-size: 8px; line-height: ` + htmlLineHeight + `; white-space: pre; }
 </style>
 </head>
 <body>
