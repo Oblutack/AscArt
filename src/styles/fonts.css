@@ -1,0 +1,37 @@
+/* JetBrains Mono, bundled so the app never fetches anything. The files live in
+   electron/fonts so the widget window can use them too (license: OFL.txt
+   there). Its characters are 0.6em wide, which is what the converters and
+   LINE_HEIGHT in src/lib/renderArt.js assume, and its block characters fill
+   the whole line, so "blocks" art has no gaps. */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  src: url("../../electron/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+  src: url("../../electron/fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+  src: url("../../electron/fonts/JetBrainsMono-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+  src: url("../../electron/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+}

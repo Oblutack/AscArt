@@ -4,7 +4,8 @@ import { GIFEncoder, applyPalette, quantize } from "gifenc";
 
 const BACKGROUND = "#212529"; // the page's --shadow-grey
 const DEFAULT_COLOR = "#d0d0d0"; // uncolored art (halftone)
-const FONT_FAMILY = '"Courier New", Consolas, "DejaVu Sans Mono", monospace';
+const FONT_FAMILY =
+  '"JetBrains Mono", "Courier New", Consolas, "DejaVu Sans Mono", monospace';
 
 // A monospace glyph is about this much wider than the font size
 const GLYPH_ASPECT = 0.6;

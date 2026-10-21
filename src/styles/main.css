@@ -1,4 +1,5 @@
 /* The app's styles, one file per area. Vite inlines the imports. */
+@import "./fonts.css";
 @import "./tokens.css";
 @import "./base.css";
 @import "./layout.css";
