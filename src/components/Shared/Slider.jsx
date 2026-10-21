@@ -34,7 +34,7 @@ const Slider = ({
       <div className="slider-header">
         {label && (
           <label className="slider-label" htmlFor={id}>
-            {label}:
+            {label}
           </label>
         )}
         {showValue && (

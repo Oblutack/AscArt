@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import Button from "./Button";
 import IconButton from "./IconButton";
 import Slider from "./Slider";
+import Switch from "./Switch";
 import Toggle from "./Toggle";
 
 describe("Slider", () => {
   it("is named by its label", () => {
     render(<Slider label="Brightness" value={5} onChange={() => {}} />);
-    expect(screen.getByLabelText("Brightness:")).toHaveValue("5");
+    expect(screen.getByLabelText("Brightness")).toHaveValue("5");
   });
 
   it("shows no stray colon without a label, and is named by ariaLabel", () => {
@@ -52,8 +53,8 @@ describe("Slider", () => {
         <Slider label="B" value={2} onChange={() => {}} />
       </>,
     );
-    expect(screen.getByLabelText("A:")).toHaveValue("1");
-    expect(screen.getByLabelText("B:")).toHaveValue("2");
+    expect(screen.getByLabelText("A")).toHaveValue("1");
+    expect(screen.getByLabelText("B")).toHaveValue("2");
   });
 });
 
@@ -64,6 +65,35 @@ describe("Toggle", () => {
 
     await userEvent.tab();
     expect(screen.getByLabelText("Invert")).toHaveFocus();
+    await userEvent.keyboard(" ");
+
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+});
+
+describe("Switch", () => {
+  it("is announced as a switch and turns on and off", async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <Switch label="Live preview" checked onChange={onChange} />,
+    );
+    const toggle = screen.getByRole("switch", { name: "Live preview" });
+    expect(toggle).toBeChecked();
+
+    await userEvent.click(toggle);
+    expect(onChange).toHaveBeenCalledWith(false);
+
+    rerender(
+      <Switch label="Live preview" checked={false} onChange={onChange} />,
+    );
+    expect(toggle).not.toBeChecked();
+  });
+
+  it("works from the keyboard", async () => {
+    const onChange = vi.fn();
+    render(<Switch label="Live preview" checked={false} onChange={onChange} />);
+
+    await userEvent.tab();
     await userEvent.keyboard(" ");
 
     expect(onChange).toHaveBeenCalledWith(true);

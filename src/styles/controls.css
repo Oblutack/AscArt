@@ -228,39 +228,172 @@
   transform: scale(1.15);
 }
 
-/* ---------- Dropdowns and text fields ---------- */
+/* ---------- Text and number fields ---------- */
 
-.neon-dropdown,
-.text-input {
-  flex: 1;
-  min-width: 0;
+.text-input,
+.number-input {
   height: 30px;
   padding: 0 var(--space-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background-color: var(--bg);
+  background: var(--bg);
   color: var(--text-strong);
   transition: border-color var(--duration);
 }
 
-.neon-dropdown {
-  appearance: none;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a90a3' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
+.text-input {
+  width: 100%;
 }
 
-.neon-dropdown:hover,
-.text-input:hover {
+.text-input:hover,
+.number-input:hover {
   border-color: var(--line-input);
-}
-
-.neon-dropdown option {
-  background: var(--bg-raised);
-  color: var(--text-strong);
 }
 
 .text-input[aria-invalid="true"] {
   border-color: var(--danger);
+}
+
+.number-input {
+  width: 52px;
+  height: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+}
+
+.number-input::-webkit-inner-spin-button,
+.number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------- Choices: segmented buttons and swatches ---------- */
+
+.choice-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-field > legend {
+  width: 100%;
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+}
+
+.segmented-option {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.segmented-option > span {
+  flex: 1;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-1);
+  border-radius: 5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--duration),
+    color var(--duration);
+}
+
+.segmented-option:hover > span {
+  color: var(--text);
+}
+
+.segmented-option > input:checked + span {
+  background: var(--bg-selected);
+  color: var(--text-strong);
+}
+
+.segmented-option > input:focus-visible + span,
+.swatch > input:focus-visible + .swatch-chip {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.swatch {
+  display: flex;
+  cursor: pointer;
+}
+
+.swatch-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: transform var(--duration);
+}
+
+.swatch:hover .swatch-chip {
+  transform: scale(1.1);
+}
+
+.swatch > input:checked + .swatch-chip {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Switch ---------- */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch-track {
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--line-input);
+  transition: background var(--duration);
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-strong);
+  transition: transform var(--duration);
+}
+
+.switch > input:checked + .switch-track {
+  background: var(--accent);
+}
+
+.switch > input:checked + .switch-track > .switch-thumb {
+  transform: translateX(14px);
+  background: var(--on-accent);
+}
+
+.switch > input:focus-visible + .switch-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

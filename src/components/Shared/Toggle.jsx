@@ -4,11 +4,12 @@
  *   checked: boolean,
  *   onChange: (checked: boolean) => void,
  *   icon?: import("react").ReactNode,
+ *   title?: string,
  * }} props
  */
-const Toggle = ({ label, checked, onChange, icon }) => {
+const Toggle = ({ label, checked, onChange, icon, title }) => {
   return (
-    <label className="toggle-container">
+    <label className="toggle-container" title={title}>
       <input
         type="checkbox"
         checked={checked}
