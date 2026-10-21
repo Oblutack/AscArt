@@ -44,7 +44,7 @@ The terminal app and the command line are one program, `ascart`.
 <img src="docs/media/desktop-convert.gif" alt="Loading a picture in the desktop app and changing its style, colors, brightness and width while the art updates" width="860">
 </div>
 
-Load a picture (or drop one anywhere in the window) and the art appears straight away. Move a slider and it follows, with no button to press. The 8 color schemes, the character sets, brightness, contrast, invert and halftone are all live.
+Load a picture (or drop one anywhere in the window) and the art appears straight away. Settings sit in one sidebar beside the art, and the art follows every change with no button to press: the character set, the 8 color schemes, the width (drag it or type it), brightness, contrast, invert and halftone. A status bar along the bottom says what the app is doing and lists the shortcuts.
 
 **Convert**
 
@@ -57,7 +57,7 @@ Load a picture (or drop one anywhere in the window) and the art appears straight
 
 * Save as **HTML** (full color; GIFs become a self-contained animated page), **plain text**, **`.ans`** (24-bit terminal colors: `cat` it in a terminal), **PNG** or an animated **GIF**.
 * **Copy** puts the plain characters on the clipboard.
-* A **history gallery** keeps your last 50 conversions with their settings, so you can reopen and tweak them.
+* **History** keeps your last 50 conversions with their settings, so you can reopen and tweak them. Live previews aren't kept: press **Convert** (`Ctrl+Enter`) for the ones you want.
 * **Desktop widgets**: pin the art or an animation to your desktop as a floating, draggable window.
 
 **Keyboard**: `Ctrl+O` open, `Ctrl+Enter` convert, `Ctrl+S` save, `Ctrl+H` history, `Esc` stop a running conversion.
@@ -75,15 +75,16 @@ Load a picture (or drop one anywhere in the window) and the art appears straight
 ### Widgets
 
 <div align="center">
-<img src="docs/media/desktop-widgets.gif" alt="Pressing WIDGET turns a picture, then an animation, into borderless windows that sit on the desktop; the app is then minimized and the two widgets are dragged around" width="860">
+<img src="docs/media/desktop-widgets.gif" alt="Pressing Widget turns a picture, then an animation, into borderless windows that sit on the desktop; the app is then minimized and the two widgets are dragged around" width="860">
 </div>
 
-Press **WIDGET** and the art in the viewer, a still picture or a running animation, becomes its own borderless window on your desktop. Make as many as you like: each one is independent, so you can keep a few going while you carry on converting.
+Press **Widget** and the art on screen, a still picture or a running animation, becomes its own borderless window on your desktop. Make as many as you like: each one is independent, so you can keep a few going while you carry on converting.
 
 * **Drag** a widget by its art to put it anywhere.
-* **Hide Controls** leaves nothing but the art floating on the desktop (below). Click the art, or right-click it, to bring the controls back.
-* **Pause**, **Prev** and **Next** step through an animation; **Smaller** and **Larger** change the size of the art.
-* **Close Widget** puts it away. Minimizing the app leaves the widgets where they are; quitting the app closes them.
+* A new widget starts at the largest size at which the whole art fits; **−** and **+** change it.
+* **Hide** leaves nothing but the art floating on the desktop (below). Click the art, or right-click it, to bring the controls back.
+* Animations can be paused and stepped through frame by frame.
+* **✕** puts a widget away. Minimizing the app leaves the widgets where they are; quitting the app closes them.
 
 <div align="center">
 <img src="docs/media/desktop-widgets.jpg" alt="Two widgets floating on a desktop, one a playing animation and one a sunset, with no window around either" width="620">
@@ -91,8 +92,8 @@ Press **WIDGET** and the art in the viewer, a still picture or a running animati
 
 <table>
 <tr>
-<td width="50%" align="center"><img src="docs/media/desktop-gallery.png" alt="The history gallery with six thumbnails of the same picture in different colors" ><br><sub><b>History gallery</b>: every conversion, with its settings</sub></td>
-<td width="50%" align="center"><img src="docs/media/desktop-widget.png" alt="A desktop widget playing an animation, with its playback controls" width="300"><br><sub><b>Desktop widget</b>: art on your desktop, animations included</sub></td>
+<td width="50%" align="center"><img src="docs/media/desktop-gallery.png" alt="The history: six conversions of the same picture in different colors, each with its date, settings, an Open button and a delete button" ><br><sub><b>History</b>: every conversion, with its settings</sub></td>
+<td width="50%" align="center"><img src="docs/media/desktop-widget.png" alt="A desktop widget playing an animation, with a slim strip of controls for playback, size, hiding and closing" width="300"><br><sub><b>Desktop widget</b>: art on your desktop, animations included</sub></td>
 </tr>
 </table>
 
@@ -255,7 +256,7 @@ cd cli && go vet ./... && go test ./...
 
 ```
 AscArt/
-├── electron/        Main process, preload API, export helpers, the widget window
+├── electron/        Main process, preload API, export helpers, the widget window, the font
 ├── src/             The React UI: components, hooks, styles, tests
 ├── python/          The Python engine: conversion, GIF and video, history, tests, PyInstaller recipe
 ├── cli/             ascart for the terminal
@@ -291,7 +292,7 @@ Other environment variables: `ASCART_PYTHON` (which Python to use in development
 
 <br>
 
-In the apps you can write your own set from darkest to lightest (2 to 100 single-width characters). To add a named one, edit `CHARSETS` in `python/core/charsets.py`, the Go equivalent in `cli/internal/engine/charsets.go`, and the Style dropdown in `src/components/Generator/WidthPanel.jsx`:
+In the apps you can write your own set from darkest to lightest (2 to 100 single-width characters). To add a named one, edit `CHARSETS` in `python/core/charsets.py`, the Go equivalent in `cli/internal/engine/charsets.go`, and the Characters choices in `src/components/Generator/StylePanel.jsx`:
 
 ```python
 CHARSETS = {
@@ -309,7 +310,7 @@ CHARSETS = {
 
 <br>
 
-The desktop app's colors are CSS variables in the `:root` block at the top of `src/styles/main.css`. The `-rgb` twins (for example `--pale-slate-2-rgb`) exist so translucent colors can use `rgba(var(--pale-slate-2-rgb), 0.3)`.
+Every color, size and font of the desktop app is a CSS variable in `src/styles/tokens.css`: change `--accent` there and every highlight follows. The palette is the terminal app's, and each text color keeps a contrast of 4.5:1 or better against the surfaces it sits on. The widget window has its own copy of the few it needs at the top of `electron/widget/widget.css`. The font is JetBrains Mono, bundled in `electron/fonts`.
 
 </details>
 
@@ -374,7 +375,6 @@ Install [ffmpeg](https://ffmpeg.org/download.html) and make sure `ffmpeg` runs i
 * Desktop builds are unsigned until a certificate is added, and Intel Macs have no desktop build yet (the terminal binary has one).
 * Background removal is desktop-only.
 * Widgets can't be minimized to the taskbar: they are desktop overlays by design.
-* A widget window is 400 pixels wide, so art wider than about 100 columns is cropped at the edges until you press **Smaller**.
 * Very large GIFs (500+ frames) take a while to load in widgets.
 * Next: batch conversion, widget opacity and saved widget layouts.
 
@@ -388,4 +388,4 @@ Issues and pull requests are welcome. Run the checks in [Quality](#quality) befo
 
 ## License and credits
 
-[MIT](LICENSE). Thanks to [rembg](https://github.com/danielgatis/rembg) for background removal, [Pillow](https://python-pillow.org/) and [NumPy](https://numpy.org/) for the Python engine, [Bubble Tea](https://github.com/charmbracelet/bubbletea) and the other Charm libraries for the terminal app, and the Electron and React communities. The Earth photo in the examples is from NASA's Apollo 17 mission and is in the public domain.
+[MIT](LICENSE). Thanks to [rembg](https://github.com/danielgatis/rembg) for background removal, [Pillow](https://python-pillow.org/) and [NumPy](https://numpy.org/) for the Python engine, [Bubble Tea](https://github.com/charmbracelet/bubbletea) and the other Charm libraries for the terminal app, the Electron and React communities, and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (SIL Open Font License, see `electron/fonts/OFL.txt`), the font of the desktop app. The Earth photo in the examples is from NASA's Apollo 17 mission and is in the public domain.
